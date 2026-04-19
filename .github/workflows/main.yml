@@ -81,7 +81,14 @@ jobs:
         id: setup_release_manual
         if: github.event_name == 'workflow_dispatch'
         run: |
-          SUFFIX=$([ "${{ github.ref_name }}" = "master" ] && echo "" || echo "-dev")
+          # Branch suffix: master → no suffix, english-translation → -english, anything else → -dev
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            SUFFIX=""
+          elif [ "${{ github.ref_name }}" = "english-translation" ]; then
+            SUFFIX="-english"
+          else
+            SUFFIX="-dev"
+          fi
           echo "publish_release=false" >> $GITHUB_OUTPUT
           echo "release_body=Manual build (${{ github.ref_name }})" >> $GITHUB_OUTPUT
           echo "release_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
