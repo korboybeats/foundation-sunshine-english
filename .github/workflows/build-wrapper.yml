@@ -1,0 +1,105 @@
+name: Build Wrapper Installer
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      english_release_tag:
+        description: 'English release tag to wrap (default: latest)'
+        required: false
+        default: 'latest'
+
+concurrency:
+  group: build-wrapper-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile wrapper installer
+    runs-on: windows-latest
+    permissions:
+      contents: write   # Required to upload artifact to release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve target English release tag
+        id: resolve_tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.english_release_tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ($env:EVENT_NAME -eq 'release') {
+            $tag = $env:RELEASE_TAG_NAME
+          } elseif (-not [string]::IsNullOrWhiteSpace($env:INPUT_TAG) -and $env:INPUT_TAG -ne 'latest') {
+            $tag = $env:INPUT_TAG
+          } else {
+            $tag = (gh release view --repo $env:REPO --json tagName | ConvertFrom-Json).tagName
+          }
+          # Tag must match GitHub's allowed character set
+          if ($tag -notmatch '^[A-Za-z0-9._\-]+$') {
+            throw "Resolved tag '$tag' contains characters that are not allowed."
+          }
+          Write-Host "Resolved tag: $tag"
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Stage English overlay
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENGLISH_RELEASE_TAG: ${{ steps.resolve_tag.outputs.tag }}
+        run: |
+          installer-wrapper/build/prepare_overlay.ps1 -ReleaseTag $env:ENGLISH_RELEASE_TAG
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y --version=6.4.3
+          # Add to PATH for subsequent steps
+          $isccPath = "${env:ProgramFiles(x86)}\Inno Setup 6"
+          "$isccPath" >> $env:GITHUB_PATH
+
+      - name: Compile wrapper installer
+        shell: pwsh
+        env:
+          OVERLAY_VERSION: ${{ steps.resolve_tag.outputs.tag }}
+        run: |
+          cd installer-wrapper
+          iscc "/DOverlayVersion=$env:OVERLAY_VERSION" wrapper.iss
+          if (-not (Test-Path "Output\Sunshine-EnglishEdition-Setup.exe")) {
+            throw "Compilation succeeded but expected output file missing."
+          }
+          $size = (Get-Item "Output\Sunshine-EnglishEdition-Setup.exe").Length
+          Write-Host "Built Sunshine-EnglishEdition-Setup.exe ($([math]::Round($size / 1MB, 1)) MB)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sunshine-EnglishEdition-Setup
+          path: installer-wrapper/Output/Sunshine-EnglishEdition-Setup.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release upload $env:RELEASE_TAG_NAME `
+            installer-wrapper/Output/Sunshine-EnglishEdition-Setup.exe `
+            --repo $env:REPO `
+            --clobber
+
+      - name: Compute and report SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash installer-wrapper/Output/Sunshine-EnglishEdition-Setup.exe -Algorithm SHA256).Hash
+          Write-Host "SHA-256: $hash"
+          "Sunshine-EnglishEdition-Setup.exe SHA-256: $hash" >> $env:GITHUB_STEP_SUMMARY
