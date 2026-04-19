@@ -56,12 +56,21 @@ jobs:
         run: |
           & "${{ github.workspace }}/installer-wrapper/build/prepare_overlay.ps1" -ReleaseTag $env:ENGLISH_RELEASE_TAG
 
-      - name: Install Inno Setup
+      - name: Locate Inno Setup
         shell: pwsh
         run: |
-          choco install innosetup --no-progress -y --version=6.4.3
-          # Add to PATH for subsequent steps
+          # GitHub windows-latest runners ship Inno Setup 6 preinstalled.
+          # If choco install was run, it would fail with a downgrade error.
+          # Just add it to PATH and verify.
           $isccPath = "${env:ProgramFiles(x86)}\Inno Setup 6"
+          if (-not (Test-Path "$isccPath\iscc.exe")) {
+            Write-Host "Inno Setup not preinstalled; installing via Chocolatey..."
+            choco install innosetup --no-progress -y --force
+          }
+          if (-not (Test-Path "$isccPath\iscc.exe")) {
+            throw "Failed to locate iscc.exe at $isccPath\iscc.exe"
+          }
+          Write-Host "Found iscc.exe at: $isccPath\iscc.exe"
           "$isccPath" >> $env:GITHUB_PATH
 
       - name: Compile wrapper installer
