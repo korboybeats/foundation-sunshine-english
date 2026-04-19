@@ -55,18 +55,18 @@ export const showActiveTheme = (theme, focus = false) => {
   }
 }
 
-// 单例标志，确保全局事件监听器只添加一次
+// Singleton flag to ensure global event listeners are added only once
 let isAutoThemeInitialized = false
 let mediaQueryHandler = null
 let domContentLoadedHandler = null
 
 export function loadAutoTheme() {
-  // 设置主题
+  // Set the theme
   setTheme(getPreferredTheme())
 
-  // 只在第一次调用时添加全局事件监听器
+  // Only attach global event listeners on the first call
   if (!isAutoThemeInitialized) {
-    // 处理系统主题变化
+    // Handle system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQueryHandler = () => {
     const storedTheme = getStoredTheme()
@@ -76,14 +76,14 @@ export function loadAutoTheme() {
     }
     mediaQuery.addEventListener('change', mediaQueryHandler)
 
-    // 处理 DOMContentLoaded 事件（如果文档已经加载完成，则立即执行）
+    // Handle DOMContentLoaded (if the document is already loaded, run immediately)
     domContentLoadedHandler = () => {
     showActiveTheme(getPreferredTheme())
     }
     if (document.readyState === 'loading') {
       window.addEventListener('DOMContentLoaded', domContentLoadedHandler)
     } else {
-      // 文档已经加载完成，直接执行
+      // Document is already loaded, execute directly
       domContentLoadedHandler()
     }
 

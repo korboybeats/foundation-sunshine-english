@@ -11,7 +11,7 @@
 
     <div class="row justify-content-center my-4">
       <div class="col-lg-10">
-        <!-- 语言选择器 -->
+        <!-- Language picker -->
         <div class="text-end mb-3">
           <div class="language-selector">
             <label for="localeSelect" class="form-label me-2">
@@ -179,26 +179,27 @@ const { error, success, loading, passwordData, passwordsMatch, isFormValid, save
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// 加载语言（使用静态嵌入的翻译数据）
+// Load a language (using the statically embedded translation data)
 const loadLanguage = (lang) => {
   const welcomeLocales = window.__WELCOME_LOCALES__
-  
+
   if (welcomeLocales && welcomeLocales[lang]) {
-    // 使用嵌入的翻译数据设置到 i18n
+    // Apply the embedded translation data to i18n
     setLocaleMessage(lang, welcomeLocales[lang])
     locale.value = lang
     document.querySelector('html').setAttribute('lang', lang)
   } else {
-    // 如果没有找到，使用英文
+    // If not found, fall back to English
     locale.value = 'en'
     document.querySelector('html').setAttribute('lang', 'en')
   }
 }
 
-// 加载当前语言设置
+// Load the current language preference
 onMounted(async () => {
   try {
-    // 使用 /api/configLocale，这个 API 不需要认证（在 welcome 页面时可能还没有账号）
+    // Use /api/configLocale; this API does not require authentication
+    // (on the welcome page there may not be an account yet)
     const config = await fetch('/api/configLocale').then((r) => r.json())
     if (config.locale) {
       selectedLocale.value = config.locale
@@ -212,7 +213,7 @@ onMounted(async () => {
   }
 })
 
-// 切换语言
+// Switch language
 const changeLanguage = () => {
   loadLanguage(selectedLocale.value)
 }
@@ -229,13 +230,13 @@ const changeLanguage = () => {
   --pencil-gray: #8b8b8b;
 }
 
-/* 容器定位 */
+/* Container positioning */
 #content {
   position: relative;
   z-index: 1;
 }
 
-/* 手绘风格卡片 */
+/* Hand-drawn card */
 .card {
   background: #fff;
   border: 3px solid var(--sketch-black);
@@ -246,7 +247,7 @@ const changeLanguage = () => {
   filter: url(#pencilTexture);
 }
 
-/* 手绘边框效果 */
+/* Hand-drawn border effect */
 .card::before {
   content: '';
   position: absolute;
@@ -259,7 +260,7 @@ const changeLanguage = () => {
   pointer-events: none;
 }
 
-/* 装饰性涂鸦 */
+/* Decorative doodle */
 .card::after {
   content: '✨';
   position: absolute;
@@ -269,7 +270,7 @@ const changeLanguage = () => {
   transform: rotate(15deg);
 }
 
-/* 手写标题 */
+/* Handwritten heading */
 h1 {
   font-family: 'Patrick Hand', 'KaiTi', 'STXingkai', 'Kaiti SC', cursive;
   color: var(--sketch-black);
@@ -279,7 +280,7 @@ h1 {
   position: relative;
 }
 
-/* 标题下划线效果 */
+/* Heading underline effect */
 h1::after {
   content: '';
   position: absolute;
@@ -292,12 +293,12 @@ h1::after {
   opacity: 0.3;
 }
 
-/* Logo 效果 */
+/* Logo effect */
 header img {
   filter: drop-shadow(3px 3px 0px rgba(0, 0, 0, 0.1));
 }
 
-/* 副标题 */
+/* Subtitle */
 .lead {
   font-family: 'Indie Flower', 'KaiTi', 'STXingkai', 'Kaiti SC', cursive;
   color: var(--pencil-gray);
@@ -305,7 +306,7 @@ header img {
   transform: rotate(0.5deg);
 }
 
-/* 手绘警告框 */
+/* Hand-drawn alert box */
 .alert-warning {
   background: linear-gradient(135deg, #fff9e6 0%, #fffaeb 100%);
   border: 3px solid #ff8c00;
@@ -325,7 +326,7 @@ header img {
   filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.2));
 }
 
-/* 手绘表单标签 */
+/* Hand-drawn form labels */
 .form-label {
   font-family: 'Patrick Hand', 'KaiTi', 'STXingkai', 'Kaiti SC', cursive;
   color: var(--sketch-black);
@@ -336,7 +337,7 @@ header img {
   position: relative;
 }
 
-/* 标签强调下划线 */
+/* Label emphasis underline */
 .form-label::after {
   content: '';
   position: absolute;
@@ -387,7 +388,7 @@ header img {
   border-right: none;
 }
 
-/* 手绘输入框 */
+/* Hand-drawn inputs */
 .form-control {
   background: #fff;
   border: 2px solid var(--sketch-black);
@@ -414,7 +415,7 @@ header img {
   opacity: 0.6;
 }
 
-/* 验证状态 */
+/* Validation state */
 .form-control.is-invalid {
   border-color: var(--sketch-red);
   background: #fff5f5;
@@ -439,7 +440,7 @@ header img {
   box-shadow: inset 2px 2px 0px rgba(220, 20, 60, 0.1), 3px 3px 0px rgba(220, 20, 60, 0.2);
 }
 
-/* 反馈信息 */
+/* Feedback messages */
 .invalid-feedback,
 .valid-feedback {
   display: block;
@@ -462,7 +463,7 @@ header img {
   display: inline-block;
 }
 
-/* 手绘按钮 */
+/* Hand-drawn buttons */
 .btn-primary {
   background: var(--sketch-blue);
   border: 3px solid var(--sketch-black);
@@ -479,7 +480,7 @@ header img {
   overflow: hidden;
 }
 
-/* 按钮装饰线条 */
+/* Button decorative line */
 .btn-primary::before {
   content: '';
   position: absolute;
@@ -512,13 +513,13 @@ header img {
   display: inline-block;
 }
 
-/* 加载动画 */
+/* Loading animation */
 .spinner-border {
   border-color: rgba(255, 255, 255, 0.3);
   border-right-color: #fff;
 }
 
-/* 手绘错误提示 */
+/* Hand-drawn error notice */
 .alert-danger {
   background: #fff0f0;
   border: 2px solid var(--sketch-red);
@@ -552,7 +553,7 @@ header img {
   font-size: 1.5rem;
 }
 
-/* 手绘成功提示 */
+/* Hand-drawn success notice */
 .alert-success {
   background: #f0fff4;
   border: 2px solid var(--sketch-green);
@@ -588,7 +589,7 @@ header img {
   color: var(--sketch-green);
 }
 
-/* Vue 过渡动画 */
+/* Vue transition animations */
 .fade-enter-active {
   animation: sketchIn 0.5s ease;
 }
@@ -619,14 +620,14 @@ header img {
   }
 }
 
-/* SVG 滤镜 */
+/* SVG filter */
 svg {
   position: absolute;
   width: 0;
   height: 0;
 }
 
-/* 响应式优化 */
+/* Responsive optimizations */
 @media (max-width: 768px) {
   .card {
     transform: rotate(0deg);
@@ -648,7 +649,7 @@ svg {
   }
 }
 
-/* 语言选择器样式 */
+/* Language picker styles */
 .language-selector {
   display: inline-block;
   position: relative;
@@ -689,7 +690,7 @@ svg {
   box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15);
 }
 
-/* 打印样式优化 */
+/* Print style optimization */
 @media print {
   .card::after,
   .alert-warning::before,

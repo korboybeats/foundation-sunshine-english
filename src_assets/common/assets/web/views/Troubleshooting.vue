@@ -9,7 +9,7 @@
         </h1>
       </div>
 
-      <!-- Row 1: 重新打开新手引导 | 登出 -->
+      <!-- Row 1: Reopen setup wizard | Log out -->
       <div class="row mb-4">
         <div class="col-lg-6 d-flex">
           <TroubleshootingCard
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <!-- Row 2: 强制关闭 | Boom -->
+      <!-- Row 2: Force close | Boom -->
       <div class="row mb-4">
         <div class="col-lg-6 d-flex">
           <TroubleshootingCard
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <!-- Row 3: 重置显示器设置 | 重启 Sunshine -->
+      <!-- Row 3: Reset display settings | Restart Sunshine -->
       <div class="row mb-4">
         <div class="col-lg-6 d-flex" v-if="platform === 'windows'">
           <TroubleshootingCard
@@ -218,7 +218,7 @@
       </div>
     </Transition>
 
-    <!-- Localhost 登出提醒弹窗（200 时显示） -->
+    <!-- Localhost logout reminder modal (shown on 200) -->
     <Transition name="fade">
       <div v-if="showLocalhostLogoutModal" class="boom-confirm-overlay" @click.self="closeLocalhostLogoutModal">
         <div class="boom-confirm-modal">
@@ -326,7 +326,7 @@ const closeLocalhostLogoutModal = () => {
 const confirmLogout = () => {
   closeLogoutModal()
   showLocalhostLogoutModal.value = false
-  stopLogRefresh() // 避免登出后 log 轮询再发请求触发第二次登录框
+  stopLogRefresh() // Avoid the log poller re-triggering the auth dialog after logout
   logout({
     onLocalhost: () => {
       showLocalhostLogoutModal.value = true
@@ -374,7 +374,7 @@ onMounted(async () => {
   padding: 0.75rem 1rem;
 }
 
-/* Boom Confirm Modal - 使用 ScanResultModal 样式 */
+/* Boom Confirm Modal - reuses ScanResultModal styles */
 .boom-confirm-overlay {
   position: fixed;
   top: 0;
@@ -485,7 +485,7 @@ onMounted(async () => {
   font-size: 0.9rem;
 }
 
-/* Vue 过渡动画 */
+/* Vue transition animations */
 .fade-enter-active {
   transition: opacity 0.3s ease;
 }

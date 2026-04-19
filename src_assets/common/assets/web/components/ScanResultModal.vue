@@ -2,7 +2,7 @@
   <Transition name="fade">
     <div v-if="show" class="scan-result-overlay" @click.self="$emit('close')">
       <div class="scan-result-modal">
-        <!-- 标题栏 -->
+        <!-- Header -->
         <div class="scan-result-header">
           <h5>
             <i class="fas fa-search me-2"></i>{{ t('apps.scan_result_title') }}
@@ -15,7 +15,7 @@
           <button class="btn-close" :aria-label="t('close')" @click="$emit('close')"></button>
         </div>
 
-        <!-- 搜索框和过滤器 -->
+        <!-- Search box and filters -->
         <div v-if="apps.length > 0" class="scan-result-search">
           <div class="search-box">
             <i class="fas fa-search search-icon"></i>
@@ -30,10 +30,10 @@
             </button>
           </div>
 
-          <!-- 过滤器按钮组 -->
+          <!-- Filter button group -->
           <div class="scan-result-filters mt-2">
             <div class="d-flex flex-wrap gap-2 align-items-center">
-              <!-- 应用类型过滤 -->
+              <!-- App-type filter -->
               <div class="btn-group btn-group-sm flex-wrap" role="group">
                 <button
                   class="btn"
@@ -125,7 +125,7 @@
                 </button>
               </div>
 
-              <!-- 游戏过滤 -->
+              <!-- Games-only filter -->
               <button
                 v-if="stats.games > 0"
                 class="btn btn-sm"
@@ -141,7 +141,7 @@
           </div>
         </div>
 
-        <!-- 应用列表 -->
+        <!-- App list -->
         <div class="scan-result-body">
           <div v-if="apps.length === 0" class="text-center text-muted py-4">
             <i class="fas fa-folder-open fa-3x mb-3"></i>
@@ -154,7 +154,7 @@
           </div>
           <div v-else class="scan-result-list">
             <div v-for="app in filteredApps" :key="app.source_path" class="scan-result-item">
-              <!-- 应用图标 -->
+              <!-- App icon -->
               <div class="scan-app-icon">
                 <img
                   v-if="app['image-path']"
@@ -178,7 +178,7 @@
                 </svg>
               </div>
 
-              <!-- 应用信息 -->
+              <!-- App info -->
               <div class="scan-app-info">
                 <div class="scan-app-name">
                   <i v-if="app['is-game']" class="fas fa-gamepad me-1 text-warning" :title="t('apps.scan_result_game')"></i>
@@ -194,7 +194,7 @@
                 <div class="scan-app-path small"><i class="fas fa-folder-open me-1"></i>{{ app.source_path }}</div>
               </div>
 
-              <!-- 操作按钮 -->
+              <!-- Action buttons -->
               <div class="scan-app-actions">
                 <button class="btn btn-sm btn-outline-primary" @click="$emit('edit', app)" :title="t('apps.scan_result_edit_title')">
                   <i class="fas fa-edit"></i>
@@ -218,7 +218,7 @@
           </div>
         </div>
 
-        <!-- 底部操作栏 -->
+        <!-- Footer action bar -->
         <div v-if="apps.length > 0" class="scan-result-footer">
           <button class="btn btn-secondary" @click="$emit('close')"><i class="fas fa-times me-1"></i>{{ t('_common.cancel') }}</button>
           <button class="btn btn-primary" @click="$emit('add-all')" :disabled="saving">
@@ -254,12 +254,12 @@ const props = defineProps({
 
 defineEmits(['close', 'edit', 'quick-add', 'remove', 'add-all'])
 
-// 本地状态
+// Local state
 const searchQuery = ref('')
 const selectedType = ref('all')
 const gamesOnly = ref(false)
 
-// 重置过滤器
+// Reset filters
 watch(
   () => props.show,
   (newVal) => {
@@ -271,7 +271,7 @@ watch(
   }
 )
 
-// 当 apps 引用被整体替换时（新扫描结果），重置所有筛选状态
+// When the apps reference is fully replaced (new scan result), reset all filter state
 watch(
   () => props.apps,
   (newApps) => {
@@ -282,25 +282,25 @@ watch(
   }
 )
 
-// 当数组内部变化时（quick-add/remove via splice），仅做防御性校正
+// When the array mutates internally (quick-add/remove via splice), do only defensive corrections
 watch(
   () => [props.apps.length, ...props.apps.map((a) => a['app-type'])],
   () => {
-    // 如果当前选中的 type 已经没有对应项了，回退到 'all'
+    // If the currently selected type no longer has matching entries, fall back to 'all'
     if (selectedType.value !== 'all') {
       const hasType = props.apps.some((app) => app['app-type'] === selectedType.value)
       if (!hasType) {
         selectedType.value = 'all'
       }
     }
-    // 如果游戏过滤开启但已无游戏项，关闭过滤
+    // If the games-only filter is on but no game entries remain, turn it off
     if (gamesOnly.value && !props.apps.some((app) => app['is-game'] === true)) {
       gamesOnly.value = false
     }
   }
 )
 
-// 统计信息
+// Statistics
 const stats = computed(() => ({
   all: props.apps.length,
   games: props.apps.filter((app) => app['is-game'] === true).length,
@@ -314,24 +314,24 @@ const stats = computed(() => ({
   gog: props.apps.filter((app) => app['app-type'] === 'gog').length,
 }))
 
-// 是否有激活的过滤器
+// Whether any filters are active
 const hasActiveFilter = computed(() => searchQuery.value || gamesOnly.value || selectedType.value !== 'all')
 
-// 过滤后的应用列表
+// Filtered app list
 const filteredApps = computed(() => {
   let filtered = props.apps
 
-  // 按应用类型过滤
+  // Filter by app type
   if (selectedType.value !== 'all') {
     filtered = filtered.filter((app) => app['app-type'] === selectedType.value)
   }
 
-  // 按游戏过滤
+  // Filter to games only
   if (gamesOnly.value) {
     filtered = filtered.filter((app) => app['is-game'] === true)
   }
 
-  // 按搜索关键词过滤
+  // Filter by search keyword
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter((app) => {
@@ -345,7 +345,7 @@ const filteredApps = computed(() => {
   return filtered
 })
 
-// 应用类型标签
+// App-type label
 const getAppTypeLabel = (appType) => {
   const typeMap = {
     executable: t('apps.scan_result_type_executable'),
@@ -360,7 +360,7 @@ const getAppTypeLabel = (appType) => {
   return typeMap[appType] || appType
 }
 
-// 应用类型徽章样式
+// App-type badge styles
 const getAppTypeBadgeClass = (appType) => {
   const classMap = {
     executable: 'bg-primary',

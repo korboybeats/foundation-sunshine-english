@@ -1,15 +1,15 @@
-# 工具模块文档
+# Utility Modules
 
-## 文件选择模块 (fileSelection.js)
+## File Selection Module (fileSelection.js)
 
-提供跨平台的文件和目录选择功能，支持 Electron 和浏览器环境。
+Cross-platform file and directory selection, supporting both Electron and browser environments.
 
-### 快速开始
+### Quick start
 
 ```javascript
 import { createFileSelector } from './utils/fileSelection.js';
 
-// 创建文件选择器实例
+// Create a file-selector instance
 const fileSelector = createFileSelector({
   platform: 'windows', // 'windows', 'linux', 'macos'
   onSuccess: (message) => console.log(message),
@@ -17,56 +17,56 @@ const fileSelector = createFileSelector({
   onInfo: (info) => console.info(info)
 });
 
-// 选择文件
+// Select a file
 fileSelector.selectFile('cmd', fileInputRef, (fieldName, filePath) => {
-  console.log(`选择的文件: ${filePath}`);
+  console.log(`Selected file: ${filePath}`);
 });
 
-// 选择目录
+// Select a directory
 fileSelector.selectDirectory('working-dir', dirInputRef, (fieldName, dirPath) => {
-  console.log(`选择的目录: ${dirPath}`);
+  console.log(`Selected directory: ${dirPath}`);
 });
 ```
 
-### 简化使用
+### Simplified usage
 
 ```javascript
 import { selectFile, selectDirectory } from './utils/fileSelection.js';
 
-// 直接选择文件
+// Select a file directly
 selectFile({
   fieldName: 'cmd',
   fileInput: fileInputRef,
   platform: 'windows',
   callback: (fieldName, filePath) => {
-    // 处理选择的文件
+    // handle the selected file
   }
 });
 
-// 直接选择目录
+// Select a directory directly
 selectDirectory({
   fieldName: 'working-dir',
   dirInput: dirInputRef,
   platform: 'windows',
   callback: (fieldName, dirPath) => {
-    // 处理选择的目录
+    // handle the selected directory
   }
 });
 ```
 
-### 环境检查
+### Environment detection
 
 ```javascript
 import { checkEnvironmentSupport } from './utils/fileSelection.js';
 
 const support = checkEnvironmentSupport();
-console.log('文件选择支持:', support.fileSelection);
-console.log('目录选择支持:', support.directorySelection);
-console.log('Electron环境:', support.isElectron);
-console.log('开发环境:', support.isDevelopment);
+console.log('File selection support:', support.fileSelection);
+console.log('Directory selection support:', support.directorySelection);
+console.log('Electron environment:', support.isElectron);
+console.log('Development environment:', support.isDevelopment);
 ```
 
-### 在 Vue 组件中使用
+### Using inside a Vue component
 
 ```javascript
 import { createFileSelector } from '../utils/fileSelection.js';
@@ -104,50 +104,50 @@ export default {
 };
 ```
 
-### 支持的平台
+### Supported platforms
 
-- **Electron**: 完整的原生文件/目录选择对话框
-- **浏览器**: HTML5 文件API，有安全限制
-- **开发环境**: 模拟完整路径，便于测试
+- **Electron**: native file / directory selection dialogs
+- **Browser**: HTML5 file API, with security restrictions
+- **Development**: a simulated full path for easier testing
 
-### 注意事项
+### Notes
 
-- 浏览器环境下无法获取完整系统路径
-- 开发环境会自动模拟完整路径
-- Electron环境提供最佳的用户体验
+- The browser environment cannot read full system paths
+- The development environment automatically simulates a full path
+- The Electron environment provides the best user experience
 
-## 表单验证模块 (validation.js)
+## Form Validation Module (validation.js)
 
-提供表单字段验证功能。
+Form-field validation utilities.
 
-### 使用方法
+### Usage
 
 ```javascript
 import { validateField, validateAppForm } from './utils/validation.js';
 
-// 验证单个字段
+// Validate a single field
 const result = validateField('appName', 'MyApp');
 console.log(result.isValid); // true/false
-console.log(result.message); // 错误消息
+console.log(result.message); // error message
 
-// 验证整个表单
+// Validate an entire form
 const formResult = validateAppForm(formData);
 console.log(formResult.isValid); // true/false
-console.log(formResult.errors); // 错误列表
+console.log(formResult.errors); // list of errors
 ```
 
-## Steam API 模块 (steamApi.js)
+## Steam API Module (steamApi.js)
 
-提供Steam Store API集成功能。
+Integration with the Steam Store API.
 
-### 使用方法
+### Usage
 
 ```javascript
 import { searchSteamApps, findAppCover } from './utils/steamApi.js';
 
-// 搜索Steam应用
+// Search for Steam apps
 const apps = await searchSteamApps('Half-Life');
 
-// 查找应用封面
+// Find a cover image for an app
 const cover = await findAppCover('Half-Life 2');
-``` 
+```

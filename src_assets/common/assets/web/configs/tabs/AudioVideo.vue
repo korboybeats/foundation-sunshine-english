@@ -185,7 +185,7 @@ const cancelDownload = () => {
 
     <ExperimentalFeatures :platform="platform" :config="config" :display_mode_remapping="display_mode_remapping" />
 
-    <!-- 下载确认对话框 -->
+    <!-- Download confirmation dialog -->
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showDownloadConfirm" class="download-confirm-overlay" @click.self="cancelDownload">

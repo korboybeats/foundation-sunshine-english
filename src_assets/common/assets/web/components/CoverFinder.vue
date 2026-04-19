@@ -2,7 +2,7 @@
   <Transition name="finder-fade">
     <div v-if="visible" class="cover-finder-overlay" @click.self="closeFinder">
       <div class="cover-finder-panel" @click.stop>
-        <!-- 头部 -->
+        <!-- Header -->
         <div class="cover-finder__header">
           <div class="cover-finder__title">
             <i class="fas fa-image me-2"></i>
@@ -13,7 +13,7 @@
           </button>
         </div>
 
-        <!-- 搜索框 -->
+        <!-- Search box -->
         <div class="cover-finder__search">
           <div class="cover-finder__search-wrapper">
             <i class="fas fa-search cover-finder__search-icon"></i>
@@ -22,7 +22,7 @@
               v-model="localSearchTerm"
               type="text"
               class="cover-finder__search-input"
-              placeholder="输入游戏名称搜索..."
+              placeholder="Enter a game name to search..."
               @keydown.enter="searchCovers"
             />
             <button v-if="localSearchTerm" class="cover-finder__search-clear" @click="clearSearch" type="button">
@@ -34,7 +34,7 @@
           </div>
         </div>
 
-        <!-- 数据源筛选 -->
+        <!-- Data-source filter -->
         <div class="cover-finder__tabs">
           <button
             v-for="tab in tabs"
@@ -51,15 +51,15 @@
           </button>
         </div>
 
-        <!-- 内容区域 -->
+        <!-- Content area -->
         <div class="cover-finder__content">
-          <!-- 加载状态 -->
+          <!-- Loading state -->
           <div v-if="loading" class="cover-finder__loading">
             <div class="cover-finder__loading-spinner"></div>
-            <p class="cover-finder__loading-text">正在搜索封面...</p>
+            <p class="cover-finder__loading-text">Searching for covers...</p>
           </div>
 
-          <!-- 封面网格 -->
+          <!-- Cover grid -->
           <div v-else-if="filteredCovers.length > 0" class="cover-finder__grid">
             <div
               v-for="(cover, index) in filteredCovers"
@@ -82,21 +82,21 @@
             </div>
           </div>
 
-          <!-- 无结果 -->
+          <!-- No results -->
           <div v-else class="cover-finder__empty">
             <div class="cover-finder__empty-icon">
               <i class="fas fa-search"></i>
             </div>
-            <h4>未找到相关封面</h4>
-            <p>尝试使用不同的关键词搜索</p>
+            <h4>No covers found</h4>
+            <p>Try a different keyword</p>
           </div>
         </div>
 
-        <!-- 底部提示 -->
+        <!-- Footer hint -->
         <div class="cover-finder__footer">
           <span class="cover-finder__footer-hint">
             <i class="fas fa-info-circle me-1"></i>
-            点击封面即可应用
+            Click a cover to apply it
           </span>
         </div>
       </div>
@@ -112,7 +112,7 @@ const PLACEHOLDER_IMAGE =
   encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
     <rect fill="#1a1a2e" width="200" height="300"/>
-    <text x="100" y="150" text-anchor="middle" fill="#4a4a6a" font-size="14">无法加载</text>
+    <text x="100" y="150" text-anchor="middle" fill="#4a4a6a" font-size="14">Failed to load</text>
   </svg>
 `)
 
@@ -138,7 +138,7 @@ export default {
       localSearchTerm: '',
       searchAbortController: null,
       tabs: [
-        { key: 'all', icon: 'fas fa-globe', label: '全部' },
+        { key: 'all', icon: 'fas fa-globe', label: 'All' },
         { key: 'igdb', icon: 'fas fa-gamepad', label: 'IGDB' },
         { key: 'steam', icon: 'fab fa-steam', label: 'Steam' },
       ],
@@ -233,8 +233,8 @@ export default {
         this.steamCovers = results.steam
       } catch (error) {
         if (error.name === 'AbortError') return
-        console.error('搜索封面失败:', error)
-        this.$emit('error', '搜索封面失败，请稍后重试')
+        console.error('Failed to search covers:', error)
+        this.$emit('error', 'Failed to search covers, please try again later')
       } finally {
         this.loading = false
       }
@@ -264,8 +264,8 @@ export default {
         }
         this.closeFinder()
       } catch (error) {
-        console.error('使用封面失败:', error)
-        this.$emit('error', '使用封面失败，请稍后重试')
+        console.error('Failed to apply cover:', error)
+        this.$emit('error', 'Failed to apply cover, please try again later')
       } finally {
         this.$emit('loading', false)
       }

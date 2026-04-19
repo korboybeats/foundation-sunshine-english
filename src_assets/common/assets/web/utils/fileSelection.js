@@ -1,11 +1,11 @@
 /**
- * 文件选择工具模块
- * 提供跨平台的文件和目录选择功能
+ * File selection utility module
+ * Provides cross-platform file and directory selection
  */
 
 const FILE_FILTERS = [
-  { name: '可执行文件', extensions: ['exe', 'app', 'sh', 'bat', 'cmd'] },
-  { name: '所有文件', extensions: ['*'] },
+  { name: 'Executables', extensions: ['exe', 'app', 'sh', 'bat', 'cmd'] },
+  { name: 'All files', extensions: ['*'] },
 ]
 
 const PLACEHOLDERS = {
@@ -14,7 +14,7 @@ const PLACEHOLDERS = {
 }
 
 /**
- * 文件选择器类
+ * File selector class
  */
 export class FileSelector {
   constructor(options = {}) {
@@ -27,7 +27,7 @@ export class FileSelector {
   }
 
   /**
-   * 通用选择方法
+   * Generic select method
    */
   async select(fieldName, input, callback, isDirectory = false) {
     this.currentField = fieldName
@@ -47,25 +47,25 @@ export class FileSelector {
   }
 
   /**
-   * 选择文件
+   * Select a file
    */
   async selectFile(fieldName, fileInput, callback) {
     return this.select(fieldName, fileInput, callback, false)
   }
 
   /**
-   * 选择目录
+   * Select a directory
    */
   async selectDirectory(fieldName, dirInput, callback) {
     return this.select(fieldName, dirInput, callback, true)
   }
 
   /**
-   * 浏览器环境下选择文件/目录
+   * Select a file/directory in the browser environment
    */
   selectBrowser(input, callback, isDirectory) {
     if (!input) {
-      this.onError(isDirectory ? '目录输入元素不存在' : '文件输入元素不存在')
+      this.onError(isDirectory ? 'Directory input element does not exist' : 'File input element does not exist')
       return
     }
 
@@ -81,14 +81,14 @@ export class FileSelector {
           const path = isDirectory ? this.processDirectoryPath(files[0]) : this.processFilePath(files[0])
 
           callback?.(this.currentField, path)
-          this.onSuccess(`${isDirectory ? '目录' : '文件'}选择成功: ${path}`)
+          this.onSuccess(`${isDirectory ? 'Directory' : 'File'} selected successfully: ${path}`)
 
           if (!this.isElectronEnvironment()) {
-            this.onInfo('浏览器环境下无法获取完整路径，请检查并手动调整路径')
+            this.onInfo('In the browser, the full path is unavailable. Please review and adjust the path manually.')
           }
         } catch (error) {
-          console.error(`${isDirectory ? '目录' : '文件'}选择处理失败:`, error)
-          this.onError(`${isDirectory ? '目录' : '文件'}选择处理失败，请重试`)
+          console.error(`${isDirectory ? 'Directory' : 'File'} selection failed:`, error)
+          this.onError(`${isDirectory ? 'Directory' : 'File'} selection failed. Please try again.`)
         }
       }
 
@@ -108,7 +108,7 @@ export class FileSelector {
   }
 
   /**
-   * 检查是否在 Tauri 环境
+   * Detect Tauri environment
    */
   isTauriEnvironment() {
     const tauri = typeof window !== 'undefined' ? window.__TAURI__ : null
@@ -116,39 +116,39 @@ export class FileSelector {
   }
 
   /**
-   * 检查是否在 Electron 环境
+   * Detect Electron environment
    */
   isElectronEnvironment() {
     return typeof window !== 'undefined' && window.process?.type === 'renderer'
   }
 
   /**
-   * Tauri 环境下选择
+   * Select in the Tauri environment
    */
   async selectTauri(fieldName, callback, isDirectory) {
     const tauri = window.__TAURI__
     if (!tauri?.dialog?.open) {
-      this.onError('Tauri 对话框 API 不可用')
+      this.onError('Tauri dialog API is not available')
       this.resetState()
       return null
     }
 
     try {
       const options = isDirectory
-        ? { title: '选择目录', multiple: false, directory: true }
-        : { title: '选择文件', filters: FILE_FILTERS, multiple: false, directory: false }
+        ? { title: 'Select directory', multiple: false, directory: true }
+        : { title: 'Select file', filters: FILE_FILTERS, multiple: false, directory: false }
 
       const selected = await tauri.dialog.open(options)
 
       if (selected) {
         callback?.(fieldName, selected)
-        this.onSuccess(`${isDirectory ? '目录' : '文件'}选择成功: ${selected}`)
+        this.onSuccess(`${isDirectory ? 'Directory' : 'File'} selected successfully: ${selected}`)
         this.resetState()
         return selected
       }
     } catch (error) {
-      console.error(`Tauri ${isDirectory ? '目录' : '文件'}选择失败:`, error)
-      this.onError(`${isDirectory ? '目录' : '文件'}选择失败，请手动输入路径`)
+      console.error(`Tauri ${isDirectory ? 'directory' : 'file'} selection failed:`, error)
+      this.onError(`${isDirectory ? 'Directory' : 'File'} selection failed. Please enter the path manually.`)
     }
 
     this.resetState()
@@ -164,7 +164,7 @@ export class FileSelector {
   }
 
   /**
-   * Electron 环境下选择
+   * Select in the Electron environment
    */
   async selectElectron(fieldName, callback, isDirectory) {
     try {
@@ -178,12 +178,12 @@ export class FileSelector {
       if (!result.canceled && result.filePaths.length > 0) {
         const path = result.filePaths[0]
         callback?.(fieldName, path)
-        this.onSuccess(`${isDirectory ? '目录' : '文件'}选择成功: ${path}`)
+        this.onSuccess(`${isDirectory ? 'Directory' : 'File'} selected successfully: ${path}`)
         return path
       }
     } catch (error) {
-      console.error(`${isDirectory ? '目录' : '文件'}选择失败:`, error)
-      this.onError(`${isDirectory ? '目录' : '文件'}选择失败，请手动输入路径`)
+      console.error(`${isDirectory ? 'Directory' : 'File'} selection failed:`, error)
+      this.onError(`${isDirectory ? 'Directory' : 'File'} selection failed. Please enter the path manually.`)
     }
 
     this.resetState()
@@ -199,14 +199,14 @@ export class FileSelector {
   }
 
   /**
-   * 处理文件路径
+   * Process file path
    */
   processFilePath(file) {
     return file.webkitRelativePath || file.name
   }
 
   /**
-   * 处理目录路径
+   * Process directory path
    */
   processDirectoryPath(firstFile) {
     if (!firstFile.webkitRelativePath) return ''
@@ -215,7 +215,7 @@ export class FileSelector {
   }
 
   /**
-   * 检查是否是开发环境
+   * Detect development environment
    */
   isDevelopmentEnvironment() {
     if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
@@ -229,7 +229,7 @@ export class FileSelector {
   }
 
   /**
-   * 重置状态
+   * Reset state
    */
   resetState() {
     this.currentField = null
@@ -237,7 +237,7 @@ export class FileSelector {
   }
 
   /**
-   * 检查文件选择支持
+   * Check file selection support
    */
   checkFileSelectionSupport() {
     if (typeof window === 'undefined') return false
@@ -245,14 +245,14 @@ export class FileSelector {
   }
 
   /**
-   * 检查目录选择支持
+   * Check directory selection support
    */
   checkDirectorySelectionSupport(dirInput) {
     return !!(dirInput && 'webkitdirectory' in dirInput)
   }
 
   /**
-   * 获取字段占位符文本
+   * Get placeholder text for a field
    */
   getPlaceholderText(fieldName) {
     const platformPlaceholders = this.platform === 'windows' ? PLACEHOLDERS.windows : PLACEHOLDERS.default
@@ -260,14 +260,14 @@ export class FileSelector {
   }
 
   /**
-   * 获取按钮标题文本
+   * Get button title text
    */
   getButtonTitle(type) {
-    return type === 'file' ? '选择文件' : type === 'directory' ? '选择目录' : '选择'
+    return type === 'file' ? 'Select file' : type === 'directory' ? 'Select directory' : 'Select'
   }
 
   /**
-   * 清理文件输入
+   * Clean up file inputs
    */
   cleanupFileInputs(fileInput, dirInput) {
     if (fileInput) fileInput.value = ''
@@ -276,14 +276,14 @@ export class FileSelector {
 }
 
 /**
- * 创建文件选择器实例的工厂函数
+ * Factory function for creating FileSelector instances
  */
 export function createFileSelector(options = {}) {
   return new FileSelector(options)
 }
 
 /**
- * 简化的文件选择函数
+ * Convenience file selection function
  */
 export async function selectFile(options = {}) {
   const selector = createFileSelector(options)
@@ -291,7 +291,7 @@ export async function selectFile(options = {}) {
 }
 
 /**
- * 简化的目录选择函数
+ * Convenience directory selection function
  */
 export async function selectDirectory(options = {}) {
   const selector = createFileSelector(options)
@@ -299,7 +299,7 @@ export async function selectDirectory(options = {}) {
 }
 
 /**
- * 检查环境支持
+ * Check environment support
  */
 export function checkEnvironmentSupport() {
   const selector = createFileSelector()

@@ -1,22 +1,22 @@
-// 应用管理相关常量
+// Application management constants
 export const APP_CONSTANTS = {
-  // 消息类型
+  // Message types
   MESSAGE_TYPES: {
     SUCCESS: 'success',
     ERROR: 'error',
     WARNING: 'warning',
     INFO: 'info'
   },
-  
-  // 消息图标映射
+
+  // Message icon mapping
   MESSAGE_ICONS: {
     success: 'fa-check-circle',
     error: 'fa-exclamation-circle',
     warning: 'fa-exclamation-triangle',
     info: 'fa-info-circle'
   },
-  
-  // 默认应用配置
+
+  // Default app configuration
   DEFAULT_APP: {
     name: "",
     output: "",
@@ -33,37 +33,37 @@ export const APP_CONSTANTS = {
     "image-path": "",
     "working-dir": ""
   },
-  
-  // 支持的平台
+
+  // Supported platforms
   PLATFORMS: {
     WINDOWS: 'windows',
     LINUX: 'linux',
     MACOS: 'macos'
   },
-  
-  // 视图模式
+
+  // View modes
   VIEW_MODES: {
     GRID: 'grid',
     LIST: 'list'
   },
-  
-  // 消息自动隐藏时间
+
+  // Message auto-hide time
   MESSAGE_AUTO_HIDE_TIME: 3000,
-  
-  // 拖拽动画时间
+
+  // Drag animation duration
   DRAG_ANIMATION_TIME: 300,
-  
-  // 复制成功动画时间
+
+  // Copy success animation duration
   COPY_SUCCESS_ANIMATION_TIME: 400,
-  
-  // 搜索防抖时间
+
+  // Search debounce time
   SEARCH_DEBOUNCE_TIME: 300,
-  
-  // 文本截断长度
+
+  // Text truncation length
   TEXT_TRUNCATE_LENGTH: 50
 };
 
-// 环境变量配置
+// Environment variable configuration
 export const ENV_VARS_CONFIG = {
   'SUNSHINE_APP_ID': 'apps.env_app_id',
   'SUNSHINE_APP_NAME': 'apps.env_app_name',
@@ -78,9 +78,9 @@ export const ENV_VARS_CONFIG = {
   'SUNSHINE_CLIENT_AUDIO_CONFIGURATION': 'apps.env_client_audio_config'
 };
 
-// API端点
+// API endpoints
 export const API_ENDPOINTS = {
   APPS: '/api/apps',
   CONFIG: '/api/config',
   APP_DELETE: (index) => `/api/apps/${index}`
-}; 
+};

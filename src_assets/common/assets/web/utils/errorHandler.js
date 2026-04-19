@@ -1,98 +1,98 @@
 import { APP_CONSTANTS } from './constants.js';
 
 /**
- * 统一错误处理类
+ * Unified error handler class
  */
 export class ErrorHandler {
   /**
-   * 处理网络错误
-   * @param {Error} error 错误对象
-   * @param {string} context 错误上下文
-   * @returns {string} 用户友好的错误信息
+   * Handle network errors
+   * @param {Error} error Error object
+   * @param {string} context Error context
+   * @returns {string} User-friendly error message
    */
-  static handleNetworkError(error, context = '操作') {
-    console.error(`${context}失败:`, error);
-    
+  static handleNetworkError(error, context = 'Operation') {
+    console.error(`${context} failed:`, error);
+
     if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-      return `网络连接失败，请检查网络连接后重试`;
+      return `Network connection failed. Please check your network connection and try again.`;
     }
-    
+
     if (error.message.includes('404')) {
-      return `${context}失败：请求的资源不存在`;
+      return `${context} failed: requested resource does not exist`;
     }
-    
+
     if (error.message.includes('500')) {
-      return `${context}失败：服务器内部错误`;
+      return `${context} failed: internal server error`;
     }
-    
+
     if (error.message.includes('403')) {
-      return `${context}失败：权限不足`;
+      return `${context} failed: insufficient permissions`;
     }
-    
-    return `${context}失败：${error.message || '未知错误'}`;
+
+    return `${context} failed: ${error.message || 'Unknown error'}`;
   }
 
   /**
-   * 处理验证错误
-   * @param {Array} errors 错误数组
-   * @returns {string} 格式化的错误信息
+   * Handle validation errors
+   * @param {Array} errors Error array
+   * @returns {string} Formatted error message
    */
   static handleValidationErrors(errors) {
     if (!Array.isArray(errors) || errors.length === 0) {
-      return '验证失败';
+      return 'Validation failed';
     }
-    
-    return errors.join('；');
+
+    return errors.join('; ');
   }
 
   /**
-   * 处理应用操作错误
-   * @param {Error} error 错误对象
-   * @param {string} operation 操作类型
-   * @param {string} appName 应用名称
-   * @returns {string} 格式化的错误信息
+   * Handle application operation errors
+   * @param {Error} error Error object
+   * @param {string} operation Operation type
+   * @param {string} appName Application name
+   * @returns {string} Formatted error message
    */
   static handleAppError(error, operation, appName = '') {
     const appContext = appName ? `"${appName}"` : '';
-    
+
     switch(operation) {
       case 'save':
-        return this.handleNetworkError(error, `保存应用${appContext}`);
+        return this.handleNetworkError(error, `Save app ${appContext}`);
       case 'delete':
-        return this.handleNetworkError(error, `删除应用${appContext}`);
+        return this.handleNetworkError(error, `Delete app ${appContext}`);
       case 'load':
-        return this.handleNetworkError(error, `加载应用${appContext}`);
+        return this.handleNetworkError(error, `Load app ${appContext}`);
       default:
-        return this.handleNetworkError(error, `操作应用${appContext}`);
+        return this.handleNetworkError(error, `Operate on app ${appContext}`);
     }
   }
 
   /**
-   * 创建错误弹窗
-   * @param {string} message 错误信息
-   * @param {string} title 标题
+   * Show an error dialog
+   * @param {string} message Error message
+   * @param {string} title Title
    */
-  static showErrorDialog(message, title = '错误') {
-    // 如果需要更复杂的错误弹窗，可以在这里实现
-    // 目前使用简单的 alert
+  static showErrorDialog(message, title = 'Error') {
+    // For more complex error dialogs, implement them here
+    // For now, use a simple alert
     alert(`${title}\n\n${message}`);
   }
 
   /**
-   * 创建确认弹窗
-   * @param {string} message 确认信息
-   * @param {string} title 标题
-   * @returns {boolean} 用户是否确认
+   * Show a confirmation dialog
+   * @param {string} message Confirmation message
+   * @param {string} title Title
+   * @returns {boolean} Whether the user confirmed
    */
-  static showConfirmDialog(message, title = '确认') {
+  static showConfirmDialog(message, title = 'Confirm') {
     return confirm(`${title}\n\n${message}`);
   }
 
   /**
-   * 记录错误日志
-   * @param {Error} error 错误对象
-   * @param {string} context 错误上下文
-   * @param {Object} metadata 额外的元数据
+   * Log an error
+   * @param {Error} error Error object
+   * @param {string} context Error context
+   * @param {Object} metadata Additional metadata
    */
   static logError(error, context = '', metadata = {}) {
     const errorInfo = {
@@ -102,18 +102,18 @@ export class ErrorHandler {
       timestamp: new Date().toISOString(),
       ...metadata
     };
-    
-    console.error('应用错误:', errorInfo);
-    
-    // 如果需要发送到日志服务，可以在这里实现
+
+    console.error('Application error:', errorInfo);
+
+    // If sending to a logging service is needed, implement it here
     // this.sendToLogService(errorInfo);
   }
 
   /**
-   * 处理异步操作错误
-   * @param {Promise} promise Promise对象
-   * @param {string} context 错误上下文
-   * @returns {Promise} 包装后的Promise
+   * Handle errors from asynchronous operations
+   * @param {Promise} promise Promise object
+   * @param {string} context Error context
+   * @returns {Promise} Wrapped promise
    */
   static async handleAsyncError(promise, context = '') {
     try {
@@ -123,4 +123,4 @@ export class ErrorHandler {
       throw error;
     }
   }
-} 
+}

@@ -358,12 +358,12 @@ const fileSelector = ref(null)
 const isWindows = computed(() => props.platform === 'windows')
 const isNewApp = computed(() => !props.app || props.app.index === -1)
 const isFormValid = computed(() => {
-  // name 字段是必填的，必须验证通过
+  // name is required and must validate successfully
   const nameValid = validation.value.name?.isValid === true
-  
-  // cmd 字段不是必填的，如果已验证则使用验证结果，如果未验证或为空则认为有效
-  const cmdValid = validation.value.cmd?.isValid !== false  // undefined 或 true 都认为有效
-  
+
+  // cmd is not required: use the validation result if validated; if unvalidated or empty, treat as valid
+  const cmdValid = validation.value.cmd?.isValid !== false  // undefined or true are both considered valid
+
   return nameValid && cmdValid
 })
 
@@ -441,15 +441,15 @@ const initializeForm = (app) => {
   ensureDefaultValues()
   validation.value = {}
   imageError.value = ''
-  // 立即验证所有字段，确保表单状态正确
+  // Validate all fields immediately to make sure the form state is correct
   nextTick(() => {
-    // 验证必填字段 name（总是验证）
+    // Always validate the required name field
     validateField('name')
-    // 验证 cmd 字段（如果有值则验证，没有值则标记为有效）
+    // Validate the cmd field (validate if it has a value; otherwise mark as valid)
     if (formData.value.cmd && formData.value.cmd.trim()) {
       validateField('cmd')
     } else {
-      // cmd 字段不是必填的，如果为空则标记为有效
+      // The cmd field is not required; mark it valid when empty
       validation.value.cmd = { isValid: true, message: '' }
     }
   })
@@ -485,9 +485,9 @@ const validateField = (fieldName) => {
   return result
 }
 
-// 处理 cmd 字段输入，如果清空则立即更新验证状态
+// Handle input on the cmd field; if cleared, update validation state immediately
 const handleCmdInput = () => {
-  // 如果 cmd 字段被清空，立即标记为有效（因为不是必填字段）
+  // If cmd is cleared, mark as valid immediately (it's not a required field)
   if (!formData.value.cmd || !formData.value.cmd.trim()) {
     validation.value.cmd = { isValid: true, message: '' }
   }
@@ -651,7 +651,7 @@ onBeforeUnmount(cleanup)
   max-height: calc(100vh - 200px);
   overflow-y: auto;
 
-  /* 滚动条美化 */
+  /* Scrollbar polish */
   &::-webkit-scrollbar {
     width: 6px;
   }

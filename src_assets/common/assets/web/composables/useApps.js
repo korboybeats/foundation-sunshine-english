@@ -8,10 +8,10 @@ import { searchCoverImage, batchSearchCoverImages } from '../utils/coverSearch.j
 const MESSAGE_DURATION = 3000
 
 /**
- * 应用管理组合式函数
+ * Apps management composable
  */
 export function useApps() {
-  // 状态
+  // State
   const apps = ref([])
   const originalApps = ref([])
   const filteredApps = ref([])
@@ -33,12 +33,12 @@ export function useApps() {
   const selectedAppType = ref('all') // 'all', 'executable', 'shortcut', 'batch', 'command', 'url'
   const deleteConfirmIndex = ref(null)
 
-  // 计算属性
+  // Computed properties
   const messageClass = computed(() => ({
     [`alert-${messageType.value}`]: true,
   }))
 
-  // 消息图标映射
+  // Message icon mapping
   const MESSAGE_ICONS = {
     success: 'fa-check-circle',
     error: 'fa-exclamation-circle',
@@ -62,7 +62,7 @@ export function useApps() {
     ...overrides,
   })
 
-  // 初始化
+  // Initialization
   const init = (t) => {
     envVars.value = Object.fromEntries(
       Object.entries(ENV_VARS_CONFIG).map(([key, translationKey]) => [key, t(translationKey)])
@@ -70,15 +70,15 @@ export function useApps() {
     debouncedSearch.value = debounce(performSearch, APP_CONSTANTS.SEARCH_DEBOUNCE_TIME)
   }
 
-  // 数据加载
+  // Data loading
   const loadApps = async () => {
     try {
       apps.value = await AppService.getApps()
       originalApps.value = deepClone(apps.value)
       filteredApps.value = [...apps.value]
     } catch (error) {
-      console.error('加载应用失败:', error)
-      showMessage('加载应用失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to load apps:', error)
+      showMessage('Failed to load apps', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     }
   }
 
@@ -86,12 +86,12 @@ export function useApps() {
     try {
       platform.value = await AppService.getPlatform()
     } catch (error) {
-      console.error('加载平台信息失败:', error)
+      console.error('Failed to load platform info:', error)
       platform.value = APP_CONSTANTS.PLATFORMS.WINDOWS
     }
   }
 
-  // 搜索
+  // Search
   const performSearch = () => {
     filteredApps.value = AppService.searchApps(apps.value, searchQuery.value)
   }
@@ -101,7 +101,7 @@ export function useApps() {
     performSearch()
   }
 
-  // 应用操作
+  // App operations
   const getOriginalIndex = (app) => apps.value.indexOf(app)
 
   const newApp = () => {
@@ -123,10 +123,10 @@ export function useApps() {
       await AppService.saveApps(apps.value, appData)
       await loadApps()
       editingApp.value = null
-      showMessage('应用保存成功', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+      showMessage('App saved successfully', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
     } catch (error) {
-      console.error('保存应用失败:', error)
-      showMessage('保存应用失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to save app:', error)
+      showMessage('Failed to save app', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     } finally {
       isSaving.value = false
     }
@@ -153,50 +153,50 @@ export function useApps() {
       apps.value.splice(index, 1)
       await AppService.saveApps(apps.value, null)
       await loadApps()
-      showMessage('应用删除成功', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+      showMessage('App deleted successfully', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
       trackEvents.appDeleted(appName)
     } catch (error) {
-      console.error('删除应用失败:', error)
-      showMessage('删除应用失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to delete app:', error)
+      showMessage('Failed to delete app', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     }
   }
 
-  // 检测是否有未保存的更改
+  // Detect whether there are unsaved changes
   const hasUnsavedChanges = () => {
     if (apps.value.length !== originalApps.value.length) {
       return true
     }
-  
-    // 深度比较应用列表
+
+    // Deep compare app lists
     const appsStr = JSON.stringify(apps.value.map(app => ({ ...app, index: undefined })))
     const originalStr = JSON.stringify(originalApps.value.map(app => ({ ...app, index: undefined })))
-    
+
     return appsStr !== originalStr
   }
 
   const save = async () => {
-    // 如果没有更改，直接返回
+    // If nothing changed, return early
     if (!hasUnsavedChanges()) {
-      showMessage('没有需要保存的更改', APP_CONSTANTS.MESSAGE_TYPES.INFO)
+      showMessage('No changes to save', APP_CONSTANTS.MESSAGE_TYPES.INFO)
       return
     }
 
     try {
       isSaving.value = true
       await AppService.saveApps(apps.value, null)
-      // 保存成功后更新原始列表
+      // Update the original list after a successful save
       originalApps.value = deepClone(apps.value)
-      showMessage('应用列表保存成功', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+      showMessage('App list saved successfully', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
       trackEvents.userAction('apps_saved', { count: apps.value.length })
     } catch (error) {
-      console.error('保存应用列表失败:', error)
-      showMessage('保存应用列表失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to save app list:', error)
+      showMessage('Failed to save app list', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     } finally {
       isSaving.value = false
     }
   }
 
-  // 拖拽排序
+  // Drag-and-drop sorting
   const onDragStart = () => {
     isDragging.value = true
   }
@@ -206,21 +206,21 @@ export function useApps() {
     await save()
   }
 
-  // 封面搜索相关（使用共享的 coverSearch 模块）
+  // Cover search (uses the shared coverSearch module)
 
-  // Tauri 环境检测
+  // Tauri environment detection
   const isTauriEnv = () => !!window.__TAURI__?.core?.invoke
 
-  // 扫描目录功能
+  // Directory scanning feature
   const scanDirectory = async (extractIcons = true) => {
     const tauri = window.__TAURI__
     if (!tauri?.core?.invoke) {
-      showMessage('扫描功能仅在 Tauri 环境下可用', APP_CONSTANTS.MESSAGE_TYPES.WARNING)
+      showMessage('Scanning is only available in the Tauri environment', APP_CONSTANTS.MESSAGE_TYPES.WARNING)
       return
     }
 
     if (!tauri?.dialog?.open) {
-      showMessage('无法打开文件对话框', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      showMessage('Unable to open file dialog', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
       return
     }
 
@@ -228,13 +228,13 @@ export function useApps() {
       const selectedDir = await tauri.dialog.open({
         directory: true,
         multiple: false,
-        title: '选择要扫描的目录',
+        title: 'Select directory to scan',
       })
 
       if (!selectedDir) return
 
       isScanning.value = true
-      showMessage('正在扫描目录...', APP_CONSTANTS.MESSAGE_TYPES.INFO)
+      showMessage('Scanning directory...', APP_CONSTANTS.MESSAGE_TYPES.INFO)
 
       const foundApps = await tauri.core.invoke('scan_directory_for_apps', {
         directory: selectedDir,
@@ -244,41 +244,41 @@ export function useApps() {
       if (foundApps.length === 0) {
         scannedApps.value = []
         showScanResult.value = true
-        showMessage('未找到可添加的应用程序', APP_CONSTANTS.MESSAGE_TYPES.INFO)
+        showMessage('No applications found that can be added', APP_CONSTANTS.MESSAGE_TYPES.INFO)
       } else {
-        // 先显示扫描结果（无封面）
+        // Show scan results immediately (without covers)
         scannedApps.value = foundApps
         showScanResult.value = true
-        showMessage(`找到 ${foundApps.length} 个应用程序，正在搜索封面...`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
+        showMessage(`Found ${foundApps.length} application(s); searching for covers...`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
 
-        // 异步更新封面图片
+        // Update cover images asynchronously
         asyncUpdateCovers(foundApps)
       }
 
       trackEvents.userAction('directory_scanned', { count: foundApps.length, extractIcons })
     } catch (error) {
-      console.error('扫描目录失败:', error)
-      showMessage(`扫描失败: ${error}`, APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to scan directory:', error)
+      showMessage(`Scan failed: ${error}`, APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     } finally {
       isScanning.value = false
     }
   }
 
-  // 扫描游戏平台库（Steam/Epic/GOG）
+  // Scan game platform libraries (Steam/Epic/GOG)
   const scanGameLibraries = async () => {
     const tauri = window.__TAURI__
     if (!tauri?.core?.invoke) {
-      showMessage('扫描功能仅在 Tauri 环境下可用', APP_CONSTANTS.MESSAGE_TYPES.WARNING)
+      showMessage('Scanning is only available in the Tauri environment', APP_CONSTANTS.MESSAGE_TYPES.WARNING)
       return
     }
 
     try {
       isScanning.value = true
-      showMessage('正在扫描游戏平台库...', APP_CONSTANTS.MESSAGE_TYPES.INFO)
+      showMessage('Scanning game platform libraries...', APP_CONSTANTS.MESSAGE_TYPES.INFO)
 
       const result = await tauri.core.invoke('scan_game_libraries')
 
-      // 将 PlatformGame 转换为 scannedApps 格式
+      // Convert PlatformGame entries into the scannedApps format
       const steamGames = result.steam || []
       const epicGames = result.epic || []
       const gogGames = result.gog || []
@@ -287,7 +287,7 @@ export function useApps() {
       if (allGames.length === 0) {
         scannedApps.value = []
         showScanResult.value = true
-        showMessage('未检测到已安装的游戏', APP_CONSTANTS.MESSAGE_TYPES.INFO)
+        showMessage('No installed games detected', APP_CONSTANTS.MESSAGE_TYPES.INFO)
       } else {
         const mapped = allGames.map((game) => ({
           name: game.name,
@@ -307,7 +307,7 @@ export function useApps() {
         if (epicGames.length) parts.push(`Epic ${epicGames.length}`)
         if (gogGames.length) parts.push(`GOG ${gogGames.length}`)
         showMessage(
-          `找到 ${result.total ?? allGames.length} 个游戏 (${parts.join(', ')})，耗时 ${result.scan_time_ms ?? 0}ms`,
+          `Found ${result.total ?? allGames.length} game(s) (${parts.join(', ')}) in ${result.scan_time_ms ?? 0}ms`,
           APP_CONSTANTS.MESSAGE_TYPES.SUCCESS
         )
       }
@@ -319,42 +319,42 @@ export function useApps() {
         total: result.total ?? allGames.length,
       })
     } catch (error) {
-      console.error('扫描游戏库失败:', error)
-      showMessage(`扫描游戏库失败: ${error}`, APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to scan game libraries:', error)
+      showMessage(`Failed to scan game libraries: ${error}`, APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     } finally {
       isScanning.value = false
     }
   }
 
-  // 异步更新封面图片
+  // Update cover images asynchronously
   const asyncUpdateCovers = async (appList) => {
     let coversFound = 0
     const total = appList.length
 
-    // 并行搜索所有封面，但逐个更新UI
+    // Search all covers in parallel but update the UI one at a time
     const promises = appList.map(async (app, index) => {
       try {
         const imagePath = await searchCoverImage(encodeURIComponent(app.name))
         if (imagePath && scannedApps.value[index]) {
-          // 更新对应位置的应用封面
+          // Update the cover for the matching position
           scannedApps.value[index] = { ...scannedApps.value[index], 'image-path': imagePath }
           coversFound++
         }
       } catch (error) {
-        console.warn(`搜索封面失败: ${app.name}`, error)
+        console.warn(`Failed to search cover: ${app.name}`, error)
       }
     })
 
     await Promise.allSettled(promises)
 
-    // 搜索完成后显示结果
+    // Show the result once searching is complete
     showMessage(
-      `已匹配 ${coversFound}/${total} 个封面`,
+      `Matched ${coversFound}/${total} cover(s)`,
       coversFound > 0 ? APP_CONSTANTS.MESSAGE_TYPES.SUCCESS : APP_CONSTANTS.MESSAGE_TYPES.INFO
     )
   }
 
-  // 扫描应用字段处理
+  // Scanned-app field handling
   const getScannedAppField = (app, field) => app[field] || app[field.replace(/-/g, '_')] || ''
 
   const getScannedAppImage = (app) => getScannedAppField(app, 'image-path')
@@ -386,7 +386,7 @@ export function useApps() {
     })
 
     removeFromScannedList(scannedApp.source_path)
-    showMessage(`正在编辑应用: ${scannedApp.name}`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
+    showMessage(`Editing app: ${scannedApp.name}`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
     trackEvents.userAction('scanned_app_edit', { name: scannedApp.name })
   }
 
@@ -401,11 +401,11 @@ export function useApps() {
         showScanResult.value = false
       }
 
-      showMessage(`已添加应用: ${scannedApp.name}`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+      showMessage(`Added app: ${scannedApp.name}`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
       trackEvents.userAction('scanned_app_quick_added', { name: scannedApp.name })
     } catch (error) {
-      console.error('快速添加应用失败:', error)
-      showMessage('添加失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to quick-add app:', error)
+      showMessage('Failed to add', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     }
   }
 
@@ -420,14 +420,14 @@ export function useApps() {
       await AppService.saveApps(apps.value, null)
       await loadApps()
 
-      showMessage(`已添加 ${appsToAdd.length} 个应用`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+      showMessage(`Added ${appsToAdd.length} app(s)`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
       trackEvents.userAction('scanned_apps_batch_added', { count: appsToAdd.length })
 
       scannedApps.value = []
       showScanResult.value = false
     } catch (error) {
-      console.error('批量添加应用失败:', error)
-      showMessage('批量添加失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to batch-add apps:', error)
+      showMessage('Batch add failed', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     } finally {
       isSaving.value = false
     }
@@ -441,7 +441,7 @@ export function useApps() {
     selectedAppType.value = 'all'
   }
 
-  // 获取各分类的统计信息
+  // Get statistics for each category
   const scanResultStats = computed(() => ({
     all: scannedApps.value.length,
     games: scannedApps.value.filter((app) => app['is-game'] === true).length,
@@ -455,21 +455,21 @@ export function useApps() {
     gog: scannedApps.value.filter((app) => app['app-type'] === 'gog').length,
   }))
 
-  // 过滤扫描结果
+  // Filter scan results
   const filteredScannedApps = computed(() => {
     let filtered = scannedApps.value
-    
-    // 先按应用类型过滤
+
+    // Filter by app type first
     if (selectedAppType.value !== 'all') {
       filtered = filtered.filter((app) => app['app-type'] === selectedAppType.value)
     }
-    
-    // 再按游戏过滤
+
+    // Then filter to games only
     if (showGamesOnly.value) {
       filtered = filtered.filter((app) => app['is-game'] === true)
     }
-    
-    // 最后按搜索关键词过滤
+
+    // Finally filter by search keyword
     if (scannedAppsSearchQuery.value) {
       const query = scannedAppsSearchQuery.value.toLowerCase()
       filtered = filtered.filter((app) => {
@@ -479,7 +479,7 @@ export function useApps() {
         return name.includes(query) || cmd.includes(query) || sourcePath.includes(query)
       })
     }
-    
+
     return filtered
   })
 
@@ -495,26 +495,26 @@ export function useApps() {
     if (!app) return
 
     try {
-      showMessage(`正在搜索封面: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
+      showMessage(`Searching for cover: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.INFO)
       const imagePath = await searchCoverImage(app.name)
 
       if (imagePath) {
         scannedApps.value[index] = { ...app, 'image-path': imagePath }
-        showMessage(`已找到封面: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+        showMessage(`Cover found: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
       } else {
-        showMessage(`未找到封面: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.WARNING)
+        showMessage(`No cover found: ${app.name}`, APP_CONSTANTS.MESSAGE_TYPES.WARNING)
       }
     } catch (error) {
-      console.error('搜索封面失败:', error)
-      showMessage('搜索封面失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+      console.error('Failed to search cover:', error)
+      showMessage('Failed to search cover', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
     }
   }
 
-  const handleCopySuccess = () => showMessage('复制成功', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
-  const handleCopyError = () => showMessage('复制失败', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
+  const handleCopySuccess = () => showMessage('Copied successfully', APP_CONSTANTS.MESSAGE_TYPES.SUCCESS)
+  const handleCopyError = () => showMessage('Copy failed', APP_CONSTANTS.MESSAGE_TYPES.ERROR)
 
   return {
-    // 状态
+    // State
     apps,
     filteredApps,
     searchQuery,
@@ -533,11 +533,11 @@ export function useApps() {
     scannedAppsSearchQuery,
     showGamesOnly,
     selectedAppType,
-    // 计算属性
+    // Computed
     messageClass,
     filteredScannedApps,
     scanResultStats,
-    // 方法
+    // Methods
     init,
     loadApps,
     loadPlatform,

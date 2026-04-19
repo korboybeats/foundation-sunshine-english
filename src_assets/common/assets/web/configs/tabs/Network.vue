@@ -29,7 +29,7 @@ const curlCommand = computed(() => {
     }
   })
   
-  // 转义 JSON 中的双引号，以便在双引号字符串中使用
+  // Escape double quotes in JSON so it can live inside a double-quoted string
   const escapedPayload = payload.replace(/"/g, '\\"')
   
   return `curl -X POST "${url}" -H "Content-Type: application/json" -d "${escapedPayload}"`
@@ -53,7 +53,7 @@ const copyCurlCommand = async () => {
       copied.value = false
     }, 2000)
   } catch (error) {
-    // 降级方案：使用传统方法
+    // Fallback: use the legacy method
     const textArea = document.createElement('textarea')
     textArea.value = curlCommand.value
     textArea.style.position = 'fixed'
@@ -67,7 +67,7 @@ const copyCurlCommand = async () => {
         copied.value = false
       }, 2000)
     } catch (err) {
-      alert(t('config.webhook_curl_copy_failed') || '复制失败，请手动选择并复制')
+      alert(t('config.webhook_curl_copy_failed') || 'Copy failed; please select and copy manually')
     }
     document.body.removeChild(textArea)
   }
@@ -383,24 +383,24 @@ const testWebhook = async () => {
       <div class="curl-command-modal">
         <div class="curl-command-header">
           <h5>
-            <i class="fas fa-terminal me-2"></i>{{ $t('config.webhook_curl_command') || 'Curl 命令' }}
+            <i class="fas fa-terminal me-2"></i>{{ $t('config.webhook_curl_command') || 'Curl command' }}
           </h5>
           <button class="btn-close" @click="closeCurlModal"></button>
         </div>
         <div class="curl-command-body">
-          <p class="text-muted mb-3">{{ $t('config.webhook_curl_command_desc') || '复制以下命令到终端中执行，可以测试 webhook 是否正常工作：' }}</p>
+          <p class="text-muted mb-3">{{ $t('config.webhook_curl_command_desc') || 'Copy the command below and run it in a terminal to test that the webhook is working:' }}</p>
           <div class="curl-command-container">
             <pre class="curl-command" id="curlCommandText">{{ curlCommand }}</pre>
           </div>
           <div class="alert alert-info mt-3" v-if="copied">
-            <i class="fas fa-check-circle me-2"></i>{{ $t('_common.copied') || '已复制到剪贴板' }}
+            <i class="fas fa-check-circle me-2"></i>{{ $t('_common.copied') || 'Copied to clipboard' }}
           </div>
         </div>
         <div class="curl-command-footer">
           <button class="copy-btn" @click="copyCurlCommand" type="button">
             <i class="fas fa-copy me-1"></i>{{ $t('_common.copy') }}
           </button>
-          <button type="button" class="btn btn-secondary" @click="closeCurlModal">{{ $t('_common.close') || '关闭' }}</button>
+          <button type="button" class="btn btn-secondary" @click="closeCurlModal">{{ $t('_common.close') || 'Close' }}</button>
         </div>
       </div>
     </div>
@@ -408,7 +408,7 @@ const testWebhook = async () => {
 </template>
 
 <style scoped>
-/* Curl Command Modal - 使用 ScanResultModal 样式 */
+/* Curl Command Modal - reuses ScanResultModal styles */
 .curl-command-overlay {
   position: fixed;
   top: 0;
@@ -580,7 +580,7 @@ const testWebhook = async () => {
 }
 
 
-/* Vue 过渡动画 */
+/* Vue transition animations */
 .fade-enter-active {
   transition: opacity 0.3s ease;
 }

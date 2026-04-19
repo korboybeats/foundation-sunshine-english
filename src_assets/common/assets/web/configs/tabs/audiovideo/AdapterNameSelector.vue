@@ -10,7 +10,7 @@ const props = defineProps([
 
 const config = ref(props.config)
 
-// 按 name 去重，同一名称只保留一项（保持首次出现顺序）
+// Deduplicate by name, keeping the first occurrence
 const uniqueAdapters = computed(() => {
   const list = config.value?.adapters ?? []
   const seen = new Set()

@@ -36,7 +36,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import { useBackground } from '../../composables/useBackground.js'
 
-// 导航项配置
+// Navigation item configuration
 const navItems = Object.freeze([
   { path: '/', icon: 'fa-home', label: 'navbar.home' },
   { path: '/pin', icon: 'fa-unlock', label: 'navbar.pin' },
@@ -46,13 +46,13 @@ const navItems = Object.freeze([
   { path: '/troubleshooting', icon: 'fa-info', label: 'navbar.troubleshoot' },
 ])
 
-// 使用背景管理 composable
+// Use the background management composable
 const { loadBackground, addDragListeners } = useBackground()
 
-// 当前路径（响应式）
+// Current path (reactive)
 const currentPath = ref(window.location.pathname)
 
-// 检查路径是否激活
+// Check whether a path is active
 const isActive = (path) => {
   const current = currentPath.value
   if (path === '/') {
@@ -62,22 +62,22 @@ const isActive = (path) => {
   return current === normalizedPath || current.startsWith(normalizedPath)
 }
 
-// 更新当前路径
+// Update the current path
 const updateCurrentPath = () => {
   currentPath.value = window.location.pathname
 }
 
-// 清理函数引用
+// Reference to the cleanup function
 let removeDragListeners = null
 
-// 链接点击处理函数
+// Link click handler
 const handleLinkClick = (e) => {
   if (e.target.closest('a.nav-link')?.href) {
     setTimeout(updateCurrentPath, 0)
   }
 }
 
-// 错误处理函数
+// Error handler
 const handleBackgroundError = (error) => {
   console.error('Background error:', error)
 }

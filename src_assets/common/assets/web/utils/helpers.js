@@ -1,8 +1,8 @@
 /**
- * 防抖函数
- * @param {Function} func 需要防抖的函数
- * @param {number} wait 等待时间（毫秒）
- * @returns {Function} 防抖后的函数
+ * Debounce function
+ * @param {Function} func Function to debounce
+ * @param {number} wait Wait time in milliseconds
+ * @returns {Function} Debounced function
  */
 export function debounce(func, wait) {
   let timeout;
@@ -17,18 +17,18 @@ export function debounce(func, wait) {
 }
 
 /**
- * 异步延迟函数
- * @param {number} ms 延迟时间（毫秒）
- * @returns {Promise} Promise对象
+ * Async delay helper
+ * @param {number} ms Delay in milliseconds
+ * @returns {Promise} Promise object
  */
 export function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * 深拷贝函数
- * @param {*} obj 需要深拷贝的对象
- * @returns {*} 深拷贝后的对象
+ * Deep clone helper
+ * @param {*} obj Object to deep clone
+ * @returns {*} Deep-cloned object
  */
 export function deepClone(obj) {
   if (obj === null || typeof obj !== 'object') return obj;
@@ -46,35 +46,35 @@ export function deepClone(obj) {
 }
 
 /**
- * 安全的JSON解析
- * @param {string} str JSON字符串
- * @param {*} defaultValue 解析失败时的默认值
- * @returns {*} 解析结果或默认值
+ * Safe JSON parse
+ * @param {string} str JSON string
+ * @param {*} defaultValue Default value when parsing fails
+ * @returns {*} Parsed result or default value
  */
 export function safeJsonParse(str, defaultValue = null) {
   try {
     return JSON.parse(str);
   } catch (error) {
-    console.warn('JSON解析失败:', error);
+    console.warn('JSON parse failed:', error);
     return defaultValue;
   }
 }
 
 /**
- * 格式化错误信息
- * @param {Error|string} error 错误对象或错误信息
- * @returns {string} 格式化后的错误信息
+ * Format error message
+ * @param {Error|string} error Error object or message
+ * @returns {string} Formatted error message
  */
 export function formatError(error) {
   if (typeof error === 'string') return error;
   if (error && error.message) return error.message;
-  return '未知错误';
+  return 'Unknown error';
 }
 
 /**
- * 检查是否为有效的URL
- * @param {string} url URL字符串
- * @returns {boolean} 是否为有效URL
+ * Check whether the value is a valid URL
+ * @param {string} url URL string
+ * @returns {boolean} Whether it is a valid URL
  */
 export function isValidUrl(url) {
   try {
@@ -86,19 +86,19 @@ export function isValidUrl(url) {
 }
 
 /**
- * 获取文件扩展名
- * @param {string} filename 文件名
- * @returns {string} 文件扩展名
+ * Get file extension
+ * @param {string} filename File name
+ * @returns {string} File extension
  */
 export function getFileExtension(filename) {
   return filename.split('.').pop().toLowerCase();
 }
 
 /**
- * 格式化文件大小
- * @param {number} bytes 字节数
- * @param {number} decimals 小数位数
- * @returns {string} 格式化后的大小
+ * Format file size
+ * @param {number} bytes Byte count
+ * @param {number} decimals Decimal places
+ * @returns {string} Formatted size
  */
 export function formatFileSize(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -110,9 +110,9 @@ export function formatFileSize(bytes, decimals = 2) {
 }
 
 /**
- * 生成随机ID
- * @param {number} length ID长度
- * @returns {string} 随机ID
+ * Generate a random ID
+ * @param {number} length ID length
+ * @returns {string} Random ID
  */
 export function generateRandomId(length = 8) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -124,33 +124,33 @@ export function generateRandomId(length = 8) {
 }
 
 /**
- * 验证必填字段
- * @param {Object} obj 要验证的对象
- * @param {Array} requiredFields 必填字段数组
- * @returns {Object} 验证结果 { isValid: boolean, missingFields: Array }
+ * Validate required fields
+ * @param {Object} obj Object to validate
+ * @param {Array} requiredFields Array of required field names
+ * @returns {Object} Validation result { isValid: boolean, missingFields: Array }
  */
 export function validateRequiredFields(obj, requiredFields) {
-  const missingFields = requiredFields.filter(field => 
+  const missingFields = requiredFields.filter(field =>
     !obj.hasOwnProperty(field) || obj[field] === '' || obj[field] === null || obj[field] === undefined
   );
-  
+
   return {
     isValid: missingFields.length === 0,
     missingFields
   };
-} 
+}
 
 /**
- * 检测是否在 Tauri 环境中
- * @returns {boolean} 是否在 Tauri 环境
+ * Detect whether running inside the Tauri environment
+ * @returns {boolean} Whether running in Tauri
  */
 export function isTauriEnv() {
   return typeof window !== 'undefined' && !!(window.isTauri || window.__TAURI__);
 }
 
 /**
- * 打开外部链接（支持 Tauri 和浏览器环境）
- * @param {string} url 要打开的 URL
+ * Open an external link (supports Tauri and browser environments)
+ * @param {string} url URL to open
  * @returns {Promise<void>}
  */
 export async function openExternalUrl(url) {
@@ -163,11 +163,11 @@ export async function openExternalUrl(url) {
       await window.__TAURI__.shell.open(url);
     } catch (error) {
       console.error('Failed to open URL with Tauri shell:', error);
-      // 降级到 window.open
+      // Fall back to window.open
       window.open(url, '_blank');
     }
   } else {
-    // 非 Tauri 环境，使用 window.open
+    // Non-Tauri environment, use window.open
     window.open(url, '_blank');
   }
-} 
+}

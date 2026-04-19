@@ -7,25 +7,25 @@
       </h5>
     </div>
     <div class="card-body">
-      <!-- 加载状态 -->
+      <!-- Loading state -->
       <div v-if="loading" class="version-loading">
         <i class="fas fa-spinner fa-spin me-2"></i>
         {{ $t('index.loading_latest') }}
       </div>
 
-      <!-- 开发版本标识 -->
+      <!-- Development build marker -->
       <div class="version-alert version-alert-success" v-if="buildVersionIsDirty">
         <i class="fas fa-code me-2"></i>
         {{ $t('index.version_dirty') }} 🌇
       </div>
 
-      <!-- 已安装版本不是稳定版 -->
+      <!-- Installed version is not stable -->
       <div class="version-alert version-alert-info" v-if="installedVersionNotStable">
         <i class="fas fa-info-circle me-2"></i>
         {{ $t('index.installed_version_not_stable') }}
       </div>
 
-      <!-- 已是最新版本 -->
+      <!-- Already on the latest version -->
       <div
         v-else-if="(!preReleaseBuildAvailable || !notifyPreReleases) && !stableBuildAvailable && !buildVersionIsDirty"
         class="version-alert version-alert-success"
@@ -34,12 +34,12 @@
         {{ $t('index.version_latest') }}
       </div>
 
-      <!-- 预发布版本可用 -->
+      <!-- Pre-release build available -->
       <div v-if="notifyPreReleases && preReleaseBuildAvailable" class="version-update">
         <div class="version-update-header">
           <div class="version-update-title">
             <i class="fas fa-rocket text-warning me-2"></i>
-            <span>有新的 <b>基地版</b> sunshine可以更新!</span>
+            <span>A new <b>Foundation</b> Sunshine build is available!</span>
           </div>
           <button type="button" class="btn btn-success btn-download" @click="handleDownloadClick(preReleaseVersion.release.html_url)">
             <i class="fas fa-download me-2"></i>
@@ -50,7 +50,7 @@
         <div class="markdown-content" v-html="parsedPreReleaseBody"></div>
       </div>
 
-      <!-- 稳定版本可用 -->
+      <!-- Stable build available -->
       <div v-if="stableBuildAvailable" class="version-update">
         <div class="version-update-header">
           <div class="version-update-title">
@@ -67,7 +67,7 @@
       </div>
     </div>
 
-    <!-- 下载确认弹窗（与配置页虚拟麦克风下载相同方式，确认后打开下载页） -->
+    <!-- Download confirmation modal (same flow as the virtual mic download on the config page; opens the download page on confirm) -->
     <Transition name="fade">
       <div v-if="showDownloadConfirm" class="download-confirm-overlay" @click.self="cancelDownload">
         <div class="download-confirm-modal">
@@ -387,7 +387,7 @@ const cancelDownload = () => {
   color: #e0e0e0;
 }
 
-/* Download Confirm Modal（与 AudioVideo 一致） */
+/* Download Confirm Modal (matches AudioVideo) */
 .download-confirm-overlay {
   position: fixed;
   top: 0;

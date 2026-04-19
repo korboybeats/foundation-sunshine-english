@@ -1,10 +1,10 @@
 /**
- * 表单验证工具模块
- * 提供应用表单的各种验证规则和方法
+ * Form validation utility module
+ * Provides validation rules and methods for application forms
  */
 
 /**
- * 验证规则对象
+ * Validation rules object
  */
 export const validationRules = {
   appName: {
@@ -12,45 +12,45 @@ export const validationRules = {
     minLength: 1,
     maxLength: 100,
     pattern: /^[^<>:"\\|?*\x00-\x1F]+$/,
-    message: '应用名称不能为空，且不能包含特殊字符',
+    message: 'Application name cannot be empty and cannot contain special characters',
   },
   command: {
     required: false,
     minLength: 0,
     maxLength: 1000,
-    message: '命令不规范，请输入正确的命令',
+    message: 'Command is malformed; please enter a valid command',
   },
   workingDir: {
     required: false,
     maxLength: 500,
-    message: '工作目录路径过长',
+    message: 'Working directory path is too long',
   },
   outputName: {
     required: false,
     maxLength: 100,
     pattern: /^[a-zA-Z0-9_\-\.]*$/,
-    message: '输出名称只能包含字母、数字、下划线、连字符和点',
+    message: 'Output name may only contain letters, digits, underscores, hyphens, and dots',
   },
   timeout: {
     required: false,
     min: 0,
     max: 3600,
-    message: '超时时间必须在0-3600秒之间',
+    message: 'Timeout must be between 0 and 3600 seconds',
   },
   imagePath: {
     required: false,
     maxLength: 500,
     allowedTypes: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'],
-    message: '图片路径无效或格式不支持',
+    message: 'Image path is invalid or the format is not supported',
   },
 }
 
 /**
- * 验证单个字段
- * @param {string} fieldName 字段名称
- * @param {any} value 字段值
- * @param {Object} customRules 自定义验证规则
- * @returns {Object} 验证结果 {isValid: boolean, message: string}
+ * Validate a single field
+ * @param {string} fieldName Field name
+ * @param {any} value Field value
+ * @param {Object} customRules Custom validation rules
+ * @returns {Object} Validation result {isValid: boolean, message: string}
  */
 export function validateField(fieldName, value, customRules = {}) {
   const rules = { ...validationRules[fieldName], ...customRules }
@@ -62,45 +62,45 @@ export function validateField(fieldName, value, customRules = {}) {
   const strValue = value?.toString().trim() ?? ''
   const isEmpty = strValue === ''
 
-  // 必填验证
+  // Required validation
   if (rules.required && isEmpty) {
-    return { isValid: false, message: rules.message || '此字段为必填项' }
+    return { isValid: false, message: rules.message || 'This field is required' }
   }
 
-  // 如果字段为空且不是必填，则跳过其他验证
+  // If the field is empty and not required, skip the remaining validations
   if (isEmpty) {
     return { isValid: true, message: '' }
   }
 
-  // 长度验证
+  // Length validation
   if (rules.minLength && strValue.length < rules.minLength) {
-    return { isValid: false, message: `最少需要${rules.minLength}个字符` }
+    return { isValid: false, message: `At least ${rules.minLength} character(s) required` }
   }
 
   if (rules.maxLength && strValue.length > rules.maxLength) {
-    return { isValid: false, message: `最多允许${rules.maxLength}个字符` }
+    return { isValid: false, message: `At most ${rules.maxLength} character(s) allowed` }
   }
 
-  // 数值验证
+  // Numeric validation
   if (rules.min !== undefined || rules.max !== undefined) {
     const numValue = Number(value)
     if (isNaN(numValue)) {
-      return { isValid: false, message: '请输入有效的数字' }
+      return { isValid: false, message: 'Please enter a valid number' }
     }
     if (rules.min !== undefined && numValue < rules.min) {
-      return { isValid: false, message: `最小值为${rules.min}` }
+      return { isValid: false, message: `Minimum value is ${rules.min}` }
     }
     if (rules.max !== undefined && numValue > rules.max) {
-      return { isValid: false, message: `最大值为${rules.max}` }
+      return { isValid: false, message: `Maximum value is ${rules.max}` }
     }
   }
 
-  // 正则表达式验证
+  // Regex validation
   if (rules.pattern && !rules.pattern.test(strValue)) {
-    return { isValid: false, message: rules.message || '格式不正确' }
+    return { isValid: false, message: rules.message || 'Invalid format' }
   }
 
-  // 文件类型验证
+  // File type validation
   if (rules.allowedTypes && fieldName === 'imagePath' && strValue !== 'desktop') {
     const lastDotIndex = strValue.lastIndexOf('.')
     if (lastDotIndex > 0) {
@@ -111,7 +111,7 @@ export function validateField(fieldName, value, customRules = {}) {
       if (extension && !rules.allowedTypes.includes(extension)) {
         return {
           isValid: false,
-          message: `只支持以下格式：${rules.allowedTypes.join(', ')}`,
+          message: `Only the following formats are supported: ${rules.allowedTypes.join(', ')}`,
         }
       }
     }
@@ -120,26 +120,26 @@ export function validateField(fieldName, value, customRules = {}) {
   return { isValid: true, message: '' }
 }
 
-// 字段映射配置
+// Field mapping configuration
 const FIELD_MAPPINGS = [
-  { key: 'name', rule: 'appName', label: '应用名称' },
-  { key: 'cmd', rule: 'command', label: '命令' },
-  { key: 'working-dir', rule: 'workingDir', label: '工作目录' },
-  { key: 'output', rule: 'outputName', label: '输出名称' },
-  { key: 'exit-timeout', rule: 'timeout', label: '超时时间' },
-  { key: 'image-path', rule: 'imagePath', label: '图片路径' },
+  { key: 'name', rule: 'appName', label: 'Application name' },
+  { key: 'cmd', rule: 'command', label: 'Command' },
+  { key: 'working-dir', rule: 'workingDir', label: 'Working directory' },
+  { key: 'output', rule: 'outputName', label: 'Output name' },
+  { key: 'exit-timeout', rule: 'timeout', label: 'Timeout' },
+  { key: 'image-path', rule: 'imagePath', label: 'Image path' },
 ]
 
 /**
- * 验证应用表单
- * @param {Object} formData 表单数据
- * @returns {Object} 验证结果
+ * Validate the application form
+ * @param {Object} formData Form data
+ * @returns {Object} Validation result
  */
 export function validateAppForm(formData) {
   const results = {}
   const errors = []
 
-  // 验证基础字段
+  // Validate base fields
   for (const { key, rule, label } of FIELD_MAPPINGS) {
     const result = validateField(rule, formData[key])
     results[key] = result
@@ -148,27 +148,27 @@ export function validateAppForm(formData) {
     }
   }
 
-  // 验证准备命令
+  // Validate prep commands
   formData['prep-cmd']?.forEach((cmd, index) => {
     if (!cmd.do?.trim() && !cmd.undo?.trim()) {
-      errors.push(`准备命令 ${index + 1}: 打开时执行命令或退出应用时要执行的命令至少需要填写一个`)
+      errors.push(`Prep command ${index + 1}: at least one of "run on launch" or "run on exit" must be filled in`)
     }
   })
 
-  // 验证菜单命令
+  // Validate menu commands
   formData['menu-cmd']?.forEach((cmd, index) => {
     if (!cmd.name?.trim()) {
-      errors.push(`菜单命令 ${index + 1}: 显示名称不能为空`)
+      errors.push(`Menu command ${index + 1}: display name cannot be empty`)
     }
     if (!cmd.cmd?.trim()) {
-      errors.push(`菜单命令 ${index + 1}: 命令不能为空`)
+      errors.push(`Menu command ${index + 1}: command cannot be empty`)
     }
   })
 
-  // 验证独立命令
+  // Validate detached commands
   formData.detached?.forEach((cmd, index) => {
     if (cmd && !cmd.trim()) {
-      errors.push(`独立命令 ${index + 1}: 命令不能为空`)
+      errors.push(`Detached command ${index + 1}: command cannot be empty`)
     }
   })
 
@@ -180,10 +180,10 @@ export function validateAppForm(formData) {
 }
 
 /**
- * 验证文件
- * @param {File} file 文件对象
- * @param {Object} options 验证选项
- * @returns {Object} 验证结果
+ * Validate a file
+ * @param {File} file File object
+ * @param {Object} options Validation options
+ * @returns {Object} Validation result
  */
 export function validateFile(file, options = {}) {
   const {
@@ -193,27 +193,27 @@ export function validateFile(file, options = {}) {
   } = options
 
   if (!file) {
-    return { isValid: false, message: '请选择文件' }
+    return { isValid: false, message: 'Please select a file' }
   }
 
   if (!allowedTypes.includes(file.type)) {
     return {
       isValid: false,
-      message: `不支持的文件类型。支持的格式：${allowedTypes.join(', ')}`,
+      message: `Unsupported file type. Supported formats: ${allowedTypes.join(', ')}`,
     }
   }
 
   if (file.size > maxSize) {
     return {
       isValid: false,
-      message: `文件大小不能超过 ${(maxSize / (1024 * 1024)).toFixed(1)}MB`,
+      message: `File size cannot exceed ${(maxSize / (1024 * 1024)).toFixed(1)}MB`,
     }
   }
 
   if (file.size < minSize) {
     return {
       isValid: false,
-      message: `文件大小不能小于 ${(minSize / 1024).toFixed(1)}KB`,
+      message: `File size cannot be smaller than ${(minSize / 1024).toFixed(1)}KB`,
     }
   }
 
@@ -221,10 +221,10 @@ export function validateFile(file, options = {}) {
 }
 
 /**
- * 实时验证混合器
- * @param {Object} formData 表单数据
- * @param {Array} watchFields 需要监听的字段
- * @returns {Object} 验证状态
+ * Real-time validation mixin
+ * @param {Object} formData Form data
+ * @param {Array} watchFields Fields to watch
+ * @returns {Object} Validation state
  */
 export function createFormValidator(formData, watchFields = []) {
   const validationStates = Object.fromEntries(watchFields.map((field) => [field, { isValid: true, message: '' }]))
@@ -257,10 +257,10 @@ export function createFormValidator(formData, watchFields = []) {
 }
 
 /**
- * 创建防抖验证器
- * @param {Function} validationFn 验证函数
- * @param {number} delay 防抖延迟时间
- * @returns {Function} 防抖后的验证函数
+ * Create a debounced validator
+ * @param {Function} validationFn Validation function
+ * @param {number} delay Debounce delay
+ * @returns {Function} Debounced validation function
  */
 export function createDebouncedValidator(validationFn, delay = 300) {
   let timeoutId

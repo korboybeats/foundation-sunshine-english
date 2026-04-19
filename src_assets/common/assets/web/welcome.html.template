@@ -6,7 +6,7 @@
   </head>
 
   <body id="app" v-cloak>
-    <!-- Vue 应用挂载点 -->
+    <!-- Vue app mount point -->
   </body>
 
   <!-- WELCOME_LOCALES_INLINE_PLACEHOLDER -->

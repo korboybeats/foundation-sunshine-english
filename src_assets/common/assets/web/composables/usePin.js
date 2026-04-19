@@ -3,7 +3,7 @@ import { ref, reactive } from 'vue'
 const STATUS_RESET_DELAY = 5000
 
 /**
- * PIN 配对组合式函数
+ * PIN pairing composable
  */
 export function usePin() {
   const pairingDeviceName = ref('')
@@ -62,7 +62,7 @@ export function usePin() {
       const tmpClients = parseClients()
       clients.value = clients.value.map((client) => {
         const merged = { ...client, ...tmpClients.find(({ uuid }) => uuid === client.uuid) }
-        // 如果客户端没有deviceSize，设置默认值为medium
+        // If the client has no deviceSize, default it to medium
         if (!merged.deviceSize) {
           merged.deviceSize = 'medium'
         }

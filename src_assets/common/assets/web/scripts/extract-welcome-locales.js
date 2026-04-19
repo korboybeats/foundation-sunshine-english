@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * 从模板文件生成完整的 welcome.html
- * 提取所有语言的 welcome 翻译并静态嵌入到 HTML 中
- * 注意：只提取 welcome 部分，因为需要的 _common 键已经添加到 welcome 中了
+ * Generate the complete welcome.html from the template file.
+ * Extracts the welcome translations for every language and embeds them statically into the HTML.
+ * Note: only the welcome section is extracted because the _common keys we need have already been
+ * merged into welcome.
  */
 
 import fs from 'fs'
@@ -17,7 +18,7 @@ const templatePath = path.join(__dirname, '../welcome.html.template')
 const outputPath = path.join(__dirname, '../welcome.html')
 const output = {}
 
-// 获取所有语言文件
+// Get all locale files
 const localeFiles = fs.readdirSync(localeDir).filter(file => file.endsWith('.json'))
 
 localeFiles.forEach(file => {
@@ -26,7 +27,7 @@ localeFiles.forEach(file => {
   
   try {
     const content = JSON.parse(fs.readFileSync(filePath, 'utf8'))
-    // 只提取 welcome 部分（username, password, error, success 已经在 welcome 中了）
+    // Only extract the welcome section (username, password, error, success are already inside welcome)
     if (content.welcome) {
       output[locale] = {
         welcome: content.welcome
@@ -37,13 +38,13 @@ localeFiles.forEach(file => {
   }
 })
 
-// 生成内联的 script 标签内容
+// Build the inline <script> tag contents
 const inlineScript = `<script>
-// 自动生成的 welcome 页面翻译数据（构建时生成）
+// Auto-generated welcome-page translation data (produced at build time)
 window.__WELCOME_LOCALES__ = ${JSON.stringify(output, null, 2)};
 </script>`
 
-// 读取模板文件并生成完整的 welcome.html
+// Read the template file and produce the final welcome.html
 if (!fs.existsSync(templatePath)) {
   console.error(`Error: Template file not found: ${templatePath}`)
   process.exit(1)
@@ -51,7 +52,7 @@ if (!fs.existsSync(templatePath)) {
 
 let template = fs.readFileSync(templatePath, 'utf8')
 
-// 替换占位符
+// Replace the placeholder
 if (template.includes('WELCOME_LOCALES_INLINE_PLACEHOLDER')) {
   template = template.replace('<!-- WELCOME_LOCALES_INLINE_PLACEHOLDER -->', inlineScript)
   fs.writeFileSync(outputPath, template, 'utf8')

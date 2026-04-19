@@ -1,17 +1,17 @@
 /**
- * 图片工具函数
- * 用于处理应用图片URL的标准化逻辑
+ * Image utility functions
+ * Used to normalize application image URL handling
  */
 /**
- * 获取图片预览URL
- * @param {string} imagePath 图片路径
- * @returns {string} 预览URL
+ * Get image preview URL
+ * @param {string} imagePath Image path
+ * @returns {string} Preview URL
  */
 export function getImagePreviewUrl(imagePath = 'box.png') {
   if (imagePath === 'desktop') {
     return '/boxart/desktop.png'
   }
-  // 如果路径不包含分隔符,说明是boxart资源ID
+  // If the path contains no separator, it is a boxart resource ID
   if (!/[/\\]/.test(imagePath)) {
     return `/boxart/${encodeURIComponent(imagePath)}`
   }
@@ -20,16 +20,16 @@ export function getImagePreviewUrl(imagePath = 'box.png') {
 }
 
 /**
- * 检查图片路径是否为本地文件路径
- * @param {string} imagePath 图片路径
- * @returns {boolean} 是否为本地文件路径
+ * Check whether the image path is a local file path
+ * @param {string} imagePath Image path
+ * @returns {boolean} Whether it is a local file path
  */
 export function isLocalImagePath(imagePath) {
   if (!imagePath) {
     return false
   }
 
-  // 如果是网络URL或blob/data URL，不是本地路径
+  // If it is a network URL or blob/data URL, it is not a local path
   if (
     imagePath.startsWith('http://') ||
     imagePath.startsWith('https://') ||

@@ -8,7 +8,7 @@
       </div>
 
       <div class="setup-content">
-        <!-- 步骤指示器 -->
+        <!-- Step indicator -->
         <div class="step-indicator">
           <div class="step" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
             <div class="step-number">1</div>
@@ -36,9 +36,9 @@
           </div>
         </div>
 
-        <!-- 步骤内容 -->
+        <!-- Step content -->
         <div class="step-content">
-          <!-- 步骤 1: 选择语言 -->
+          <!-- Step 1: Choose language -->
           <div v-if="currentStep === 1">
             <h3 class="mb-4">{{ $t('setup.step0_description') }}</h3>
             
@@ -49,7 +49,7 @@
                 <i class="fas fa-language"></i>
               </div>
               <h4>简体中文</h4>
-              <p>使用简体中文界面</p>
+              <p>Use the Simplified Chinese interface</p>
             </div>
 
             <div class="option-card" 
@@ -63,7 +63,7 @@
             </div>
           </div>
 
-          <!-- 步骤 2: 选择显卡 -->
+          <!-- Step 2: Select GPU -->
           <div v-else-if="currentStep === 2">
             <h3 class="mb-4">{{ $t('setup.step2_description') }}</h3>
             
@@ -87,21 +87,21 @@
                 <p><strong>{{ $t('setup.selected_adapter') }}:</strong> {{ selectedAdapter }}</p>
               </div>
 
-              <!-- GPU选择提示框 -->
+              <!-- GPU selection hint box -->
               <div class="form-text mt-3 adapter-hint-box" v-html="$t('config.adapter_name_desc_windows')"></div>
           </div>
 
-          <!-- 步骤 3: 选择串流显示器 -->
+          <!-- Step 3: Select streaming display -->
           <div v-else-if="currentStep === 3">
             <h3 class="mb-4">{{ $t('setup.step1_description') }}</h3>
             <p class="vdd-intro-text mb-4">{{ $t('setup.step1_vdd_intro') }}</p>
             
-            <!-- 基地显示器标题 -->
+            <!-- Foundation display heading -->
             <h5 class="my-3 physical-display-title">
               <i class="fas fa-tv"></i>
               {{ $t('setup.base_display_title') }}
             </h5>
-            <!-- 虚拟显示器选项 -->
+            <!-- Virtual display option -->
             <div class="option-card" 
                  :class="{ selected: selectedDisplay === 'ZakoHDR' }"
                  @click="selectedDisplay = 'ZakoHDR'">
@@ -116,7 +116,7 @@
               </div>
             </div>
 
-            <!-- 物理显示器列表 -->
+            <!-- Physical display list -->
             <div v-if="displayDevices && displayDevices.length > 0">
               <h5 class="my-3 physical-display-title">
                 <i class="fas fa-desktop"></i>
@@ -140,11 +140,11 @@
             </div>
           </div>
 
-          <!-- 步骤 4: 选择显示器组合策略 -->
+          <!-- Step 4: Select display combination strategy -->
           <div v-else-if="currentStep === 4">
             <h3 class="mb-4">{{ $t('setup.step3_description') }}</h3>
-            
-            <!-- 显示器组合策略（VDD/物理模式统一） -->
+
+            <!-- Display combination strategy (unified for VDD and physical modes) -->
               <div class="option-card-compact"
                    :class="{ selected: displayDevicePrep === 'ensure_only_display' }"
                    @click="displayDevicePrep = 'ensure_only_display'">
@@ -196,7 +196,7 @@
               </div>
           </div>
 
-          <!-- 步骤 5: 完成 -->
+          <!-- Step 5: Done -->
           <div v-else-if="currentStep === 5">
             <div>
               <div class="text-center mb-3">
@@ -217,21 +217,21 @@
                 {{ saveError }}
               </div>
 
-              <!-- 客户端下载 -->
+              <!-- Client downloads -->
               <div class="client-download-section mt-3">
                 <h5 class="mb-3">
                   <i class="fas fa-download"></i>
                   {{ $t('setup.download_clients') }}
                 </h5>
                 <div class="client-download-layout">
-                  <!-- 左侧：应用下载链接 -->
+                  <!-- Left: app download links -->
                   <div class="client-links">
                     <a class="resource-link resource-link-android"
                        href="https://github.com/qiin2333/moonlight-vplus"
                        target="_blank">
                       <div class="resource-icon"><i class="fab fa-android"></i></div>
                       <div class="resource-content">
-                        <span class="resource-title">安卓 Moonlight V+</span>
+                        <span class="resource-title">Android Moonlight V+</span>
                         <span class="resource-desc">Android / Android TV</span>
                       </div>
                       <i class="fas fa-external-link-alt resource-arrow"></i>
@@ -241,7 +241,7 @@
                        @click.prevent="openHarmonyModal">
                       <div class="resource-icon"><i class="fas fa-mobile-alt"></i></div>
                       <div class="resource-content">
-                        <span class="resource-title">鸿蒙 Moonlight V+</span>
+                        <span class="resource-title">HarmonyOS Moonlight V+</span>
                         <span class="resource-desc">HarmonyOS NEXT</span>
                       </div>
                       <i class="fas fa-external-link-alt resource-arrow"></i>
@@ -251,7 +251,7 @@
                        target="_blank">
                       <div class="resource-icon"><i class="fab fa-apple"></i></div>
                       <div class="resource-content">
-                        <span class="resource-title">虚空终端 (VoidLink)</span>
+                        <span class="resource-title">VoidLink</span>
                         <span class="resource-desc">iOS / iPadOS</span>
                       </div>
                       <i class="fas fa-external-link-alt resource-arrow"></i>
@@ -267,7 +267,7 @@
                       <i class="fas fa-external-link-alt resource-arrow"></i>
                     </a>
                   </div>
-                  <!-- 右侧：二维码 -->
+                  <!-- Right: QR codes -->
                   <div class="client-qrcodes">
                     <div class="qr-code-item">
                       <div class="qr-code-box">
@@ -296,7 +296,7 @@
 
       </div>
 
-      <!-- 操作按钮（固定底栏） -->
+      <!-- Action buttons (sticky footer) -->
       <div class="action-buttons">
           <button class="btn btn-setup btn-setup-secondary" 
                   @click="previousStep" 
@@ -356,7 +356,7 @@
       <div v-if="showHarmonyModal" class="skip-wizard-overlay" @click.self="closeHarmonyModal">
         <div class="skip-wizard-modal">
           <div class="skip-wizard-header">
-            <h5>鸿蒙Moonlight V+</h5>
+            <h5>HarmonyOS Moonlight V+</h5>
             <button class="btn-close" @click="closeHarmonyModal"></button>
           </div>
           <div class="skip-wizard-body">
@@ -429,19 +429,19 @@ export default {
   data() {
     return {
       currentStep: 1,
-      selectedLocale: 'zh', // 默认中文
-      selectedDisplay: 'ZakoHDR', // 默认选择基地显示器
+      selectedLocale: 'zh', // Default to Simplified Chinese
+      selectedDisplay: 'ZakoHDR', // Default to the Foundation virtual display
       selectedAdapter: '',
-      displayDevicePrep: 'ensure_only_display', // 默认选择：确保唯一显示器（VDD 和普通模式通用）
+      displayDevicePrep: 'ensure_only_display', // Default: ensure single display (works for both VDD and physical modes)
       saveSuccess: false,
       saveError: null,
       saving: false,
-      showSkipModal: false, // 跳过向导确认弹窗
-      showHarmonyModal: false, // 鸿蒙链接提醒弹窗
-      showRestartModal: false, // 重启倒计时弹窗
-      restartCountdown: 8, // 倒计时秒数
-      restartTimer: null, // 倒计时定时器
-      // 客户端下载链接
+      showSkipModal: false, // Skip-wizard confirmation modal
+      showHarmonyModal: false, // HarmonyOS link reminder modal
+      showRestartModal: false, // Restart countdown modal
+      restartCountdown: 8, // Countdown seconds
+      restartTimer: null, // Countdown timer
+      // Client download links
       androidQrCode: 'https://assets.alkaidlab.com/androidQrCode.png',
       iosQrCode: 'https://assets.alkaidlab.com/iosQrCode.png',
     }
@@ -450,14 +450,14 @@ export default {
     return {}
   },
   mounted() {
-    // 记录进入设置向导
+    // Record entry into the setup wizard
     trackEvents.pageView('setup_wizard')
     trackEvents.userAction('setup_wizard_started', {
       has_locale: this.hasLocale,
       adapter_count: this.adapters.length
     })
     
-    // 如果已经有语言配置，跳过第一步
+    // If a language is already configured, skip the first step
     if (this.hasLocale) {
       this.currentStep = 2
       trackEvents.userAction('setup_wizard_skip_language', { 
@@ -465,7 +465,7 @@ export default {
       })
     }
     
-    // 如果只有一个显卡，自动选择
+    // If there is only one GPU, select it automatically
     if (this.uniqueAdapters.length === 1) {
       this.selectedAdapter = this.uniqueAdapters[0].name
     }
@@ -492,7 +492,7 @@ export default {
     isVirtualDisplay() {
       return this.selectedDisplay === 'ZakoHDR'
     },
-    // 按 name 去重，同一名称只保留一项（保持首次出现顺序）
+    // Deduplicate by name, keeping the first occurrence
     uniqueAdapters() {
       const list = this.adapters ?? []
       const seen = new Set()
@@ -512,7 +512,7 @@ export default {
     },
     async nextStep() {
       if (this.currentStep === 1 && this.canProceed) {
-        // 保存语言设置并刷新
+        // Save the language setting and reload
         await this.saveLanguage()
       } else if (this.currentStep === 2 && this.canProceed) {
         this.currentStep++
@@ -533,7 +533,7 @@ export default {
             locale: this.selectedLocale
           }),
         })
-        // 重新加载页面以应用新语言
+        // Reload the page to apply the new language
         window.location.reload()
       } catch (error) {
         console.error('Failed to save language:', error)
@@ -544,32 +544,32 @@ export default {
       this.saveError = null
 
       try {
-        // 先获取当前完整配置，保留所有已有设置
+        // First fetch the full current configuration to preserve all existing settings
         const currentConfig = await fetch('/api/config').then(r => r.json())
-        
-        // 从完整配置中复制所有字段，避免覆盖其他配置
+
+        // Copy every field from the full config to avoid overwriting other settings
         const config = { ...currentConfig }
 
-        // 标记新手引导已完成
+        // Mark the setup wizard as completed
         config.setup_wizard_completed = true
-        
-        // 确保 locale 被保存（如果用户在步骤1选择了语言，或者已有配置中有 locale）
+
+        // Ensure locale is saved (if the user picked a language in step 1, or it already exists in the config)
         if (this.selectedLocale) {
           config.locale = this.selectedLocale
         } else if (currentConfig.locale) {
           config.locale = currentConfig.locale
         }
-        
-        // 设置 adapter_name
+
+        // Set adapter_name
         config.adapter_name = this.selectedAdapter || ''
 
-        // 设置选择的显示器
+        // Set the selected display
         config.output_name = this.selectedDisplay
 
-        // 统一保存 display_device_prep（VDD 和物理模式通用）
+        // Save display_device_prep uniformly (works for both VDD and physical modes)
         config.display_device_prep = this.displayDevicePrep
 
-        console.log('保存配置:', config)
+        console.log('Saving configuration:', config)
 
         const response = await fetch('/api/config', {
           method: 'POST',
@@ -583,7 +583,7 @@ export default {
           this.saveSuccess = true
           this.currentStep = 5
           
-          // 记录设置完成
+          // Record setup completion
           trackEvents.userAction('setup_wizard_completed', {
             selected_display: this.selectedDisplay,
             adapter: this.selectedAdapter,
@@ -596,7 +596,7 @@ export default {
           const errorText = await response.text()
           this.saveError = `${this.$t('setup.save_error')}: ${errorText}`
           
-          // 记录保存失败
+          // Record save failure
           trackEvents.errorOccurred('setup_config_save_failed', errorText)
         }
       } catch (error) {
@@ -637,7 +637,7 @@ export default {
       }
     },
     async confirmSkipWizard() {
-      // 关闭模态框
+      // Close the modal
       this.closeSkipModal()
       
       if (this.saving) return
@@ -646,14 +646,14 @@ export default {
       this.saveError = null
 
       try {
-        // 先获取当前完整配置，保留所有已有设置
+        // First fetch the full current configuration to preserve all existing settings
         const currentConfig = await fetch('/api/config').then(r => r.json())
-        
-        // 从完整配置中复制所有字段，避免覆盖其他配置
+
+        // Copy every field from the full config to avoid overwriting other settings
         const config = { ...currentConfig }
-        // 标记新手引导已完成
+        // Mark the setup wizard as completed
         config.setup_wizard_completed = true
-        console.log('跳过新手引导，保存配置:', config)
+        console.log('Skipping setup wizard, saving config:', config)
         const response = await fetch('/api/config', {
           method: 'POST',
           headers: {
@@ -663,21 +663,21 @@ export default {
         })
 
         if (response.ok) {
-          // 记录跳过事件
+          // Record the skip event
           trackEvents.userAction('setup_wizard_skipped', {
             from_step: this.currentStep
           })
           
-          // 触发完成事件，让父组件知道设置向导已完成
+          // Emit the completion event so the parent knows the wizard finished
           this.$emit('setup-complete', config)
           
-          // 重新加载页面以隐藏设置向导
+          // Reload the page to hide the setup wizard
           window.location.reload()
         } else {
           const errorText = await response.text()
           this.saveError = `${this.$t('setup.skip_error')}: ${errorText}`
           
-          // 记录跳过失败
+          // Record the skip failure
           trackEvents.errorOccurred('setup_wizard_skip_failed', errorText)
         }
       } catch (error) {
@@ -688,21 +688,21 @@ export default {
       }
     },
     goToApps() {
-      // 记录跳转到应用配置页面
+      // Record navigation to the apps page
       trackEvents.userAction('setup_go_to_apps', {
         from_step: this.currentStep
       })
-      // 触发重启并显示倒计时
+      // Trigger restart and show the countdown
       this.triggerRestartAndRedirect()
     },
     async triggerRestartAndRedirect() {
-      // 调用重启 API
+      // Call the restart API
       try {
         await fetch('/api/restart', { method: 'POST' })
       } catch {
-        // 重启请求可能会断开连接，忽略错误
+        // The restart request may drop the connection; ignore the error
       }
-      // 显示倒计时弹窗
+      // Show the countdown modal
       this.showRestartModal = true
       this.restartCountdown = 8
       this.restartTimer = setInterval(() => {
@@ -724,8 +724,8 @@ export default {
       window.location.href = '/'
     },
     getDisplayName(device) {
-      // 解析 device.data，提取友好名称
-      // 数据格式：
+      // Parse device.data and extract the friendly name
+      // Data format:
       // DISPLAY NAME: \\.\\DISPLAY1
       // FRIENDLY NAME: F32D80U
       // DEVICE STATE: PRIMARY
@@ -745,15 +745,15 @@ export default {
       }
     },
     getDisplayInfo(device) {
-      // 解析 device.data，提取详细信息
+      // Parse device.data and extract detailed info
       try {
         const data = device.data || ''
         
-        // 提取 DEVICE STATE
+        // Extract DEVICE STATE
         const stateMatch = data.match(/DEVICE STATE: (\w+)/)
         const state = stateMatch ? stateMatch[1].toLowerCase() : 'unknown'
         
-        // 提取 HDR STATE
+        // Extract HDR STATE
         const hdrMatch = data.match(/HDR STATE: (\w+)/)
         const hdr = hdrMatch ? hdrMatch[1] : ''
         
@@ -933,7 +933,7 @@ export default {
   line-height: 1.3;
 }
 
-/* 紧凑型选项卡片（水平布局） */
+/* Compact option card (horizontal layout) */
 .option-card-compact {
   display: flex;
   align-items: center;
@@ -988,13 +988,13 @@ export default {
   transition: all 0.3s ease;
 }
 
-/* 显卡适配器标签 */
+/* Adapter label */
 .adapter-label {
   font-size: 1.05em;
   font-weight: 600;
 }
 
-/* 物理显示器标题 */
+/* Physical display heading */
 .physical-display-title {
   font-size: 0.95em;
 }
@@ -1078,7 +1078,7 @@ export default {
   font-size: 0.95em;
 }
 
-/* GPU选择提示框样式 */
+/* GPU selection hint box styles */
 .adapter-hint-box {
   background: rgba(102, 126, 234, 0.08);
   padding: 0.8em 1em;
@@ -1090,7 +1090,7 @@ export default {
   font-weight: 500;
 }
 
-/* VDD 介绍文字样式 */
+/* VDD intro text styles */
 .vdd-intro-text {
   color: var(--bs-body-color);
   opacity: 0.75;
@@ -1107,7 +1107,7 @@ export default {
   word-wrap: break-word;
 }
 
-/* 滚动条样式 */
+/* Scrollbar styles */
 .step-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -1125,7 +1125,7 @@ export default {
   background: rgba(102, 126, 234, 0.5);
 }
 
-/* 完成页面标题 */
+/* Completion page heading */
 .setup-complete-icon {
   font-size: 1.2em;
   color: #28a745;
@@ -1133,7 +1133,7 @@ export default {
   vertical-align: middle;
 }
 
-/* 客户端下载样式 */
+/* Client downloads styles */
 .client-download-section {
   background: var(--bs-secondary-bg);
   padding: 1em;
@@ -1284,7 +1284,7 @@ export default {
   margin-right: 0.3em;
 }
 
-/* 小图标样式 */
+/* Small icon styles */
 .option-icon-small {
   font-size: 1.5em;
   color: #667eea;
@@ -1309,7 +1309,7 @@ export default {
   margin-bottom: 1rem;
 }
 
-/* Skip Wizard Modal - 使用 ScanResultModal 样式 */
+/* Skip Wizard Modal - reuses ScanResultModal styles */
 .skip-wizard-overlay {
   position: fixed;
   top: 0;
@@ -1420,7 +1420,7 @@ export default {
   font-size: 0.9rem;
 }
 
-/* Vue 过渡动画 */
+/* Vue transition animations */
 .fade-enter-active {
   transition: opacity 0.3s ease;
 }

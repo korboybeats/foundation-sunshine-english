@@ -29,7 +29,7 @@ function removeCmd(index) {
 }
 
 function handleCommandOrderChanged(newOrder) {
-  // 更新命令顺序
+  // Update command order
   globalPrepCmd.value.splice(0, globalPrepCmd.value.length, ...newOrder)
 }
 </script>

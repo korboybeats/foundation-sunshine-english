@@ -803,7 +803,7 @@ onUnmounted(() => {
   }
 }
 
-// 无障碍：减少动态效果
+// Accessibility: reduced motion
 @media (prefers-reduced-motion: reduce) {
   .config-floating-buttons .cute-btn {
     animation: none !important;

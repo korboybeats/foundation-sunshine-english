@@ -1,6 +1,6 @@
-/* 统一模态框样式 */
+/* Unified modal styles */
 :root {
-  /* 背景与边框 */
+  /* Background and border */
   --modal-backdrop-bg: rgba(0, 0, 0, 0.7);
   --modal-content-bg: rgba(30, 30, 50, 0.95);
   --modal-border-color: rgba(255, 255, 255, 0.2);
@@ -10,7 +10,7 @@
   --modal-shadow: rgba(0, 0, 0, 0.5);
   --modal-footer-bg: rgba(0, 0, 0, 0.2);
 
-  /* 按钮渐变 */
+  /* Button gradients */
   --btn-primary-gradient: linear-gradient(135deg, #667eea, #764ba2);
   --btn-primary-gradient-hover: linear-gradient(135deg, #764ba2, #667eea);
   --btn-secondary-gradient: rgba(255, 255, 255, 0.2);
@@ -22,7 +22,7 @@
   --btn-outline-primary-border: rgba(102, 126, 234, 0.5);
   --btn-outline-primary-hover: rgba(102, 126, 234, 0.2);
 
-  /* 玻璃效果 */
+  /* Glass effect */
   --glass-light: rgba(255, 255, 255, 0.06);
   --glass-medium: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
@@ -63,13 +63,13 @@
   --glass-border: rgba(255, 255, 255, 0.15);
 }
 
-/* 背景遮罩 */
+/* Backdrop overlay */
 .modal-backdrop {
   background: var(--modal-backdrop-bg);
   backdrop-filter: blur(8px);
 }
 
-/* 模态框内容 */
+/* Modal content */
 .modal-content {
   background: var(--modal-content-bg);
   border: 1px solid var(--modal-border-color);
@@ -104,7 +104,7 @@
   border-radius: 0 0 20px 20px;
 }
 
-/* 关闭按钮 */
+/* Close button */
 .btn-close {
   opacity: 0.7;
   transition: opacity 0.2s;
@@ -118,7 +118,7 @@
   }
 }
 
-/* 模态框按钮 */
+/* Modal buttons */
 .modal {
   padding: 0 20px;
 
@@ -250,7 +250,7 @@
     }
   }
 
-  /* 表单元素 */
+  /* Form elements */
   .form-control,
   .form-select {
     background: var(--glass-light);
@@ -279,7 +279,7 @@
     font-weight: 600;
   }
 
-  /* 警告框 */
+  /* Alert boxes */
   .alert {
     background: var(--glass-light);
     border: 1px solid var(--glass-border);
@@ -320,7 +320,7 @@
     }
   }
 
-  /* 选项卡 */
+  /* Tabs */
   .nav-tabs {
     border-bottom: 1px solid var(--glass-border);
 
@@ -340,7 +340,7 @@
     }
   }
 
-  /* 手风琴 */
+  /* Accordion */
   .accordion-item {
     background: var(--glass-light);
     border: 1px solid var(--modal-border-color);
@@ -385,7 +385,7 @@
     }
   }
 
-  /* 代码块 */
+  /* Code blocks */
   pre,
   code {
     background: var(--glass-light);
@@ -405,7 +405,7 @@
     color: #475569;
   }
 
-  /* 表格 */
+  /* Tables */
   .table {
     color: var(--modal-text-color);
 
@@ -434,7 +434,7 @@
   }
 }
 
-/* 响应式 */
+/* Responsive */
 @media (max-width: 768px) {
   .modal-content {
     margin: 10px;

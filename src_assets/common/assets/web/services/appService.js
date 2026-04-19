@@ -2,32 +2,32 @@ import { API_ENDPOINTS } from '../utils/constants.js';
 import { formatError } from '../utils/helpers.js';
 
 /**
- * 应用服务类
+ * Application service class
  */
 export class AppService {
   /**
-   * 获取应用列表
-   * @returns {Promise<Array>} 应用列表
+   * Get the application list
+   * @returns {Promise<Array>} Application list
    */
   static async getApps() {
     try {
       const response = await fetch(API_ENDPOINTS.APPS);
       if (!response.ok) {
-        throw new Error(`获取应用列表失败: ${response.status}`);
+        throw new Error(`Failed to load app list: ${response.status}`);
       }
       const data = await response.json();
       return data.apps || [];
     } catch (error) {
-      console.error('获取应用列表失败:', error);
+      console.error('Failed to load app list:', error);
       throw new Error(formatError(error));
     }
   }
 
   /**
-   * 保存应用
-   * @param {Array} apps 应用列表
-   * @param {Object} editApp 编辑的应用（可选）
-   * @returns {Promise<boolean>} 是否保存成功
+   * Save apps
+   * @param {Array} apps Application list
+   * @param {Object} editApp App being edited (optional)
+   * @returns {Promise<boolean>} Whether the save succeeded
    */
   static async saveApps(apps, editApp = null) {
     try {
@@ -41,99 +41,99 @@ export class AppService {
           editApp
         })
       });
-      
+
       if (!response.ok) {
-        throw new Error(`保存应用失败: ${response.status}`);
+        throw new Error(`Failed to save app: ${response.status}`);
       }
-      
+
       return true;
     } catch (error) {
-      console.error('保存应用失败:', error);
+      console.error('Failed to save app:', error);
       throw new Error(formatError(error));
     }
   }
 
   /**
-   * 删除应用
-   * @param {number} index 应用索引
-   * @returns {Promise<boolean>} 是否删除成功
+   * Delete an app
+   * @param {number} index App index
+   * @returns {Promise<boolean>} Whether the deletion succeeded
    */
   static async deleteApp(index) {
     try {
       const response = await fetch(API_ENDPOINTS.APP_DELETE(index), {
         method: 'DELETE'
       });
-      
+
       if (!response.ok) {
-        throw new Error(`删除应用失败: ${response.status}`);
+        throw new Error(`Failed to delete app: ${response.status}`);
       }
-      
+
       return true;
     } catch (error) {
-      console.error('删除应用失败:', error);
+      console.error('Failed to delete app:', error);
       throw new Error(formatError(error));
     }
   }
 
   /**
-   * 获取平台信息
-   * @returns {Promise<string>} 平台信息
+   * Get platform info
+   * @returns {Promise<string>} Platform info
    */
   static async getPlatform() {
     try {
       const response = await fetch(API_ENDPOINTS.CONFIG);
       if (!response.ok) {
-        throw new Error(`获取平台信息失败: ${response.status}`);
+        throw new Error(`Failed to fetch platform info: ${response.status}`);
       }
       const data = await response.json();
       return data.platform || 'windows';
     } catch (error) {
-      console.error('获取平台信息失败:', error);
-      // 默认返回windows平台
+      console.error('Failed to fetch platform info:', error);
+      // Default to windows
       return 'windows';
     }
   }
 
   /**
-   * 搜索应用
-   * @param {Array} apps 应用列表
-   * @param {string} query 搜索关键词
-   * @returns {Array} 搜索结果
+   * Search apps
+   * @param {Array} apps Application list
+   * @param {string} query Search keyword
+   * @returns {Array} Search result
    */
   static searchApps(apps, query) {
     if (!query || !query.trim()) {
       return [...apps];
     }
-    
+
     const searchTerm = query.toLowerCase().trim();
-    return apps.filter(app => 
-      app.name.toLowerCase().includes(searchTerm) || 
+    return apps.filter(app =>
+      app.name.toLowerCase().includes(searchTerm) ||
       (app.cmd && app.cmd.toLowerCase().includes(searchTerm))
     );
   }
 
   /**
-   * 验证应用数据
-   * @param {Object} app 应用对象
-   * @returns {Object} 验证结果
+   * Validate app data
+   * @param {Object} app App object
+   * @returns {Object} Validation result
    */
   static validateApp(app) {
     const errors = [];
-    
+
     if (!app.name || !app.name.trim()) {
-      errors.push('应用名称不能为空');
+      errors.push('Application name cannot be empty');
     }
-    
+
     if (!app.cmd || !app.cmd.trim()) {
-      errors.push('应用命令不能为空');
+      errors.push('Application command cannot be empty');
     }
-    
-    // 验证退出超时时间
-    if (app['exit-timeout'] !== undefined && 
+
+    // Validate exit timeout
+    if (app['exit-timeout'] !== undefined &&
         (isNaN(app['exit-timeout']) || app['exit-timeout'] < 0)) {
-      errors.push('退出超时时间必须是非负数');
+      errors.push('Exit timeout must be a non-negative number');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors
@@ -141,21 +141,21 @@ export class AppService {
   }
 
   /**
-   * 格式化应用数据
-   * @param {Object} app 原始应用数据
-   * @returns {Object} 格式化后的应用数据
+   * Format app data
+   * @param {Object} app Raw app data
+   * @returns {Object} Formatted app data
    */
   static formatAppData(app) {
-    // 过滤掉 do 和 undo 都为空或只包含空格的 prep-cmd 项
-    const filteredPrepCmd = Array.isArray(app['prep-cmd']) 
+    // Filter out prep-cmd entries where both do and undo are empty or contain only whitespace
+    const filteredPrepCmd = Array.isArray(app['prep-cmd'])
       ? app['prep-cmd'].filter(cmd => {
           const hasDo = cmd.do && cmd.do.trim() !== '';
           const hasUndo = cmd.undo && cmd.undo.trim() !== '';
-          // 至少有一个不为空才保留
+          // Keep if at least one is non-empty
           return hasDo || hasUndo;
         })
       : [];
-    
+
     return {
       name: app.name?.trim() || '',
       output: app.output?.trim() || '',
@@ -172,4 +172,4 @@ export class AppService {
       'working-dir': app['working-dir']?.trim() || ''
     };
   }
-} 
+}

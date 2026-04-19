@@ -10,21 +10,21 @@ export function useLogout() {
     xhr.open('GET', '/api/logout?t=' + Date.now(), true)
     xhr.setRequestHeader('Authorization', 'Basic ' + btoa('logout:logout'))
 
-    // 既然浏览器可能会卡在 401 重试里不回调 JS，
-    // 那我们就不等了。设定 200ms 后，无论如何必须跳回首页。
-    // 这能强制打断浏览器的 XHR 死循环。
+    // The browser can get stuck retrying on 401 and never call back into JS,
+    // so we don't wait. After 200ms we force a navigation back to the home page.
+    // This breaks out of the browser's XHR retry loop.
     const watchdog = setTimeout(() => {
-      // 如果到了这里，说明 200 没触发，或者浏览器卡在 401 了
-      // 强行中止请求，跳转首页
+      // If we reach here, either 200 never fired or the browser is stuck on 401.
+      // Force-abort the request and redirect to the home page.
       try { xhr.abort() } catch(e) {}
       window.location.href = '/'
     }, 200)
 
     xhr.onreadystatechange = () => {
-      // 只有一种情况我们取消跳转：后端明确返回了 200 (Localhost)
+      // The only case where we cancel the redirect: the backend explicitly returned 200 (Localhost)
       if (xhr.readyState === 4 && xhr.status === 200) {
         clearTimeout(watchdog)
-        opts.onLocalhost?.()   // 执行 Localhost 逻辑
+        opts.onLocalhost?.()   // Execute the Localhost branch
       }
     }
     xhr.send()

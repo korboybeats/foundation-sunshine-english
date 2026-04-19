@@ -8,6 +8,6 @@ export function useTheme() {
   })
 
   return {
-    // 可以在这里暴露更多主题相关的功能
+    // Additional theme-related features can be exposed here
   }
 }

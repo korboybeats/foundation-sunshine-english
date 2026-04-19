@@ -1,17 +1,17 @@
 import { ref } from 'vue'
 import { trackEvents } from '../config/firebase.js'
 
-// 平台相关的标签页排除规则
+// Platform-specific tab exclusion rules
 const PLATFORM_EXCLUSIONS = {
   windows: ['vt', 'vaapi'],
   linux: ['amd', 'qsv', 'vt'],
   macos: ['amd', 'nv', 'qsv', 'vaapi'],
 }
 
-// 不参与默认值比较的键
+// Keys that are excluded from default-value comparison
 const EXCLUDED_DEFAULT_KEYS = new Set(['resolutions', 'fps', 'adapter_name'])
 
-// 默认标签页配置
+// Default tab configuration
 const DEFAULT_TABS = [
   {
     id: 'general',
@@ -186,12 +186,12 @@ const DEFAULT_TABS = [
 ]
 
 /**
- * 深拷贝对象
+ * Deep clone an object
  */
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj))
 
 /**
- * 安全解析 JSON
+ * Safely parse JSON
  */
 const safeParseJSON = (str, fallback = []) => {
   try {
@@ -202,7 +202,7 @@ const safeParseJSON = (str, fallback = []) => {
 }
 
 /**
- * 判断是否应该删除默认值
+ * Determine whether a default value should be removed
  */
 const shouldDeleteDefault = (configData, tab, optionKey) => {
   if (EXCLUDED_DEFAULT_KEYS.has(optionKey)) return false
@@ -218,7 +218,7 @@ const shouldDeleteDefault = (configData, tab, optionKey) => {
 }
 
 /**
- * 遍历所有标签页选项
+ * Iterate over every option in all tabs
  */
 const forEachTabOption = (tabs, callback) => {
   for (const tab of tabs) {
@@ -233,18 +233,18 @@ const forEachTabOption = (tabs, callback) => {
 }
 
 /**
- * 序列化分辨率数组
+ * Serialize the resolutions array
  */
 const serializeResolutions = (resolutions) =>
   JSON.stringify(resolutions).replace(/","/g, ',').replace(/^\["/, '[').replace(/"\]$/, ']')
 
 /**
- * 序列化 FPS 数组
+ * Serialize the FPS array
  */
 const serializeFps = (fps) => JSON.stringify(fps).replace(/"/g, '')
 
 /**
- * 解析分辨率字符串
+ * Parse the resolutions string
  */
 const parseResolutions = (resStr) => {
   try {
@@ -255,12 +255,12 @@ const parseResolutions = (resStr) => {
 }
 
 /**
- * 过滤有效的 FPS 值
+ * Filter valid FPS values
  */
 const filterValidFps = (fps) => fps.filter((item) => +item >= 30 && +item <= 500)
 
 /**
- * 配置管理组合式函数
+ * Configuration management composable
  */
 export function useConfig() {
   const platform = ref('')
@@ -274,7 +274,7 @@ export function useConfig() {
   const display_mode_remapping = ref([])
   const tabs = ref([])
 
-  // 原始配置快照
+  // Original configuration snapshot
   const snapshots = ref({
     config: null,
     fps: null,
@@ -284,7 +284,7 @@ export function useConfig() {
   })
 
   /**
-   * 保存当前状态快照
+   * Save snapshot of the current state
    */
   const saveSnapshots = () => {
     snapshots.value = {
@@ -297,14 +297,14 @@ export function useConfig() {
   }
 
   /**
-   * 初始化标签页配置
+   * Initialize tab configuration
    */
   const initTabs = () => {
     tabs.value = deepClone(DEFAULT_TABS)
   }
 
   /**
-   * 根据平台过滤标签页
+   * Filter tabs by platform
    */
   const filterTabsByPlatform = (platformName) => {
     const exclusions = PLATFORM_EXCLUSIONS[platformName] || []
@@ -321,7 +321,7 @@ export function useConfig() {
   }
 
   /**
-   * 填充配置默认值
+   * Fill default configuration values
    */
   const fillDefaultValues = () => {
     forEachTabOption(tabs.value, (tab) => {
@@ -334,7 +334,7 @@ export function useConfig() {
   }
 
   /**
-   * 解析特殊字段
+   * Parse special fields
    */
   const parseSpecialFields = () => {
     fps.value = safeParseJSON(config.value.fps)
@@ -347,7 +347,7 @@ export function useConfig() {
   }
 
   /**
-   * 加载配置
+   * Load configuration
    */
   const loadConfig = async () => {
     try {
@@ -369,7 +369,7 @@ export function useConfig() {
   }
 
   /**
-   * 序列化配置
+   * Serialize configuration
    */
   const serialize = () => {
     config.value.resolutions = serializeResolutions(resolutions.value)
@@ -380,7 +380,7 @@ export function useConfig() {
   }
 
   /**
-   * 移除默认值
+   * Remove default values
    */
   const removeDefaultValues = (configData) => {
     forEachTabOption(tabs.value, (tab) => {
@@ -393,7 +393,7 @@ export function useConfig() {
   }
 
   /**
-   * 保存配置
+   * Save configuration
    */
   const save = async () => {
     saved.value = false
@@ -426,7 +426,7 @@ export function useConfig() {
   }
 
   /**
-   * 应用配置（保存并重启）
+   * Apply configuration (save and restart)
    */
   const apply = async () => {
     saved.value = false
@@ -450,7 +450,7 @@ export function useConfig() {
   }
 
   /**
-   * 在标签页中查找目标
+   * Find a target within tabs
    */
   const findTabByHash = (hash) => {
     for (const tab of tabs.value) {
@@ -469,7 +469,7 @@ export function useConfig() {
   }
 
   /**
-   * 处理哈希导航
+   * Handle hash navigation
    */
   const handleHash = () => {
     const hash = window.location.hash.slice(1)
@@ -485,7 +485,7 @@ export function useConfig() {
   }
 
   /**
-   * 比较两个值是否相等
+   * Compare whether two values are equal
    */
   const isEqual = (a, b) => {
     if (a === b) return true
@@ -499,7 +499,7 @@ export function useConfig() {
   }
 
   /**
-   * 比较两个配置对象
+   * Compare two configuration objects
    */
   const configsAreEqual = (current, original) => {
     const allKeys = new Set([...Object.keys(current), ...Object.keys(original)])
@@ -513,14 +513,14 @@ export function useConfig() {
   }
 
   /**
-   * 检测是否有未保存的更改
+   * Detect whether there are unsaved changes
    */
   const hasUnsavedChanges = () => {
     if (!config.value || !snapshots.value.config) {
       return false
     }
 
-    // 序列化当前配置用于比较
+    // Serialize the current configuration for comparison
     const tempConfig = deepClone(config.value)
     tempConfig.resolutions = serializeResolutions(resolutions.value)
     tempConfig.fps = serializeFps(filterValidFps(fps.value))

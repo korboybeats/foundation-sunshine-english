@@ -10,7 +10,7 @@
       </div>
       <div class="card-body">
 
-        <!-- 基地官网 -->
+        <!-- Official site -->
         <div class="resource-group mb-4">
           <h6 class="resource-group-title">
             <i class="fas fa-globe text-primary me-2"></i>
@@ -47,7 +47,7 @@
           </div>
         </div>
 
-        <!-- 快速入门 -->
+        <!-- Quick start -->
         <div class="resource-group mb-4">
           <h6 class="resource-group-title">
             <i class="fas fa-rocket text-success me-2"></i>
@@ -85,7 +85,7 @@
           </div>
         </div>
 
-        <!-- 客户端下载 -->
+        <!-- Client downloads -->
         <div class="resource-group mb-4">
           <h6 class="resource-group-title">
             <i class="fas fa-download text-primary me-2"></i>
@@ -102,7 +102,7 @@
                   <i class="fab fa-android"></i>
                 </div>
                 <div class="resource-content">
-                  <span class="resource-title">安卓 Moonlight V+</span>
+                  <span class="resource-title">Android Moonlight V+</span>
                   <span class="resource-desc">Android / Android TV</span>
                 </div>
                 <i class="fas fa-external-link-alt resource-arrow"></i>
@@ -159,7 +159,7 @@
           </div>
         </div>
 
-        <!-- 友情链接 -->
+        <!-- Related links -->
         <div class="resource-group">
           <h6 class="resource-group-title">
             <i class="fas fa-code-branch text-dark me-2"></i>

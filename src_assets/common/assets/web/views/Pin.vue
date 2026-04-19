@@ -129,7 +129,7 @@
             <p class="mb-3 text-muted">{{ $t('pin.remove_paired_devices_desc') }}</p>
           </div>
 
-          <!-- 加载状态 -->
+          <!-- Loading state -->
           <div v-if="loading && clients.length === 0" class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">{{ $t('pin.loading') }}</span>
@@ -137,7 +137,7 @@
             <p class="mt-3 text-muted">{{ $t('pin.loading_clients') }}</p>
           </div>
 
-          <!-- 客户端列表 -->
+          <!-- Client list -->
           <div id="client-list" v-else-if="clients && clients.length > 0" class="client-list-container">
             <div class="table-responsive">
               <table class="table table-hover table-bordered align-middle mb-0">
@@ -200,7 +200,7 @@
                     </td>
                     <td class="text-center">
                       <div class="btn-toolbar justify-content-center" role="toolbar">
-                        <!-- 编辑模式按钮 -->
+                        <!-- Edit mode buttons -->
                         <template v-if="!editingStates[client.uuid]">
                           <button
                             class="btn btn-sm btn-outline-primary me-1"
@@ -211,7 +211,7 @@
                             <i class="fas fa-edit me-1"></i> {{ $t('_common.edit') }}
                           </button>
                         </template>
-                        <!-- 保存/取消按钮 -->
+                        <!-- Save/cancel buttons -->
                         <template v-else>
                           <button
                             class="btn btn-sm btn-success me-1"
@@ -231,7 +231,7 @@
                             <i class="fas fa-times me-1"></i> {{ $t('_common.cancel') }}
                           </button>
                         </template>
-                        <!-- 删除按钮 -->
+                        <!-- Delete button -->
                         <button
                           class="btn btn-sm btn-outline-danger"
                           @click="handleDelete(client)"
@@ -242,7 +242,7 @@
                           <i v-else class="fas fa-trash me-1"></i> {{ $t('_common.delete') }}
                         </button>
                       </div>
-                      <!-- 未保存更改提示 -->
+                      <!-- Unsaved changes hint -->
                       <div
                         v-if="editingStates[client.uuid] && hasUnsavedChanges(client.uuid)"
                         class="text-warning small mt-2"
@@ -255,7 +255,7 @@
               </table>
             </div>
           </div>
-          <!-- 空状态 -->
+          <!-- Empty state -->
           <div v-else-if="!loading" class="list-group list-group-flush list-group-item-light">
             <div class="list-group-item p-5 text-center">
               <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
@@ -267,7 +267,7 @@
         </div>
       </div>
 
-      <!-- 删除确认对话框 -->
+      <!-- Delete confirmation dialog -->
       <Transition name="fade">
         <div v-if="clientToDelete" class="delete-client-overlay" @click.self="clientToDelete = null">
           <div class="delete-client-modal">
@@ -427,7 +427,7 @@ watch(clients, initTooltips, { deep: true })
   background-color: rgba(255, 193, 7, 0.1) !important;
 }
 
-/* Delete Client Modal - 使用 ScanResultModal 样式 */
+/* Delete Client Modal - reuses ScanResultModal styles */
 .delete-client-overlay {
   position: fixed;
   top: 0;
@@ -538,7 +538,7 @@ watch(clients, initTooltips, { deep: true })
   }
 }
 
-/* Vue 过渡动画 */
+/* Vue transition animations */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -549,7 +549,7 @@ watch(clients, initTooltips, { deep: true })
   opacity: 0;
 }
 
-/* 响应式优化 */
+/* Responsive optimizations */
 @media (max-width: 768px) {
   .btn-toolbar {
     flex-direction: column;

@@ -2,7 +2,7 @@
   <div class="form-group-enhanced">
     <label for="appImagePath" class="form-label-enhanced">{{ $t('apps.image') }}</label>
 
-    <!-- 使用桌面图片选项 -->
+    <!-- Use desktop image option -->
     <div class="form-check mb-3">
       <input
         type="checkbox"
@@ -14,7 +14,7 @@
       <label for="useDesktopImage" class="form-check-label">{{ $t('apps.use_desktop_image') }}</label>
     </div>
 
-    <!-- 图片路径输入 -->
+    <!-- Image path input -->
     <div v-if="!isDesktopImage" class="input-group">
       <input
         type="file"
@@ -33,7 +33,7 @@
         @dragleave="handleDragLeave"
         @dragover.prevent
         @drop.prevent.stop="handleDrop"
-        placeholder="选择图片文件或拖拽到此处"
+        placeholder="Select an image file or drag one here"
       />
       <button
         class="btn btn-outline-secondary"
@@ -45,19 +45,19 @@
       </button>
     </div>
 
-    <!-- 图片预览 -->
+    <!-- Image preview -->
     <div v-if="!isDesktopImage && imagePath" class="image-preview-container mt-3">
       <div class="image-preview">
-        <img :src="previewUrl" alt="图片预览" @error="handleImageError" />
+        <img :src="previewUrl" alt="Image preview" @error="handleImageError" />
       </div>
       <div class="image-preview-circle">
-        <img :src="previewUrl" alt="图片预览" @error="handleImageError" />
+        <img :src="previewUrl" alt="Image preview" @error="handleImageError" />
       </div>
     </div>
 
     <div class="field-hint">{{ $t('apps.image_desc') }}</div>
 
-    <!-- 封面查找器 -->
+    <!-- Cover finder -->
     <CoverFinder
       :visible="showCoverFinder"
       :search-term="appName"
@@ -106,21 +106,21 @@ export default {
   },
   methods: {
     /**
-     * 处理桌面图片选择变化
+     * Handle desktop image checkbox change
      */
     handleDesktopImageChange(event) {
       this.$emit('update-image', event.target.checked ? 'desktop' : '')
     },
 
     /**
-     * 更新图片路径
+     * Update image path
      */
     updateImagePath(event) {
       this.$emit('update-image', event.target.value)
     },
 
     /**
-     * 处理文件选择
+     * Handle file selection
      */
     async handleFileSelect(event) {
       const file = event.target.files[0]
@@ -130,16 +130,16 @@ export default {
     },
 
     /**
-     * 处理拖拽进入
+     * Handle drag enter
      */
     handleDragEnter(event) {
       event.preventDefault()
       this.dragCounter++
-      this.$emit('image-error', '杂鱼~快放进来呀~')
+      this.$emit('image-error', 'Drop the file here to upload')
     },
 
     /**
-     * 处理拖拽离开
+     * Handle drag leave
      */
     handleDragLeave(event) {
       event.preventDefault()
@@ -150,7 +150,7 @@ export default {
     },
 
     /**
-     * 处理拖拽放置
+     * Handle drop
      */
     async handleDrop(event) {
       event.preventDefault()
@@ -158,7 +158,7 @@ export default {
 
       const file = event.dataTransfer.files[0]
       if (!file) {
-        this.$emit('image-error', '其他地方不可以！')
+        this.$emit('image-error', 'Please drop the file inside the input area')
         return
       }
 
@@ -166,7 +166,7 @@ export default {
     },
 
     /**
-     * 处理文件上传
+     * Handle file upload
      */
     async processFile(file) {
       const validation = validateFile(file)
@@ -176,18 +176,18 @@ export default {
       }
 
       try {
-        this.$emit('image-error', '正在上传图片...')
+        this.$emit('image-error', 'Uploading image...')
         const path = await this.uploadImageToSunshine(file)
         this.$emit('update-image', path)
         this.$emit('image-error', '')
       } catch (error) {
-        console.error('上传图片失败:', error)
-        this.$emit('image-error', `上传图片失败: ${error.message}`)
+        console.error('Failed to upload image:', error)
+        this.$emit('image-error', `Failed to upload image: ${error.message}`)
       }
     },
 
     /**
-     * 上传图片到 Sunshine API
+     * Upload image to the Sunshine API
      */
     async uploadImageToSunshine(file) {
       const base64Data = await this.readFileAsBase64(file)
@@ -204,13 +204,13 @@ export default {
       }
 
       const result = await response.json()
-      console.log('✅ Sunshine API 上传成功，文件路径:', result.path)
+      console.log('✅ Sunshine API upload succeeded, file path:', result.path)
 
       return `${key}.png`
     },
 
     /**
-     * 读取文件为 Base64
+     * Read a file as Base64
      */
     readFileAsBase64(file) {
       return new Promise((resolve, reject) => {
@@ -222,7 +222,7 @@ export default {
     },
 
     /**
-     * 生成图片 key
+     * Generate the image key
      */
     generateImageKey() {
       const timestamp = Date.now()
@@ -231,39 +231,39 @@ export default {
     },
 
     /**
-     * 获取图片预览URL
+     * Get the image preview URL
      */
     getImagePreviewUrl() {
       return getImagePreviewUrl(this.imagePath)
     },
 
     /**
-     * 处理图片加载错误
+     * Handle image load error
      */
     handleImageError() {
-      this.$emit('image-error', '图片加载失败，请检查文件路径')
+      this.$emit('image-error', 'Failed to load image; please check the file path')
     },
 
     /**
-     * 打开封面查找器
+     * Open the cover finder
      */
     openCoverFinder() {
       if (!this.appName) {
-        this.$emit('image-error', '请先输入应用名称')
+        this.$emit('image-error', 'Please enter the application name first')
         return
       }
       this.showCoverFinder = true
     },
 
     /**
-     * 关闭封面查找器
+     * Close the cover finder
      */
     closeCoverFinder() {
       this.showCoverFinder = false
     },
 
     /**
-     * 处理封面选择
+     * Handle cover selection
      */
     handleCoverSelected(coverData) {
       this.$emit('update-image', coverData.path)
@@ -271,14 +271,14 @@ export default {
     },
 
     /**
-     * 处理封面加载状态
+     * Handle cover loading state
      */
     handleCoverLoading(loading) {
       this.coverLoading = loading
     },
 
     /**
-     * 处理封面错误
+     * Handle cover error
      */
     handleCoverError(error) {
       this.$emit('image-error', error)
@@ -371,13 +371,13 @@ export default {
   cursor: not-allowed;
 }
 
-/* 拖拽状态样式 */
+/* Drag state styles */
 .form-control-enhanced[data-dragging='true'] {
   border-color: #0d6efd;
   background-color: #e7f1ff;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .input-group {
     flex-direction: column;

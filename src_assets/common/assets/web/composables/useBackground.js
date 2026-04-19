@@ -22,7 +22,7 @@ const loadImage = (imageUrl) =>
   new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('图片加载失败'))
+    img.onerror = () => reject(new Error('Failed to load image'))
     img.src = imageUrl
   })
 
@@ -112,7 +112,7 @@ const analyzeImageColors = (img) => {
         }
       }
     } catch {
-      // 使用主要颜色
+      // Use the dominant color
     }
 
     const [r, g, b] = selectedColor
@@ -182,7 +182,7 @@ const setTextColorTheme = (colorInfo) => {
 }
 
 /**
- * 背景图片管理组合式函数
+ * Background image management composable
  */
 export function useBackground(options = {}) {
   const {
@@ -202,7 +202,7 @@ export function useBackground(options = {}) {
         const colorInfo = await detectImageColorInfo(imageUrl)
         setTextColorTheme(colorInfo)
       } catch {
-        // 静默失败
+        // Silent failure
       }
     }
   }
@@ -214,7 +214,7 @@ export function useBackground(options = {}) {
       const colorInfo = await detectImageColorInfo(currentBg)
       setTextColorTheme(colorInfo)
     } catch {
-      // 静默失败
+      // Silent failure
     }
   }
 
@@ -229,7 +229,7 @@ export function useBackground(options = {}) {
         try {
           localStorage.setItem(storageKey, imageData)
         } catch {
-          throw new Error('图片太大，无法存储。请选择更小的图片或降低图片质量。')
+          throw new Error('Image is too large to store. Please select a smaller image or lower the quality.')
         }
       } else {
         throw error
@@ -266,12 +266,12 @@ export function useBackground(options = {}) {
         img.onload = () => {
           const { width, height } = calculateResizedDimensions(img.width, img.height)
           const result = compressWithQuality(img, width, height, initialQuality)
-          result ? resolve(result) : reject(new Error('图片太大，无法存储。请选择更小的图片。'))
+          result ? resolve(result) : reject(new Error('Image is too large to store. Please select a smaller image.'))
         }
-        img.onerror = () => reject(new Error('图片加载失败'))
+        img.onerror = () => reject(new Error('Failed to load image'))
         img.src = event.target.result
       }
-      reader.onerror = () => reject(new Error('文件读取失败'))
+      reader.onerror = () => reject(new Error('Failed to read file'))
       reader.readAsDataURL(file)
     })
 
@@ -294,7 +294,7 @@ export function useBackground(options = {}) {
     try {
       await saveBackground(await compressImage(file))
     } catch (error) {
-      onError?.(error) ?? alert(error.message || '处理图片时发生错误')
+      onError?.(error) ?? alert(error.message || 'An error occurred while processing the image')
     }
   }
 
@@ -314,7 +314,7 @@ export function useBackground(options = {}) {
     return setBackground(defaultBackground)
   }
 
-  // 监听主题切换
+  // Listen for theme changes
   if (typeof document !== 'undefined') {
     const handleThemeChange = () => setTimeout(recheckBackgroundBrightness, 100)
     const observerConfig = { attributes: true, attributeFilter: ['data-bs-theme'] }

@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { loadAutoTheme, setStoredTheme, setTheme, showActiveTheme, getPreferredTheme } from '../../utils/theme.js'
 
-// 处理主题切换
+// Handle theme change
 const handleThemeChange = (theme) => {
   setStoredTheme(theme)
   setTheme(theme)

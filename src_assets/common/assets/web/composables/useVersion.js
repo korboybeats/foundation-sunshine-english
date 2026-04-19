@@ -6,7 +6,7 @@ import { trackEvents } from '../config/firebase.js'
 const GITHUB_API_BASE = 'https://api.github.com/repos/qiin2333/Sunshine/releases'
 
 /**
- * 解析 Markdown 内容
+ * Parse Markdown content
  */
 const parseMarkdown = (text) => {
   if (!text) return ''
@@ -15,7 +15,7 @@ const parseMarkdown = (text) => {
 }
 
 /**
- * 安全获取 GitHub 数据
+ * Safely fetch data from GitHub
  */
 const fetchGitHub = async (url) => {
   try {
@@ -29,7 +29,7 @@ const fetchGitHub = async (url) => {
 }
 
 /**
- * 将配置值转换为布尔值
+ * Convert a config value to a boolean
  */
 const toBoolean = (value) => {
   if (typeof value === 'string') {
@@ -39,7 +39,7 @@ const toBoolean = (value) => {
 }
 
 /**
- * 版本管理组合式函数
+ * Version management composable
  */
 export function useVersion() {
   const version = ref(null)
@@ -48,7 +48,7 @@ export function useVersion() {
   const notifyPreReleases = ref(false)
   const loading = ref(true)
 
-  // 计算属性
+  // Computed properties
   const installedVersionNotStable = computed(() => 
     githubVersion.value?.isLessThan?.(version.value) ?? false
   )
@@ -77,7 +77,7 @@ export function useVersion() {
   )
 
   /**
-   * 获取版本信息
+   * Fetch version information
    */
   const fetchVersions = async (config) => {
     loading.value = true
@@ -86,7 +86,7 @@ export function useVersion() {
       notifyPreReleases.value = toBoolean(config.notify_pre_releases)
       version.value = new SunshineVersion(null, config.version)
       
-      // 并行获取 GitHub 版本信息
+      // Fetch GitHub version info in parallel
       const [latestData, releases] = await Promise.all([
         fetchGitHub(`${GITHUB_API_BASE}/latest`),
         fetchGitHub(GITHUB_API_BASE)
@@ -103,7 +103,7 @@ export function useVersion() {
         }
       }
 
-      // 记录版本检查事件
+      // Record the version-check event
       if (githubVersion.value && version.value) {
         trackEvents.versionChecked(version.value.version, githubVersion.value.version)
       }

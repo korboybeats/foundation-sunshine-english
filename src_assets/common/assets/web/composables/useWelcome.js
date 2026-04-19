@@ -1,7 +1,7 @@
 import { ref, reactive, computed } from 'vue'
 
 /**
- * 欢迎页面组合式函数
+ * Welcome page composable
  */
 export function useWelcome() {
   const error = ref(null)
@@ -51,7 +51,7 @@ export function useWelcome() {
           window.location.href = '/'
         }, 2000)
       } else {
-        // 如果服务器返回了错误消息，使用它；否则使用翻译键
+        // If the server returned an error message use it; otherwise use the translation key
         error.value = result.error || 'welcome.server_error'
       }
     } catch (err) {

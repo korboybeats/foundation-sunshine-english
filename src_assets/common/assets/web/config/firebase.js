@@ -1,4 +1,4 @@
-// Firebase配置和初始化
+// Firebase configuration and initialization
 import { initializeApp } from 'firebase/app'
 import { getAnalytics, logEvent } from 'firebase/analytics'
 
@@ -20,7 +20,7 @@ export function initFirebase() {
     analytics = getAnalytics(app)
     return { app, analytics }
   } catch (error) {
-    console.error('Firebase 初始化失败:', error)
+    console.error('Firebase initialization failed:', error)
     return null
   }
 }
@@ -28,7 +28,7 @@ export function initFirebase() {
 export function trackEvent(eventName, params = {}) {
   if (!analytics) return
 
-  // 处理参数：数组转字符串，截断过长值
+  // Process parameters: convert arrays to strings, truncate values that are too long
   const sanitized = Object.fromEntries(
     Object.entries(params).map(([k, v]) => {
       let val = Array.isArray(v) ? v.join(', ') : typeof v === 'object' && v ? JSON.stringify(v) : v
@@ -40,7 +40,7 @@ export function trackEvent(eventName, params = {}) {
   try {
     logEvent(analytics, eventName, sanitized)
   } catch (error) {
-    console.error('记录事件失败:', error)
+    console.error('Failed to log event:', error)
   }
 }
 

@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 /**
- * 设置向导组合式函数
+ * Setup wizard composable
  */
 export function useSetupWizard() {
   const showSetupWizard = ref(false)
@@ -9,11 +9,11 @@ export function useSetupWizard() {
   const displayDevices = ref([])
   const hasLocale = ref(false)
 
-  // 检查是否需要显示设置向导
+  // Check whether the setup wizard needs to be shown
   const checkSetupWizard = (config) => {
-    const isFirstTime = config.setup_wizard_completed == true || 
+    const isFirstTime = config.setup_wizard_completed == true ||
                        config.setup_wizard_completed == 'true'
-    
+
     if (!isFirstTime) {
       showSetupWizard.value = true
       adapters.value = config.adapters || []
@@ -24,10 +24,10 @@ export function useSetupWizard() {
     return false
   }
 
-  // 设置完成回调
+  // Setup completion callback
   const onSetupComplete = (config) => {
-    console.log('设置完成:', config)
-    // 用户点击"配置应用程序"按钮后会自动跳转到 /apps
+    console.log('Setup complete:', config)
+    // After the user clicks "Configure applications" they will be automatically redirected to /apps
   }
 
   return {

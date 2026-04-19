@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 const LOG_REGEX = /(\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}]):\s/g
 
 /**
- * 日志管理组合式函数
+ * Logs management composable
  */
 export function useLogs() {
   const logs = ref(null)

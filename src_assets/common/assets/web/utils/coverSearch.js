@@ -1,24 +1,24 @@
 /**
- * 封面搜索工具模块
- * 提供统一的IGDB和Steam封面搜索功能
+ * Cover search utility module
+ * Provides unified IGDB and Steam cover search functionality
  */
 
 import { searchSteamCovers } from './steamApi.js'
 
-// 共享缓存（模块级别，避免重复创建）
+// Shared caches (module-level, avoids repeated creation)
 const bucketCache = new Map()
 const gameCache = new Map()
 
-// IGDB 相关常量
+// IGDB-related constants
 const IGDB_BASE_URL = 'https://lizardbyte.github.io/GameDB'
 const IGDB_IMAGE_URL = 'https://images.igdb.com/igdb/image/upload/t_cover_big_2x'
 
-// 缓存 Tauri 环境检测结果
+// Cached Tauri environment detection result
 let _isTauriEnv = null
 
 /**
- * 检测是否在 Tauri 环境中
- * @returns {boolean} 是否在 Tauri 环境
+ * Detect whether running inside the Tauri environment
+ * @returns {boolean} Whether running in Tauri
  */
 function isTauriEnv() {
   if (_isTauriEnv === null) {
@@ -28,19 +28,19 @@ function isTauriEnv() {
 }
 
 /**
- * 构建代理 URL（用于绕过 CORS 限制）
- * @param {string} url 原始 URL
- * @returns {string} 代理 URL 或原始 URL
+ * Build a proxy URL (used to bypass CORS restrictions)
+ * @param {string} url Original URL
+ * @returns {string} Proxy URL or the original URL
  */
 function buildProxyUrl(url) {
   return isTauriEnv() ? `/_proxy/?url=${encodeURIComponent(url)}` : url
 }
 
 /**
- * 获取搜索bucket（用于IGDB搜索）
- * 注意：IGDB bucket 只支持英文字母和数字，中文等非ASCII字符会返回 '@'
- * @param {string} name 应用名称
- * @returns {string} bucket标识符
+ * Get the search bucket (used for IGDB search)
+ * Note: IGDB buckets only support ASCII letters and digits; non-ASCII characters such as CJK return '@'
+ * @param {string} name Application name
+ * @returns {string} Bucket identifier
  */
 export function getSearchBucket(name) {
   const bucket = name
@@ -51,34 +51,34 @@ export function getSearchBucket(name) {
 }
 
 /**
- * 检查搜索词是否适合IGDB搜索
- * IGDB的bucket系统只支持英文，中文等非ASCII字符无法正确匹配
- * @param {string} name 搜索名称
- * @returns {boolean} 是否适合IGDB搜索
+ * Check whether the search term is suitable for IGDB search
+ * The IGDB bucket system only supports ASCII letters; non-ASCII characters such as CJK cannot be matched correctly
+ * @param {string} name Search name
+ * @returns {boolean} Whether suitable for IGDB search
  */
 function isValidForIGDB(name) {
   if (!name) return false
-  // 检查是否包含至少一个英文字母或数字
+  // Check whether it contains at least one ASCII letter or digit
   return /[a-zA-Z\d]/.test(name)
 }
 
-// 预编译正则表达式
+// Pre-compiled regular expressions
 const SEPARATOR_REGEX = /[:\-_''""]/g
 const WHITESPACE_REGEX = /\s+/g
 
 /**
- * 规范化搜索字符串
- * @param {string} str 原始字符串
- * @returns {string} 规范化后的字符串
+ * Normalize the search string
+ * @param {string} str Original string
+ * @returns {string} Normalized string
  */
 function normalizeSearchString(str) {
   return str.toLowerCase().replace(SEPARATOR_REGEX, ' ').replace(WHITESPACE_REGEX, ' ').trim()
 }
 
 /**
- * 生成字符串的bigrams集合
- * @param {string} str 输入字符串
- * @returns {Set<string>} bigrams集合
+ * Generate the bigrams set for a string
+ * @param {string} str Input string
+ * @returns {Set<string>} Set of bigrams
  */
 function getBigrams(str) {
   const bigrams = new Set()
@@ -90,10 +90,10 @@ function getBigrams(str) {
 }
 
 /**
- * 计算字符串相似度（Dice系数）
- * @param {string} str1 字符串1
- * @param {string} str2 字符串2
- * @returns {number} 相似度 0-1
+ * Calculate string similarity (Dice coefficient)
+ * @param {string} str1 String 1
+ * @param {string} str2 String 2
+ * @returns {number} Similarity 0-1
  */
 function calculateSimilarity(str1, str2) {
   const s1 = normalizeSearchString(str1)
@@ -114,31 +114,31 @@ function calculateSimilarity(str1, str2) {
 }
 
 /**
- * 检查是否匹配搜索词
- * @param {string} gameName 游戏名称
- * @param {string} searchTerm 搜索词
- * @returns {{match: boolean, score: number}} 匹配结果和分数
+ * Check whether a name matches the search term
+ * @param {string} gameName Game name
+ * @param {string} searchTerm Search term
+ * @returns {{match: boolean, score: number}} Match result and score
  */
 function matchesSearch(gameName, searchTerm) {
   const normalizedGame = normalizeSearchString(gameName)
   const normalizedSearch = normalizeSearchString(searchTerm)
 
-  // 完全匹配
+  // Exact match
   if (normalizedGame === normalizedSearch) {
     return { match: true, score: 1 }
   }
 
-  // 前缀匹配（高优先级）
+  // Prefix match (high priority)
   if (normalizedGame.startsWith(normalizedSearch)) {
     return { match: true, score: 0.95 }
   }
 
-  // 包含匹配
+  // Substring match
   if (normalizedGame.includes(normalizedSearch)) {
     return { match: true, score: 0.85 }
   }
 
-  // 单词匹配（搜索词的所有单词都在游戏名中）
+  // Word match (all words in the search term appear in the game name)
   const searchWords = normalizedSearch.split(' ').filter((w) => w.length > 1)
   if (searchWords.length > 0) {
     const gameWords = normalizedGame.split(' ')
@@ -148,7 +148,7 @@ function matchesSearch(gameName, searchTerm) {
     }
   }
 
-  // 相似度匹配
+  // Similarity match
   const similarity = calculateSimilarity(gameName, searchTerm)
   if (similarity > 0.5) {
     return { match: true, score: similarity * 0.7 }
@@ -158,11 +158,11 @@ function matchesSearch(gameName, searchTerm) {
 }
 
 /**
- * 带缓存的fetch函数
- * @param {Map} cache 缓存Map
- * @param {string} key 缓存键
- * @param {Function} fetchFn 获取数据的函数
- * @returns {Promise<any>} 数据
+ * Cached fetch helper
+ * @param {Map} cache Cache Map
+ * @param {string} key Cache key
+ * @param {Function} fetchFn Function that fetches the data
+ * @returns {Promise<any>} Data
  */
 async function fetchWithCache(cache, key, fetchFn) {
   const cached = cache.get(key)
@@ -173,11 +173,11 @@ async function fetchWithCache(cache, key, fetchFn) {
 }
 
 /**
- * 从封面URL提取hash并构建完整URL
- * @param {string} thumbUrl 缩略图URL
- * @param {string} size 图片尺寸
- * @param {string} ext 文件扩展名
- * @returns {string} 完整的图片URL
+ * Extract the hash from a cover URL and build the full URL
+ * @param {string} thumbUrl Thumbnail URL
+ * @param {string} size Image size
+ * @param {string} ext File extension
+ * @returns {string} Full image URL
  */
 function buildIGDBImageUrl(thumbUrl, size = 't_cover_big_2x', ext = 'png') {
   const lastSlash = thumbUrl.lastIndexOf('/')
@@ -187,13 +187,13 @@ function buildIGDBImageUrl(thumbUrl, size = 't_cover_big_2x', ext = 'png') {
 }
 
 /**
- * 搜索IGDB封面（单个结果，返回URL字符串）
- * @param {string} searchName 搜索名称
- * @param {string} bucket bucket标识符
- * @returns {Promise<string>} 封面URL，未找到返回空字符串
+ * Search IGDB cover (single result, returns URL string)
+ * @param {string} searchName Search name
+ * @param {string} bucket Bucket identifier
+ * @returns {Promise<string>} Cover URL, or empty string if not found
  */
 export async function searchIGDBCover(searchName, bucket) {
-  // 检查搜索词是否适合IGDB搜索
+  // Check whether the search term is suitable for IGDB search
   if (!isValidForIGDB(searchName)) {
     return ''
   }
@@ -232,24 +232,24 @@ export async function searchIGDBCover(searchName, bucket) {
 
     return buildIGDBImageUrl(game.cover.url)
   } catch (error) {
-    console.warn(`搜索IGDB封面失败: ${searchName}`, error)
+    console.warn(`Failed to search IGDB cover: ${searchName}`, error)
     return ''
   }
 }
 
 /**
- * 搜索IGDB封面（多个结果，返回数组）
- * @param {string} name 应用名称
- * @param {AbortSignal} signal 可选的AbortSignal用于取消请求
- * @param {number} maxResults 最大结果数量
- * @returns {Promise<Array>} 封面结果数组
+ * Search IGDB covers (multiple results, returns array)
+ * @param {string} name Application name
+ * @param {AbortSignal} signal Optional AbortSignal to cancel the request
+ * @param {number} maxResults Maximum number of results
+ * @returns {Promise<Array>} Cover result array
  */
 export async function searchIGDBCovers(name, signal = null, maxResults = 20) {
   if (!name) return []
 
-  // 检查搜索词是否适合IGDB搜索（IGDB只支持英文搜索）
+  // Check whether the search term is suitable for IGDB search (IGDB only supports ASCII search)
   if (!isValidForIGDB(name)) {
-    console.debug(`IGDB搜索跳过：搜索词 "${name}" 不包含英文字符`)
+    console.debug(`IGDB search skipped: search term "${name}" contains no ASCII characters`)
     return []
   }
 
@@ -260,7 +260,7 @@ export async function searchIGDBCovers(name, signal = null, maxResults = 20) {
       const url = `${IGDB_BASE_URL}/buckets/${bucket}.json`
       const response = await fetch(buildProxyUrl(url), { signal })
       if (!response.ok) {
-        // 404 表示该 bucket 不存在，这是正常情况，返回空对象
+        // 404 means the bucket does not exist, which is normal — return an empty object
         if (response.status === 404) {
           return {}
         }
@@ -269,7 +269,7 @@ export async function searchIGDBCovers(name, signal = null, maxResults = 20) {
       return response.json()
     })
 
-    // 使用改进的匹配算法，收集所有匹配项并按分数排序
+    // Use the improved matching algorithm; collect all matches and sort by score
     const matches = []
     const ids = Object.keys(maps)
     for (let i = 0; i < ids.length; i++) {
@@ -280,11 +280,11 @@ export async function searchIGDBCovers(name, signal = null, maxResults = 20) {
       }
     }
 
-    // 按分数降序排序，取前maxResults个
+    // Sort by score descending, take the top maxResults
     matches.sort((a, b) => b.score - a.score)
     const matchedIds = matches.slice(0, maxResults).map((m) => m.id)
 
-    // 并行获取游戏详情，使用缓存
+    // Fetch game details in parallel, using the cache
     const games = await Promise.all(
       matchedIds.map(async (id) => {
         return fetchWithCache(gameCache, id, async () => {
@@ -318,16 +318,16 @@ export async function searchIGDBCovers(name, signal = null, maxResults = 20) {
     if (error.name === 'AbortError') {
       throw error
     }
-    console.error('搜索IGDB封面失败:', error)
+    console.error('Failed to search IGDB covers:', error)
     return []
   }
 }
 
 /**
- * 搜索封面图片（单个结果，用于useApps.js）
- * 同时搜索IGDB和Steam，返回第一个找到的结果
- * @param {string} appName 应用名称
- * @returns {Promise<string>} 封面URL，未找到返回空字符串
+ * Search for cover image (single result, used by useApps.js)
+ * Searches IGDB and Steam at the same time and returns the first one found
+ * @param {string} appName Application name
+ * @returns {Promise<string>} Cover URL, or empty string if not found
  */
 export async function searchCoverImage(appName) {
   if (!appName) return ''
@@ -346,15 +346,15 @@ export async function searchCoverImage(appName) {
       ''
     )
   } catch (error) {
-    console.warn(`搜索封面失败: ${appName}`, error)
+    console.warn(`Failed to search cover: ${appName}`, error)
     return ''
   }
 }
 
 /**
- * 批量搜索封面图片
- * @param {Array} appList 应用列表
- * @returns {Promise<Array>} 带封面URL的应用列表
+ * Batch search cover images
+ * @param {Array} appList Application list
+ * @returns {Promise<Array>} Application list with cover URLs
  */
 export async function batchSearchCoverImages(appList) {
   const results = await Promise.allSettled(
@@ -367,10 +367,10 @@ export async function batchSearchCoverImages(appList) {
 }
 
 /**
- * 同时搜索IGDB和Steam封面（多个结果，用于CoverFinder.vue）
- * @param {string} name 应用名称
- * @param {AbortSignal} signal 可选的AbortSignal用于取消请求
- * @returns {Promise<{igdb: Array, steam: Array}>} 包含IGDB和Steam结果的对象
+ * Search both IGDB and Steam covers (multiple results, used by CoverFinder.vue)
+ * @param {string} name Application name
+ * @param {AbortSignal} signal Optional AbortSignal to cancel the request
+ * @returns {Promise<{igdb: Array, steam: Array}>} Object containing IGDB and Steam results
  */
 export async function searchAllCovers(name, signal = null) {
   if (!name) {
@@ -391,13 +391,13 @@ export async function searchAllCovers(name, signal = null) {
     if (error.name === 'AbortError') {
       throw error
     }
-    console.error('搜索封面失败:', error)
+    console.error('Failed to search covers:', error)
     return { igdb: [], steam: [] }
   }
 }
 
 /**
- * 清除缓存
+ * Clear caches
  */
 export function clearCache() {
   bucketCache.clear()

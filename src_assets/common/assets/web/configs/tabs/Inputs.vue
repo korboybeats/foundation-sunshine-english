@@ -12,7 +12,7 @@ const props = defineProps([
 
 const config = ref(props.config)
 
-// Tauri 环境下的 vmouse 驱动管理
+// vmouse driver management in Tauri
 const isTauri = ref(false)
 const vmouseStatus = ref({ installed: false, running: false, status_text: '' })
 const vmouseLoading = ref(false)
@@ -292,7 +292,7 @@ const vmouseStatusLabel = computed(() => {
       </div>
       <div class="form-text">{{ $t('config.virtual_mouse_desc') }}</div>
 
-      <!-- Tauri 环境：驱动管理面板 -->
+      <!-- Tauri environment: driver management panel -->
       <div v-if="isTauri" class="vmouse-panel mt-2">
         <div class="vmouse-panel-header">
           <div class="vmouse-status-indicator">
@@ -320,7 +320,7 @@ const vmouseStatusLabel = computed(() => {
         </div>
       </div>
 
-      <!-- 非 Tauri 环境：显示提示信息 -->
+      <!-- Non-Tauri environment: show informational message -->
       <div v-else class="vmouse-helper mt-2">
         <i class="fas fa-info-circle me-1 text-info"></i>
         <span>{{ $t('config.vmouse_note') }}</span>
@@ -343,7 +343,7 @@ const vmouseStatusLabel = computed(() => {
 </template>
 
 <style scoped>
-/* 非 Tauri 环境的提示信息 */
+/* Hint shown outside the Tauri environment */
 .vmouse-helper {
   display: flex;
   align-items: center;
@@ -360,7 +360,7 @@ const vmouseStatusLabel = computed(() => {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 驱动管理面板 */
+/* Driver management panel */
 .vmouse-panel {
   border-radius: 10px;
   border: 1px solid var(--bs-border-color);
@@ -380,7 +380,7 @@ const vmouseStatusLabel = computed(() => {
   border-color: rgba(var(--bs-primary-rgb), 0.5);
 }
 
-/* 面板头部 */
+/* Panel header */
 .vmouse-panel-header {
   display: flex;
   align-items: center;
@@ -393,7 +393,7 @@ const vmouseStatusLabel = computed(() => {
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* 状态指示器 */
+/* Status indicator */
 .vmouse-status-indicator {
   display: flex;
   align-items: center;
@@ -434,7 +434,7 @@ const vmouseStatusLabel = computed(() => {
   opacity: 0.85;
 }
 
-/* 刷新按钮 */
+/* Refresh button */
 .vmouse-refresh-btn {
   display: flex;
   align-items: center;
@@ -459,12 +459,12 @@ const vmouseStatusLabel = computed(() => {
   cursor: not-allowed;
 }
 
-/* 面板操作区 */
+/* Panel actions area */
 .vmouse-panel-body {
   padding: 0.6rem 0.85rem;
 }
 
-/* 操作按钮 */
+/* Action buttons */
 .vmouse-action-btn {
   display: inline-flex;
   align-items: center;
@@ -504,7 +504,7 @@ const vmouseStatusLabel = computed(() => {
   color: #fff;
 }
 
-/* 操作中 spinner */
+/* In-progress spinner */
 .vmouse-spinner {
   width: 14px;
   height: 14px;

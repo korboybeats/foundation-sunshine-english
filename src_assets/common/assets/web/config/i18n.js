@@ -4,13 +4,13 @@ import {createI18n} from "vue-i18n";
 import en from '../public/assets/locale/en.json'
 
 export default async function() {
-    // 先尝试从 /api/config 获取实时配置（会读取配置文件）
+    // First try to get the live configuration from /api/config (this reads the config file)
     let locale = "en";
     try {
         let config = await (await fetch("/api/config")).json();
         locale = config.locale ?? "en";
     } catch (e) {
-        // 如果失败，回退到 /api/configLocale（从内存读取）
+        // If that fails, fall back to /api/configLocale (read from memory)
         try {
             let r = await (await fetch("/api/configLocale")).json();
             locale = r.locale ?? "en";
@@ -32,12 +32,12 @@ export default async function() {
         console.error("Failed to download translations", e);
     }
     const i18n = createI18n({
-        legacy: false, // 使用 Composition API 模式
+        legacy: false, // Use Composition API mode
         locale: locale, // set locale
         fallbackLocale: 'en', // set fallback locale
         messages: messages,
-        globalInjection: true, // 允许在模板中使用 $t
-        warnHtmlMessage: false, // 禁用 HTML 消息警告（因为我们使用 v-html 来渲染受信任的翻译内容）
+        globalInjection: true, // Allow using $t in templates
+        warnHtmlMessage: false, // Disable HTML message warnings (we use v-html to render trusted translation content)
     })
     return i18n;
 }

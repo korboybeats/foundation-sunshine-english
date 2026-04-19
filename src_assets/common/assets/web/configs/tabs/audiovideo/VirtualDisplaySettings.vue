@@ -31,7 +31,7 @@ function removeResolution(index) {
 }
 
 function validateFps(value) {
-  // 支持整数和小数格式（如 60, 59.94, 29.97）
+  // Supports integers and decimals (e.g. 60, 59.94, 29.97)
   const pattern = /^\d+(\.\d+)?$/
   if (!pattern.test(value)) {
     return false
@@ -48,7 +48,7 @@ function addFps() {
   }
   
   if (!validateFps(value)) {
-    // 验证失败，清空输入但不显示错误（由HTML5 pattern验证处理）
+    // Validation failed: clear the input without showing an error (handled by HTML5 pattern validation)
     fpsIn.value = ''
     return
   }
@@ -132,7 +132,7 @@ function removeFps(index) {
           required
           pattern="\d+(\.\d+)?"
           class="form-control add-input add-input-fps"
-          placeholder="例如: 120 或 119.88"
+          placeholder="e.g. 120 or 119.88"
         />
         <button v-if="fps.length < MAX_FPS" class="btn btn-success add-btn" type="submit">
           <i class="fas fa-plus"></i>

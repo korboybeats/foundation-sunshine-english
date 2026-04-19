@@ -9,33 +9,33 @@ const props = defineProps(['platform', 'config', 'global_prep_cmd'])
 
 const config = ref(props.config)
 
-// 检查是否在 Tauri 环境中（通过 inject-script.js 注入）
+// Check whether running inside Tauri (injected via inject-script.js)
 const isTauri = computed(() => {
   return typeof window !== 'undefined' && window.__TAURI__?.core?.invoke
 })
 
-// 检查是否选择了 WGC
+// Check whether WGC is selected
 const isWGCSelected = computed(() => {
   return props.platform === 'windows' && config.value.capture === 'wgc'
 })
 
-// 检查是否选择了 AMD Display Capture
+// Check whether AMD Display Capture is selected
 const isAMDCaptureSelected = computed(() => {
   return props.platform === 'windows' && config.value.capture === 'amd'
 })
 
-// Sunshine 运行模式状态
+// Sunshine runtime mode state
 const isUserMode = ref(false)
 const isCheckingMode = ref(false)
 
 const showMessage = (message, type = 'info') => {
-  // 尝试使用 window.showToast（如果可用）
+  // Try window.showToast (if available)
   if (typeof window.showToast === 'function') {
     window.showToast(message, type)
     return
   }
 
-  // 尝试通过 postMessage 请求父窗口显示消息
+  // Try requesting the parent window to show a message via postMessage
   if (window.parent && window.parent !== window) {
     try {
       window.parent.postMessage(
@@ -49,11 +49,11 @@ const showMessage = (message, type = 'info') => {
       )
       return
     } catch (e) {
-      console.warn('无法通过 postMessage 发送消息:', e)
+      console.warn('Could not send message via postMessage:', e)
     }
   }
 
-  // 降级到 alert
+  // Fall back to alert
   if (type === 'error') {
     alert(message)
   } else {
@@ -61,7 +61,7 @@ const showMessage = (message, type = 'info') => {
   }
 }
 
-// 检查当前 Sunshine 运行模式
+// Check the current Sunshine runtime mode
 const checkSunshineMode = async () => {
   if (!isTauri.value) {
     return
@@ -72,15 +72,15 @@ const checkSunshineMode = async () => {
     const result = await window.__TAURI__.core.invoke('is_sunshine_running_in_user_mode')
     isUserMode.value = result === true
   } catch (error) {
-    console.error('检查 Sunshine 模式失败:', error)
-    // 如果检查失败，默认假设为服务模式
+    console.error('Failed to check Sunshine mode:', error)
+    // If the check fails, assume service mode by default
     isUserMode.value = false
   } finally {
     isCheckingMode.value = false
   }
 }
 
-// 切换 Sunshine 运行模式
+// Switch the Sunshine runtime mode
 const toggleSunshineMode = async () => {
   if (!isTauri.value) {
     showMessage(t('config.wgc_control_panel_only'), 'error')
@@ -91,11 +91,11 @@ const toggleSunshineMode = async () => {
     const msg = await window.__TAURI__.core.invoke('toggle_sunshine_mode')
     showMessage(msg || t('config.wgc_mode_switch_started'), 'success')
 
-    // 切换通过 UAC 提升的 PowerShell 在后台执行，需预留：UAC 确认 + net stop + taskkill + 启动。延迟后再检查，并做二次检查以修正中间状态。
+    // The switch runs in a UAC-elevated PowerShell in the background; allow time for UAC prompt + net stop + taskkill + startup. Delay before checking, then re-check to correct intermediate state.
     setTimeout(() => checkSunshineMode(), 6000)
     setTimeout(() => checkSunshineMode(), 11000)
   } catch (error) {
-    console.error('切换模式失败:', error)
+    console.error('Failed to switch mode:', error)
     showMessage(t('config.wgc_mode_switch_failed') + ': ' + (error.message || error), 'error')
   }
 }

@@ -2,7 +2,7 @@
   <div>
     <Navbar v-if="!showSetupWizard" />
 
-    <!-- 首次设置向导 -->
+    <!-- First-time setup wizard -->
     <SetupWizard
       v-if="showSetupWizard"
       :adapters="adapters"
@@ -11,7 +11,7 @@
       @setup-complete="onSetupComplete"
     />
 
-    <!-- 正常首页内容 -->
+    <!-- Normal home content -->
     <div v-if="!showSetupWizard" id="content" class="container">
       <div class="page-header mt-2 mb-4">
         <h1 class="page-title">
@@ -20,10 +20,10 @@
         <p class="page-subtitle">{{ $t('index.description') }}</p>
       </div>
 
-      <!-- 错误日志 -->
+      <!-- Error logs -->
       <ErrorLogs :fatal-logs="fatalLogs" />
 
-      <!-- 版本信息 -->
+      <!-- Version info -->
       <VersionCard
         :version="version"
         :github-version="githubVersion"
@@ -38,7 +38,7 @@
         :parsed-pre-release-body="parsedPreReleaseBody"
       />
 
-      <!-- 资源卡片 -->
+      <!-- Resource card -->
       <div class="my-4">
         <ResourceCard />
       </div>
@@ -58,7 +58,7 @@ import { useLogs } from '../composables/useLogs.js'
 import { useSetupWizard } from '../composables/useSetupWizard.js'
 import { trackEvents } from '../config/firebase.js'
 
-// 使用组合式函数
+// Use the composables
 const {
   version,
   githubVersion,
@@ -78,7 +78,7 @@ const { fatalLogs, fetchLogs } = useLogs()
 
 const { showSetupWizard, adapters, displayDevices, hasLocale, checkSetupWizard, onSetupComplete } = useSetupWizard()
 
-// 上报显卡信息
+// Report GPU info
 const reportGPUInfo = (config) => {
   try {
     const adapters = config.adapters || []
@@ -94,13 +94,13 @@ const reportGPUInfo = (config) => {
 
     trackEvents.gpuReported(gpuInfo)
   } catch (error) {
-    console.error('上报显卡信息失败:', error)
+    console.error('Failed to report GPU info:', error)
   }
 }
 
-// 初始化
+// Initialization
 onMounted(async () => {
-  // 记录页面访问
+  // Record page view
   trackEvents.pageView('home')
 
   try {
@@ -110,23 +110,23 @@ onMounted(async () => {
       reportGPUInfo(config)
     }, 1000)
 
-    // 检查是否需要显示设置向导
+    // Check whether the setup wizard needs to be shown
     if (checkSetupWizard(config)) {
       return
     }
 
-    // 获取版本信息
+    // Fetch version info
     await fetchVersions(config)
 
-    // 获取日志
+    // Fetch logs
     await fetchLogs()
 
-    // 更新页面标题
+    // Update the page title
     if (version.value) {
       document.title += ` Ver ${version.value.version}`
     }
   } catch (e) {
-    // 在预览模式下，API 不可用是正常的，只记录警告
+    // In preview mode the API may not be available, so only log a warning
     if (e?.message?.includes('JSON') || e?.message?.includes('<!DOCTYPE')) {
       console.warn('API not available in preview mode:', e.message)
     } else {
