@@ -168,6 +168,43 @@ function Invoke-UpstreamInstaller([string]$InstallerPath) {
 # ---------------------------------------------------------------------------
 # 3. Apply English overlay
 # ---------------------------------------------------------------------------
+function Stop-SunshineProcesses {
+    # Upstream installer auto-starts SunshineService and may launch sunshine.exe.
+    # We must stop them before overlaying our English binary or the copy fails
+    # with 'file in use'.
+    Write-Log "Stopping Sunshine service + processes (so we can overlay the binary)..."
+    $svc = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -ne 'Stopped') {
+        try {
+            Stop-Service -Name "SunshineService" -Force -ErrorAction Stop
+            Write-Log "  SunshineService stopped."
+            $script:RestartSunshineService = $true
+        } catch {
+            Write-Log "  WARN: failed to stop SunshineService: $($_.Exception.Message)"
+        }
+    }
+    Get-Process -Name "sunshine", "sunshine-gui" -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            Stop-Process -Id $_.Id -Force -ErrorAction Stop
+            Write-Log "  Killed $($_.Name) (PID $($_.Id))"
+        } catch {
+            Write-Log "  WARN: failed to kill $($_.Name) (PID $($_.Id)): $($_.Exception.Message)"
+        }
+    }
+    Start-Sleep -Milliseconds 1500
+}
+
+function Restart-SunshineService {
+    if (-not $script:RestartSunshineService) { return }
+    Write-Log "Restarting SunshineService..."
+    try {
+        Start-Service -Name "SunshineService" -ErrorAction Stop
+        Write-Log "  SunshineService restarted."
+    } catch {
+        Write-Log "  WARN: failed to restart SunshineService: $($_.Exception.Message). Start manually if needed."
+    }
+}
+
 function Copy-Overlay {
     if (-not (Test-Path $OverlayDir)) {
         Abort-Install "Overlay directory not found: $OverlayDir"
@@ -175,6 +212,8 @@ function Copy-Overlay {
     if (-not (Test-Path $InstallDir)) {
         Abort-Install "Install directory not found: $InstallDir (upstream install may have failed silently)"
     }
+
+    Stop-SunshineProcesses
 
     Write-Log "Copying English overlay $OverlayDir -> $InstallDir"
     $count = 0
@@ -255,6 +294,7 @@ try {
     Copy-Overlay
     Install-Vmouse
     Set-VersionKey
+    Restart-SunshineService
 
     Write-Log "=== Install complete ==="
     exit 0
