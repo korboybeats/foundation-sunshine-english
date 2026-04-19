@@ -164,6 +164,38 @@ $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path $manifestPath -Encoding 
 Write-Host "Manifest: $manifestPath"
 Get-Content $manifestPath
 
+Write-Step "Fetching English-default sunshine-gui.exe from korboybeats/sunshine-control-panel"
+
+# Fetch the latest sunshine-gui.exe from our forked GUI repo. This GUI defaults
+# to English (vs the upstream Chinese default) so the right-click tray menu and
+# main window come up in English without the user having to find the Chinese
+# language picker first.
+try {
+    $guiAsset = gh release view --repo korboybeats/sunshine-control-panel --json assets `
+        | ConvertFrom-Json `
+        | Select-Object -ExpandProperty assets `
+        | Where-Object { $_.name -like "sunshine-gui*.exe" } `
+        | Select-Object -First 1
+
+    if ($guiAsset) {
+        $guiDest = Join-Path $OverlayDir "assets\gui\sunshine-gui.exe"
+        $guiDestDir = Split-Path -Parent $guiDest
+        if (-not (Test-Path $guiDestDir)) {
+            New-Item -ItemType Directory -Force -Path $guiDestDir | Out-Null
+        }
+        gh release download --repo korboybeats/sunshine-control-panel `
+            --pattern $guiAsset.name `
+            --output $guiDest `
+            --clobber
+        $guiSize = (Get-Item $guiDest).Length
+        Write-Host "  + assets\gui\sunshine-gui.exe ($([math]::Round($guiSize / 1MB, 1)) MB)"
+    } else {
+        Write-Warning "No sunshine-gui*.exe asset found in korboybeats/sunshine-control-panel latest release; skipping GUI overlay."
+    }
+} catch {
+    Write-Warning "Failed to fetch sunshine-gui.exe: $($_.Exception.Message). Skipping GUI overlay (the upstream Chinese GUI will remain)."
+}
+
 Write-Step "Cleanup"
 Remove-Item -Recurse -Force $WorkDir
 Write-Host "Removed work directory."

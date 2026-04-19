@@ -53,6 +53,7 @@ Source: "install.ps1"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
 Source: "build\overlay\sunshine.exe";          DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
 Source: "build\overlay\assets\web\*";          DestDir: "{tmp}\overlay\assets\web";     Flags: ignoreversion recursesubdirs createallsubdirs deleteafterinstall
 Source: "build\overlay\scripts\vmouse\*.bat";  DestDir: "{tmp}\overlay\scripts\vmouse"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist
+Source: "build\overlay\assets\gui\sunshine-gui.exe"; DestDir: "{tmp}\overlay\assets\gui"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist
 Source: "build\overlay\OVERLAY_MANIFEST.json"; DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
 
 [Run]
