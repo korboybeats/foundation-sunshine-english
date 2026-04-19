@@ -261,6 +261,29 @@ function Install-Vmouse {
 }
 
 # ---------------------------------------------------------------------------
+# 4b. Install ViGEmBus (virtual gamepad driver)
+# ---------------------------------------------------------------------------
+function Install-Gamepad {
+    # Upstream's install-gamepad.bat downloads and installs ViGEmBus from the
+    # nefarius release page. The upstream installer has a [Run] entry that
+    # invokes this script when the 'gamepad' component is selected, but in
+    # silent mode it's been observed to skip. We re-run it explicitly here.
+    # The script is idempotent: if ViGEmBus >= 1.17 is already installed, it
+    # exits cleanly.
+    $script = Join-Path $InstallDir "scripts\install-gamepad.bat"
+    if (-not (Test-Path $script)) {
+        Write-Log "install-gamepad.bat not found - skipping ViGEmBus install."
+        return
+    }
+    Write-Log "Installing ViGEmBus (virtual gamepad driver): $script"
+    $proc = Start-Process -FilePath $script -WorkingDirectory (Split-Path -Parent $script) -Wait -PassThru -NoNewWindow
+    Write-Log "install-gamepad.bat exit code: $($proc.ExitCode)"
+    if ($proc.ExitCode -ne 0) {
+        Write-Log "WARNING: ViGEmBus install exit code $($proc.ExitCode). Sunshine streaming works; gamepad input from clients will be unavailable until ViGEmBus is installed. Re-run $script as admin to retry, or download from https://github.com/nefarius/ViGEmBus/releases"
+    }
+}
+
+# ---------------------------------------------------------------------------
 # 5. Update wrapper version registry key
 # ---------------------------------------------------------------------------
 function Set-VersionKey {
@@ -293,6 +316,7 @@ try {
     Invoke-UpstreamInstaller -InstallerPath $upstream
     Copy-Overlay
     Install-Vmouse
+    Install-Gamepad
     Set-VersionKey
     Restart-SunshineService
 
