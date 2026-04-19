@@ -1,15 +1,15 @@
-; ============================================================================
-; overlay_apply.iss - Verify English overlay landed correctly
-;
-; The actual overlay file copying is handled by Inno's [Files] section using
-; standard Source/DestDir directives with the ignoreversion flag — those run
-; automatically as part of normal Inno installation.
-;
-; This module provides a post-overlay sanity check that the marker files
-; (sunshine.exe, assets/web/index.html) actually exist in {app} where we
-; expect them. If they don't, something went wrong with the upstream install
-; (probably a different default install dir) and the wrapper failed silently.
-; ============================================================================
+// ============================================================================
+// overlay_apply.iss - Verify English overlay landed correctly
+//
+// The actual overlay file copying is handled by Inno's [Files] section using
+// standard Source/DestDir directives with the ignoreversion flag — those run
+// automatically as part of normal Inno installation.
+//
+// This module provides a post-overlay sanity check that the marker files
+// (sunshine.exe, assets/web/index.html) actually exist in {app} where we
+// expect them. If they don't, something went wrong with the upstream install
+// (probably a different default install dir) and the wrapper failed silently.
+// ============================================================================
 
 var
   g_OverlayApplyErrorMsg: String;

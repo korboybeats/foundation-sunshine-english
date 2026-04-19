@@ -1,15 +1,15 @@
-; ============================================================================
-; vmouse.iss - Post-install vmouse driver registration
-;
-; The upstream installer drops the vmouse driver files (.dll/.inf/.cat/.cer)
-; under {app}\scripts\vmouse\driver\ as part of its 'vmouse' component.
-; To actually REGISTER the driver with Windows (so it shows up as a HID device),
-; install-vmouse.bat must be run with admin privileges.
-;
-; The wrapper invokes this script if the user opted into the vmouse component.
-; Failure is non-fatal — we surface a soft warning at the finish screen but
-; don't roll back the install.
-; ============================================================================
+// ============================================================================
+// vmouse.iss - Post-install vmouse driver registration
+//
+// The upstream installer drops the vmouse driver files (.dll/.inf/.cat/.cer)
+// under {app}\scripts\vmouse\driver\ as part of its 'vmouse' component.
+// To actually REGISTER the driver with Windows (so it shows up as a HID device),
+// install-vmouse.bat must be run with admin privileges.
+//
+// The wrapper invokes this script if the user opted into the vmouse component.
+// Failure is non-fatal — we surface a soft warning at the finish screen but
+// don't roll back the install.
+// ============================================================================
 
 var
   g_VmouseInstallSucceeded: Boolean;

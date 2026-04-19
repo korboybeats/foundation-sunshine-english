@@ -1,9 +1,9 @@
-; ============================================================================
-; version_check.iss - Pre-install compatibility check
-;
-; Reads the wrapper's own version registry key (HKLM\SOFTWARE\SunshineEnglishEdition)
-; to detect upgrades vs fresh installs. Also verifies the platform is x64.
-; ============================================================================
+// ============================================================================
+// version_check.iss - Pre-install compatibility check
+//
+// Reads the wrapper's own version registry key (HKLM\SOFTWARE\SunshineEnglishEdition)
+// to detect upgrades vs fresh installs. Also verifies the platform is x64.
+// ============================================================================
 
 const
   REG_KEY_PATH = 'SOFTWARE\SunshineEnglishEdition';

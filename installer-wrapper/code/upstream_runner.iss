@@ -1,20 +1,20 @@
-; ============================================================================
-; upstream_runner.iss - Run the AlkaidLab installer silently
-;
-; Responsibilities:
-;   - Build /COMPONENTS argument from user's component selection
-;   - Invoke upstream installer with /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-;     /DIR="{app}" /COMPONENTS="..." /LOG="{tmp}\upstream-install.log"
-;   - Capture exit code; non-zero -> set g_UpstreamRunErrorMsg
-;   - Surface upstream's log path on failure
-;
-; Public procedures:
-;   function RunUpstreamInstaller(): Boolean;
-;
-; Public variables:
-;   g_UpstreamRunErrorMsg: String
-;   g_UpstreamLogPath:     String
-; ============================================================================
+// ============================================================================
+// upstream_runner.iss - Run the AlkaidLab installer silently
+//
+// Responsibilities:
+//   - Build /COMPONENTS argument from user's component selection
+//   - Invoke upstream installer with /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+//     /DIR="{app}" /COMPONENTS="..." /LOG="{tmp}\upstream-install.log"
+//   - Capture exit code; non-zero -> set g_UpstreamRunErrorMsg
+//   - Surface upstream's log path on failure
+//
+// Public procedures:
+//   function RunUpstreamInstaller(): Boolean;
+//
+// Public variables:
+//   g_UpstreamRunErrorMsg: String
+//   g_UpstreamLogPath:     String
+// ============================================================================
 
 var
   g_UpstreamRunErrorMsg: String;

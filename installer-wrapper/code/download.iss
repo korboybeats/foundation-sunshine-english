@@ -1,23 +1,23 @@
-; ============================================================================
-; download.iss - GitHub release fetch + verification
-;
-; Responsibilities:
-;   - Query GitHub API for AlkaidLab/foundation-sunshine latest release
-;   - Find the *WindowsInstaller.exe asset
-;   - Download with progress reporting via WizardForm.ProgressGauge
-;   - Verify SHA-256 against SHA256SUMS.txt from the same release
-;   - Retry 3x with exponential backoff (5s, 15s, 45s)
-;   - Cache successful downloads under {userappdata}\SunshineEnglishEdition\cache\
-;
-; Public procedures:
-;   function DownloadUpstreamInstaller(): Boolean;
-;     Returns True on success. On failure, sets g_DownloadErrorMsg.
-;
-; Public variables (read-only after DownloadUpstreamInstaller returns):
-;   g_UpstreamInstallerPath: String  - full path to downloaded .exe
-;   g_UpstreamReleaseTag:    String  - tag name of the release we fetched
-;   g_DownloadErrorMsg:      String  - human-readable failure description
-; ============================================================================
+// ============================================================================
+// download.iss - GitHub release fetch + verification
+//
+// Responsibilities:
+//   - Query GitHub API for AlkaidLab/foundation-sunshine latest release
+//   - Find the *WindowsInstaller.exe asset
+//   - Download with progress reporting via WizardForm.ProgressGauge
+//   - Verify SHA-256 against SHA256SUMS.txt from the same release
+//   - Retry 3x with exponential backoff (5s, 15s, 45s)
+//   - Cache successful downloads under {userappdata}\SunshineEnglishEdition\cache\
+//
+// Public procedures:
+//   function DownloadUpstreamInstaller(): Boolean;
+//     Returns True on success. On failure, sets g_DownloadErrorMsg.
+//
+// Public variables (read-only after DownloadUpstreamInstaller returns):
+//   g_UpstreamInstallerPath: String  - full path to downloaded .exe
+//   g_UpstreamReleaseTag:    String  - tag name of the release we fetched
+//   g_DownloadErrorMsg:      String  - human-readable failure description
+// ============================================================================
 
 const
   UPSTREAM_REPO = 'AlkaidLab/foundation-sunshine';
