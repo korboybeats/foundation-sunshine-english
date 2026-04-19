@@ -202,7 +202,7 @@ Source: "{#MySourceDir}\scripts\uninstall-gamepad.bat"; DestDir: "{app}\scripts"
 ; Virtual Mouse Driver scripts & files
 Source: "{#MySourceDir}\scripts\vmouse\install-vmouse.bat"; DestDir: "{app}\scripts\vmouse"; Flags: ignoreversion; Components: vmouse
 Source: "{#MySourceDir}\scripts\vmouse\uninstall-vmouse.bat"; DestDir: "{app}\scripts\vmouse"; Flags: ignoreversion; Components: vmouse
-Source: "{#MySourceDir}\scripts\vmouse\driver\*"; DestDir: "{app}\scripts\vmouse\driver"; Flags: ignoreversion recursesubdirs; Components: vmouse
+@VMOUSE_DRIVER_FILES_ENTRY@
 
 ; Optional diagnostic tools
 Source: "{#MySourceDir}\tools\dxgi-info.exe"; DestDir: "{app}\tools"; Flags: ignoreversion; Components: tools
