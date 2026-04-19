@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Foundation Sunshine — English Edition install logic.
+    Foundation Sunshine - English Edition install logic.
 
 .DESCRIPTION
     Invoked by the Inno Setup wrapper after its own [Files] section has
@@ -75,7 +75,7 @@ function Write-Log([string]$Message) {
     }
 }
 
-function Throw-Step([string]$Message) {
+function Abort-Install([string]$Message) {
     Write-Log "ERROR: $Message"
     throw $Message
 }
@@ -94,14 +94,14 @@ function Get-UpstreamInstaller {
     try {
         $release = Invoke-RestMethod -Uri "https://api.github.com/repos/AlkaidLab/foundation-sunshine/releases/latest" -Headers $headers -TimeoutSec 30
     } catch {
-        Throw-Step "Failed to query upstream release: $($_.Exception.Message)"
+        Abort-Install "Failed to query upstream release: $($_.Exception.Message)"
     }
 
     Write-Log "Upstream tag: $($release.tag_name)"
 
     $asset = $release.assets | Where-Object { $_.name -like "*WindowsInstaller.exe" } | Select-Object -First 1
     if (-not $asset) {
-        Throw-Step "No *WindowsInstaller.exe asset in upstream release $($release.tag_name)"
+        Abort-Install "No *WindowsInstaller.exe asset in upstream release $($release.tag_name)"
     }
 
     Write-Log "Found asset: $($asset.name) ($([math]::Round($asset.size / 1MB, 1)) MB)"
@@ -134,7 +134,7 @@ function Get-UpstreamInstaller {
         }
     }
 
-    Throw-Step "Failed to download upstream installer after $maxAttempts attempts."
+    Abort-Install "Failed to download upstream installer after $maxAttempts attempts."
 }
 
 # ---------------------------------------------------------------------------
@@ -161,7 +161,7 @@ function Invoke-UpstreamInstaller([string]$InstallerPath) {
     # 0 = success, 3010 = success-needs-reboot
     if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
         Write-Log "Upstream installer log: $upstreamLog"
-        Throw-Step "Upstream installer failed with exit code $($proc.ExitCode). See log: $upstreamLog"
+        Abort-Install "Upstream installer failed with exit code $($proc.ExitCode). See log: $upstreamLog"
     }
 }
 
@@ -170,10 +170,10 @@ function Invoke-UpstreamInstaller([string]$InstallerPath) {
 # ---------------------------------------------------------------------------
 function Copy-Overlay {
     if (-not (Test-Path $OverlayDir)) {
-        Throw-Step "Overlay directory not found: $OverlayDir"
+        Abort-Install "Overlay directory not found: $OverlayDir"
     }
     if (-not (Test-Path $InstallDir)) {
-        Throw-Step "Install directory not found: $InstallDir (upstream install may have failed silently)"
+        Abort-Install "Install directory not found: $InstallDir (upstream install may have failed silently)"
     }
 
     Write-Log "Copying English overlay $OverlayDir -> $InstallDir"
@@ -193,7 +193,7 @@ function Copy-Overlay {
     # Sanity check
     $marker = Join-Path $InstallDir "sunshine.exe"
     if (-not (Test-Path $marker)) {
-        Throw-Step "Overlay verification failed: $marker missing after copy."
+        Abort-Install "Overlay verification failed: $marker missing after copy."
     }
     Write-Log "Overlay verification OK."
 }
@@ -209,7 +209,7 @@ function Install-Vmouse {
 
     $script = Join-Path $InstallDir "scripts\vmouse\install-vmouse.bat"
     if (-not (Test-Path $script)) {
-        Write-Log "WARNING: install-vmouse.bat not found — vmouse component may not have been installed."
+        Write-Log "WARNING: install-vmouse.bat not found - vmouse component may not have been installed."
         return
     }
 
@@ -240,14 +240,14 @@ function Set-VersionKey {
 # Main
 # ---------------------------------------------------------------------------
 try {
-    Write-Log "=== Foundation Sunshine — English Edition install start ==="
+    Write-Log "=== Foundation Sunshine - English Edition install start ==="
     Write-Log "InstallDir:     $InstallDir"
     Write-Log "OverlayDir:     $OverlayDir"
     Write-Log "Components:     $Components"
     Write-Log "InstallVmouse:  $InstallVmouse"
 
     if (-not [Environment]::Is64BitOperatingSystem) {
-        Throw-Step "Foundation Sunshine requires 64-bit Windows."
+        Abort-Install "Foundation Sunshine requires 64-bit Windows."
     }
 
     $upstream = Get-UpstreamInstaller
