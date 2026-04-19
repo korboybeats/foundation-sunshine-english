@@ -38,6 +38,9 @@
 
 # build directories
 build/
+# but NOT the wrapper installer's build/ scripts dir
+!installer-wrapper/build/
+!installer-wrapper/build/**
 cmake-*/
 docs/doxyconfig*
 
