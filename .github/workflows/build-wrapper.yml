@@ -54,7 +54,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENGLISH_RELEASE_TAG: ${{ steps.resolve_tag.outputs.tag }}
         run: |
-          installer-wrapper/build/prepare_overlay.ps1 -ReleaseTag $env:ENGLISH_RELEASE_TAG
+          & "${{ github.workspace }}/installer-wrapper/build/prepare_overlay.ps1" -ReleaseTag $env:ENGLISH_RELEASE_TAG
 
       - name: Install Inno Setup
         shell: pwsh
