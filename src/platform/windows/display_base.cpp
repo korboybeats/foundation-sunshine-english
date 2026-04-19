@@ -1224,20 +1224,20 @@ namespace platf {
             BOOST_LOG(debug) << "[Display] Desktop Duplication test passed: " << device_name;
           }
           else {
-            BOOST_LOG(debug) << "[Display] 跳过 DXGI测试失败 不可用显示器: " << device_name;
+            BOOST_LOG(debug) << "[Display] Skipping unavailable display (DXGI test failed): " << device_name;
           }
         }
         else {
-          BOOST_LOG(debug) << "[Display] 跳过 None AttachedToDesktop 不可用显示器: " << device_name;
+          BOOST_LOG(debug) << "[Display] Skipping unavailable display (not AttachedToDesktop): " << device_name;
         }
 
         if (can_capture) {
           display_names.emplace_back(std::move(device_name));
-          BOOST_LOG(debug) << "[Display] 添加可用显示器: " << device_name;
+          BOOST_LOG(debug) << "[Display] Added available display: " << device_name;
         }
       }
     }
-    BOOST_LOG(debug) << "[Display] 显示器枚举完成，找到 " << display_names.size() << " 个可用显示器";
+    BOOST_LOG(debug) << "[Display] Display enumeration complete, found " << display_names.size() << " available display(s)";
     return display_names;
   }
 

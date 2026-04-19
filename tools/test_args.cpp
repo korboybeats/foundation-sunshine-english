@@ -1,7 +1,7 @@
 /**
  * @file tools/test_args.cpp
- * @brief 测试程序：输出所有命令行参数到日志文件
- * @note 此程序仅用于开发测试，不会被打包到发布版本中
+ * @brief Test program: write all command-line arguments to a log file
+ * @note This program is for development testing only and is not packaged in release builds
  */
 
 #include <iostream>
@@ -43,25 +43,25 @@ std::string get_current_time() {
 #ifdef _WIN32
 void print_user_info(std::ofstream& log) {
     log << "----------------------------------------\n";
-    log << "User Information (用户信息):\n";
-    
-    // 获取用户名
+    log << "User Information:\n";
+
+    // Get the user name
     char username[UNLEN + 1];
     DWORD username_len = UNLEN + 1;
     if (GetUserNameA(username, &username_len)) {
-        log << "  Username (用户名): " << username << "\n";
+        log << "  Username: " << username << "\n";
     } else {
-        log << "  Username (用户名): <Failed to get (获取失败)>\n";
+        log << "  Username: <Failed to get>\n";
     }
-    
-    // 获取计算机名
+
+    // Get the computer name
     char computer_name[MAX_COMPUTERNAME_LENGTH + 1];
     DWORD computer_name_len = MAX_COMPUTERNAME_LENGTH + 1;
     if (GetComputerNameA(computer_name, &computer_name_len)) {
-        log << "  Computer (计算机名): " << computer_name << "\n";
+        log << "  Computer: " << computer_name << "\n";
     }
-    
-    // 检查是否是管理员
+
+    // Check whether the user is an administrator
     BOOL is_admin = FALSE;
     PSID admin_group = NULL;
     SID_IDENTIFIER_AUTHORITY nt_authority = SECURITY_NT_AUTHORITY;
@@ -70,12 +70,12 @@ void print_user_info(std::ofstream& log) {
         CheckTokenMembership(NULL, admin_group, &is_admin);
         FreeSid(admin_group);
     }
-    log << "  Is Admin (是否管理员): " << (is_admin ? "Yes (是)" : "No (否)") << "\n";
-    
-    // 获取当前进程的令牌信息
+    log << "  Is Admin: " << (is_admin ? "Yes" : "No") << "\n";
+
+    // Get current process token information
     HANDLE token = NULL;
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-        // 获取用户 SID
+        // Get user SID
         DWORD token_user_size = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &token_user_size);
         if (token_user_size > 0) {
@@ -84,96 +84,96 @@ void print_user_info(std::ofstream& log) {
             if (GetTokenInformation(token, TokenUser, token_user, token_user_size, &token_user_size)) {
                 LPSTR sid_string = NULL;
                 if (ConvertSidToStringSidA(token_user->User.Sid, &sid_string)) {
-                    log << "  User SID (用户 SID): " << sid_string << "\n";
+                    log << "  User SID: " << sid_string << "\n";
                     LocalFree(sid_string);
                 }
             }
         }
-        
-        // 获取权限级别
+
+        // Get elevation level
         DWORD elevation_type_size = sizeof(TOKEN_ELEVATION_TYPE);
         TOKEN_ELEVATION_TYPE elevation_type;
         if (GetTokenInformation(token, TokenElevationType, &elevation_type,
                                 elevation_type_size, &elevation_type_size)) {
-            const char* elevation_str = "Unknown (未知)";
+            const char* elevation_str = "Unknown";
             switch (elevation_type) {
                 case TokenElevationTypeDefault:
-                    elevation_str = "Default (默认)";
+                    elevation_str = "Default";
                     break;
                 case TokenElevationTypeFull:
-                    elevation_str = "Full (Elevated) (完全/已提升)";
+                    elevation_str = "Full (Elevated)";
                     break;
                 case TokenElevationTypeLimited:
-                    elevation_str = "Limited (受限)";
+                    elevation_str = "Limited";
                     break;
             }
-            log << "  Elevation Type (权限提升类型): " << elevation_str << "\n";
+            log << "  Elevation Type: " << elevation_str << "\n";
         }
-        
-        // 检查是否以管理员身份运行
+
+        // Check whether the process is running elevated
         BOOL is_elevated = FALSE;
         DWORD is_elevated_size = sizeof(BOOL);
         if (GetTokenInformation(token, TokenElevation, &is_elevated,
                                is_elevated_size, &is_elevated_size)) {
-            log << "  Is Elevated (是否已提升权限): " << (is_elevated ? "Yes (是)" : "No (否)") << "\n";
+            log << "  Is Elevated: " << (is_elevated ? "Yes" : "No") << "\n";
         }
-        
+
         CloseHandle(token);
     }
-    
-    // 获取进程 ID
-    log << "  Process ID (进程 ID): " << GetCurrentProcessId() << "\n";
-    log << "  Thread ID (线程 ID): " << GetCurrentThreadId() << "\n";
-    
-    // 获取会话 ID
+
+    // Get process ID
+    log << "  Process ID: " << GetCurrentProcessId() << "\n";
+    log << "  Thread ID: " << GetCurrentThreadId() << "\n";
+
+    // Get session ID
     DWORD session_id = 0;
     if (ProcessIdToSessionId(GetCurrentProcessId(), &session_id)) {
-        log << "  Session ID (会话 ID): " << session_id << "\n";
+        log << "  Session ID: " << session_id << "\n";
     }
 }
 #else
 void print_user_info(std::ofstream& log) {
     log << "----------------------------------------\n";
-    log << "User Information (用户信息):\n";
-    
-    // 获取用户 ID 和组 ID
+    log << "User Information:\n";
+
+    // Get user ID and group ID
     uid_t uid = getuid();
     gid_t gid = getgid();
-    log << "  UID (用户 ID): " << uid << "\n";
-    log << "  GID (组 ID): " << gid << "\n";
-    
-    // 获取用户名
+    log << "  UID: " << uid << "\n";
+    log << "  GID: " << gid << "\n";
+
+    // Get user name
     struct passwd* pw = getpwuid(uid);
     if (pw) {
-        log << "  Username (用户名): " << pw->pw_name << "\n";
-        log << "  Home (主目录): " << pw->pw_dir << "\n";
+        log << "  Username: " << pw->pw_name << "\n";
+        log << "  Home: " << pw->pw_dir << "\n";
     }
-    
-    // 检查是否是 root
-    log << "  Is Root (是否 Root): " << (uid == 0 ? "Yes (是)" : "No (否)") << "\n";
-    
-    // 获取进程 ID
-    log << "  Process ID (进程 ID): " << getpid() << "\n";
+
+    // Check whether the user is root
+    log << "  Is Root: " << (uid == 0 ? "Yes" : "No") << "\n";
+
+    // Get process ID
+    log << "  Process ID: " << getpid() << "\n";
 }
 #endif
 
 int main(int argc, char* argv[]) {
-    // 获取可执行文件所在目录
+    // Get the directory containing the executable
     std::string log_file;
 #ifdef _WIN32
     char exe_path[MAX_PATH];
     DWORD path_len = GetModuleFileNameA(NULL, exe_path, MAX_PATH);
     if (path_len > 0 && path_len < MAX_PATH) {
-        // 找到最后一个反斜杠
+        // Find the last backslash
         char* last_slash = strrchr(exe_path, '\\');
         if (last_slash) {
-            *last_slash = '\0';  // 截断到目录
+            *last_slash = '\0';  // Truncate to directory
             log_file = std::string(exe_path) + "\\sunshine_test_args.log";
         } else {
-            log_file = "sunshine_test_args.log";  // 回退到当前目录
+            log_file = "sunshine_test_args.log";  // Fall back to the current directory
         }
     } else {
-        log_file = "sunshine_test_args.log";  // 回退到当前目录
+        log_file = "sunshine_test_args.log";  // Fall back to the current directory
     }
 #else
     char exe_path[PATH_MAX];
@@ -182,13 +182,13 @@ int main(int argc, char* argv[]) {
         exe_path[path_len] = '\0';
         char* last_slash = strrchr(exe_path, '/');
         if (last_slash) {
-            *last_slash = '\0';  // 截断到目录
+            *last_slash = '\0';  // Truncate to directory
             log_file = std::string(exe_path) + "/sunshine_test_args.log";
         } else {
-            log_file = "sunshine_test_args.log";  // 回退到当前目录
+            log_file = "sunshine_test_args.log";  // Fall back to the current directory
         }
     } else {
-        log_file = "sunshine_test_args.log";  // 回退到当前目录
+        log_file = "sunshine_test_args.log";  // Fall back to the current directory
     }
 #endif
 
@@ -198,39 +198,39 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // 写入分隔符和时间戳
+    // Write a separator and timestamp
     log << "\n";
     log << "========================================\n";
-    log << "Test Time (测试时间): " << get_current_time() << "\n";
+    log << "Test Time: " << get_current_time() << "\n";
     log << "========================================\n";
-    log << "Total Arguments (参数总数): " << argc << "\n";
-    log << "Executable (可执行文件): " << (argc > 0 ? argv[0] : "unknown") << "\n";
-    
-    // 打印用户权限信息
+    log << "Total Arguments: " << argc << "\n";
+    log << "Executable: " << (argc > 0 ? argv[0] : "unknown") << "\n";
+
+    // Print user privilege information
     print_user_info(log);
-    
+
     log << "----------------------------------------\n";
 
-    // 输出所有参数
+    // Print all arguments
     for (int i = 0; i < argc; i++) {
-        log << "Arg[" << i << "] (参数[" << i << "]): \"" << argv[i] << "\"\n";
+        log << "Arg[" << i << "]: \"" << argv[i] << "\"\n";
     }
 
     log << "----------------------------------------\n";
-    log << "Argument Analysis (参数分析):\n";
+    log << "Argument Analysis:\n";
 
-    // 检查是否有环境变量相关的参数
+    // Check for environment-variable-related arguments
     bool found_env_vars = false;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg.find("%SUNSHINE_") != std::string::npos) {
-            log << "  WARNING (警告): Found unexpanded environment variable in arg[" << i << "] (在参数[" << i << "] 中发现未展开的环境变量): " << arg << "\n";
+            log << "  WARNING: Found unexpanded environment variable in arg[" << i << "]: " << arg << "\n";
             found_env_vars = true;
         }
     }
 
     if (!found_env_vars) {
-        log << "  ✓ All environment variables appear to be expanded (所有环境变量已正确展开)\n";
+        log << "  All environment variables appear to be expanded\n";
     }
 
     log << "========================================\n";
@@ -238,9 +238,9 @@ int main(int argc, char* argv[]) {
 
     log.close();
 
-    // 同时输出到控制台（如果可用）
-    std::cout << "Arguments logged to (参数已记录到): " << log_file << std::endl;
-    std::cout << "Total arguments (参数总数): " << argc << std::endl;
+    // Also write to the console (if available)
+    std::cout << "Arguments logged to: " << log_file << std::endl;
+    std::cout << "Total arguments: " << argc << std::endl;
     for (int i = 0; i < argc; i++) {
         std::cout << "  [" << i << "] " << argv[i] << std::endl;
     }

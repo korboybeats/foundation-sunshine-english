@@ -285,7 +285,7 @@ namespace nvhttp {
       }
     }
     catch (const std::exception &e) {
-      BOOST_LOG(debug) << "获取客户端证书UUID失败: " << e.what();
+      BOOST_LOG(debug) << "Failed to obtain client certificate UUID: " << e.what();
     }
     return "";
   }
@@ -561,7 +561,7 @@ namespace nvhttp {
     sess.cipher_key = std::make_unique<crypto::aes_t>(key);
 
     tree.put("root.paired", 1);
-    // 增加自定义客户端名字告诉客户端
+    // Include the custom client name to send back to the client
     tree.put("root.pairname", client_name);
     tree.put("root.plaincert", util::hex_vec(conf_intern.servercert, true));
     tree.put("root.<xmlattr>.status_code", 200);
@@ -1405,7 +1405,7 @@ namespace nvhttp {
   getSessionsInfo(resp_https_t response, req_https_t request) {
     print_req<SunshineHTTPS>(request);
 
-    // 限制只允许 localhost 访问
+    // Restrict access to localhost only
     auto client_address = request->remote_endpoint().address();
     auto address = net::addr_to_normalized_string(client_address);
     auto ip_type = net::from_address(address);
@@ -1786,7 +1786,7 @@ namespace nvhttp {
     host_audio = util::from_view(get_arg(args, "localAudioPlayMode"));
     const auto launch_session = make_launch_session(host_audio, args);
 
-    // 获取客户端证书UUID（稳定的客户端标识符）
+    // Get the client certificate UUID (stable client identifier)
     std::string client_cert_uuid = get_client_cert_uuid_from_request(request);
     if (!client_cert_uuid.empty()) {
       launch_session->env["SUNSHINE_CLIENT_CERT_UUID"] = client_cert_uuid;
@@ -2217,11 +2217,11 @@ namespace nvhttp {
         display_name = std::move(decoded_name);
       }
 
-      // 如果没有指定显示器名称，使用当前捕获的显示器
+      // If no display name was specified, use the currently captured display
       if (display_name.empty() && !config::video.output_name.empty()) {
         display_name = display_device::get_display_name(config::video.output_name);
         if (display_name.empty()) {
-          // 如果转换失败，尝试直接使用配置值（可能已经是显示器名称）
+          // If conversion fails, try using the configured value directly (it may already be a display name)
           display_name = config::video.output_name;
         }
         BOOST_LOG(debug) << "rotate_display: Using current capture display: " << display_name << " (from config: " << config::video.output_name << ")";

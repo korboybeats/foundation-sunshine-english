@@ -161,7 +161,7 @@ namespace config {
 
     std::string external_ip;
     std::vector<std::string> resolutions;
-    std::vector<std::string> fps;  // 支持小数刷新率，如 "119.88"
+    std::vector<std::string> fps;  // Supports fractional refresh rates such as "119.88"
 
     int sleep_mode;  // Sleep mode: 0=suspend(S3), 1=hibernate(S4), 2=away_mode
   };
@@ -246,8 +246,8 @@ namespace config {
     std::string bind_address;
 
     std::string log_file;
-    bool restore_log;  // 是否恢复日志文件（true=恢复，false=覆盖）
-    int max_log_size_mb;  // 日志文件最大大小（MB），超过后自动轮转，0=不限制
+    bool restore_log;  // Whether to restore the log file (true = restore, false = overwrite)
+    int max_log_size_mb;  // Maximum log file size in MB; exceeds this triggers rotation, 0 = unlimited
     bool notify_pre_releases;
     bool system_tray;
     std::vector<prep_cmd_t> prep_cmds;

@@ -308,17 +308,17 @@ namespace confighttp {
 
   void
   getWelcomePage(resp_https_t response, req_https_t request) {
-    // 如果已经有用户名，要求认证后才能访问（防止未授权访问）
-    // 认证通过后重定向到首页，认证失败则拒绝访问
+    // If a username has been set, require authentication before allowing access (prevents unauthorized access)
+    // On success, redirect to the home page; on failure, deny access
     if (!config::sunshine.username.empty()) {
       if (!authenticate(response, request)) {
-        return; // authenticate已经发送了401响应
+        return; // authenticate has already sent the 401 response
       }
-      // 认证通过，重定向到首页
+      // Authentication passed, redirect to the home page
       send_redirect(response, request, "/");
       return;
     }
-    // 只有在没有用户名时才显示welcome页面（首次设置）
+    // Only show the welcome page when no username is set (first-time setup)
     getHtmlPage(response, request, "welcome.html", false);
   }
 
@@ -328,7 +328,7 @@ namespace confighttp {
   }
 
   /**
-   * 处理静态资源文件
+   * Handle static resource files
    */
   void
   getStaticResource(resp_https_t response, req_https_t request, const std::string& path, const std::string& contentType) {
@@ -351,7 +351,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 检查 child 是否是 parent 目录的子路径（防止路径穿越）
+   * @brief Check whether `child` is a subpath of `parent` (prevents path traversal)
    */
   bool
   isChildPath(fs::path const &child, fs::path const &parent) {
@@ -1041,7 +1041,7 @@ namespace confighttp {
     boost::regex pattern("\\[|\\]|\\s+");
     char delimiter = ',';
 
-    // 添加全局刷新率到global节点
+    // Add global refresh rates to the global node
     for (const auto &fps : split(boost::regex_replace(fpsArray, pattern, ""), delimiter)) {
       global_node.add("g_refresh_rate", fps);
     }
@@ -1059,40 +1059,40 @@ namespace confighttp {
       resolutions_nodes.push_back(std::make_pair("resolution"s, res_node));
     }
 
-    // 类似于 config.cpp 中的 path_f 函数逻辑，使用相对路径
+    // Similar to the path_f function logic in config.cpp; use a relative path
     std::filesystem::path idd_option_path = platf::appdata() / "vdd_settings.xml";
 
-    BOOST_LOG(info) << "VDD配置文件路径: " << idd_option_path.string();
+    BOOST_LOG(info) << "VDD config file path: " << idd_option_path.string();
 
     if (!fs::exists(idd_option_path)) {
         return false;
     }
 
-    // 先读取现有配置文件
+    // First read the existing configuration file
     pt::ptree existing_root;
     pt::ptree root;
 
     try {
       pt::read_xml(idd_option_path.string(), existing_root);
-      // 如果现有配置文件中已有vdd_settings节点
+      // If the existing config already contains a vdd_settings node
       if (existing_root.get_child_optional("vdd_settings")) {
-        // 复制现有配置
+        // Copy the existing config
         iddOptionTree = existing_root.get_child("vdd_settings");
 
-        // 更新需要更改的部分
+        // Update the parts that need to change
         pt::ptree monitor_node;
         monitor_node.put("count", 1);
 
         pt::ptree gpu_node;
         gpu_node.put("friendlyname", gpu_name.empty() ? "default" : gpu_name);
 
-        // 替换配置
+        // Replace the configuration
         iddOptionTree.put_child("monitors", monitor_node);
         iddOptionTree.put_child("gpu", gpu_node);
         iddOptionTree.put_child("global", global_node);
         iddOptionTree.put_child("resolutions", resolutions_nodes);
       } else {
-        // 如果没有vdd_settings节点，创建新的
+        // If there is no vdd_settings node, create a new one
         pt::ptree monitor_node;
         monitor_node.put("count", 1);
 
@@ -1105,8 +1105,8 @@ namespace confighttp {
         iddOptionTree.add_child("resolutions", resolutions_nodes);
       }
     } catch(std::exception &e) {
-      // 读取失败，创建新的配置
-      BOOST_LOG(warning) << "读取现有VDD配置失败，创建新配置: " << e.what();
+      // Read failed; create a new configuration
+      BOOST_LOG(warning) << "Failed to read existing VDD config, creating a new one: " << e.what();
 
       pt::ptree monitor_node;
       monitor_node.put("count", 1);
@@ -1122,12 +1122,12 @@ namespace confighttp {
 
     root.add_child("vdd_settings", iddOptionTree);
     try {
-      // 使用更紧凑的XML格式设置，减少不必要的空白
+      // Use more compact XML formatting to reduce unnecessary whitespace
       auto setting = boost::property_tree::xml_writer_make_settings<std::string>(' ', 2);
       std::ostringstream oss;
       write_xml(oss, root, setting);
 
-      // 清理多余空行，保持XML格式整洁
+      // Clean up extra blank lines to keep the XML tidy
       std::string xml_content = oss.str();
       boost::regex empty_lines_regex("\\n\\s*\\n");
       xml_content = boost::regex_replace(xml_content, empty_lines_regex, "\n");
@@ -1139,7 +1139,7 @@ namespace confighttp {
       return true;
     }
     catch(std::exception &e) {
-      BOOST_LOG(warning) << "写入VDD配置失败: " << e.what();
+      BOOST_LOG(warning) << "Failed to write VDD config: " << e.what();
       return false;
     }
   }
@@ -1171,14 +1171,14 @@ namespace confighttp {
 
       saveVddSettings(resArray, fpsArray, gpu_name);
 
-      // 将 inputTree 转换为 std::map（保证有序）
+      // Convert inputTree to a std::map (preserves ordering)
       std::map<std::string, std::string> fullConfig;
       for (const auto &kv : inputTree) {
         std::string value = inputTree.get<std::string>(kv.first);
         fullConfig[kv.first] = value;
       }
 
-      // 更新配置
+      // Update the configuration
       config::update_full_config(fullConfig);
     }
     catch (std::exception &e) {
@@ -1618,7 +1618,7 @@ namespace confighttp {
 
     print_req(request);
 
-    // 限制只允许 localhost 访问（增强安全性）
+    // Restrict access to localhost only (defense in depth)
     auto client_address = request->remote_endpoint().address();
     auto address = net::addr_to_normalized_string(client_address);
     auto ip_type = net::from_address(address);
@@ -1638,7 +1638,7 @@ namespace confighttp {
     }
 
     try {
-      // 获取所有活动会话信息
+      // Get info for all active sessions
       auto sessions_info = stream::session::get_all_sessions_info();
       
       json response_json;
@@ -1705,11 +1705,11 @@ namespace confighttp {
 
     print_req(request);
 
-    // 限制只允许 localhost 访问
+    // Restrict access to localhost only
     auto client_address = request->remote_endpoint().address();
     auto address = net::addr_to_normalized_string(client_address);
     auto ip_type = net::from_address(address);
-    
+
     if (ip_type != net::PC) {
       std::ostringstream msg_stream;
       msg_stream << "Access denied. Only localhost requests are allowed. Client IP: " << client_address.to_string();
@@ -1729,7 +1729,7 @@ namespace confighttp {
       auto bitrate_param = args.find("bitrate");
       auto clientname_param = args.find("clientname");
 
-      // 验证参数
+      // Validate parameters
       if (bitrate_param == args.end()) {
         std::ostringstream msg_stream;
         msg_stream << "Missing bitrate parameter when changing bitrate";
@@ -1756,7 +1756,7 @@ namespace confighttp {
         return;
       }
 
-      // 安全地解析码率参数
+      // Safely parse the bitrate parameter
       int bitrate = 0;
       try {
         bitrate = std::stoi(bitrate_param->second);
@@ -1773,7 +1773,7 @@ namespace confighttp {
 
       std::string client_name = clientname_param->second;
 
-      // 验证码率范围
+      // Validate the bitrate range
       if (bitrate <= 0 || bitrate > 800000) {
         std::ostringstream msg_stream;
         msg_stream << "Invalid bitrate value when changing bitrate. Must be between 1 and 800000 Kbps";
@@ -1787,7 +1787,7 @@ namespace confighttp {
         return;
       }
 
-      // 获取所有活动会话以便调试
+      // Fetch all active sessions for debugging context
       std::vector<std::string> available_clients;
       try {
         auto sessions_info = stream::session::get_all_sessions_info();
@@ -1798,16 +1798,16 @@ namespace confighttp {
         }
       }
       catch (...) {
-        // 继续执行，即使获取会话信息失败，仍然尝试修改码率
+        // Continue even if fetching session info failed; still try to change the bitrate
       }
-      
-      BOOST_LOG(info) << "Config API: Attempting to change bitrate for client '" << client_name 
+
+      BOOST_LOG(info) << "Config API: Attempting to change bitrate for client '" << client_name
                       << "' to " << bitrate << " Kbps";
       if (!available_clients.empty()) {
         BOOST_LOG(info) << "Available RUNNING clients: " << boost::algorithm::join(available_clients, ", ");
       }
-      
-      // 调用底层 API 修改码率
+
+      // Call the lower-level API to change the bitrate
       video::dynamic_param_t param;
       param.type = video::dynamic_param_type_e::BITRATE;
       param.value.int_value = bitrate;
@@ -1872,35 +1872,35 @@ namespace confighttp {
     if (!authenticate(response, request)) return;
     print_req(request);
 
-    // 提取请求路径，移除/steam-api前缀
+    // Extract the request path, removing the "/steam-api" prefix
     std::string path = request->path;
     if (path.find("/steam-api") == 0) {
-      path = path.substr(10); // 移除"/steam-api"前缀
+      path = path.substr(10); // Remove the "/steam-api" prefix
     }
 
-    // 构建目标URL
+    // Build the target URL
     std::string targetUrl = "https://api.steampowered.com" + path;
-    
-    // 添加查询参数
+
+    // Append query parameters
     if (!request->query_string.empty()) {
       targetUrl += "?" + request->query_string;
     }
 
     BOOST_LOG(info) << "Steam API proxy request: " << targetUrl;
 
-    // 安全检查：防止SSRF，确保目标主机确实是api.steampowered.com
+    // Safety check: prevent SSRF by ensuring the target host is api.steampowered.com
     if (http::url_get_host(targetUrl) != "api.steampowered.com") {
       BOOST_LOG(warning) << "Blocked Steam API proxy request to unauthorized host";
       response->write(SimpleWeb::StatusCode::client_error_bad_request, "Invalid Host");
       return;
     }
 
-    // 使用http模块下载数据
+    // Use the http module to fetch data
     std::string content;
-    
+
     try {
       if (http::fetch_url(targetUrl, content)) {
-        // 设置响应头
+        // Set response headers
         SimpleWeb::CaseInsensitiveMultimap headers;
         headers.emplace("Content-Type", "application/json");
         headers.emplace("Access-Control-Allow-Origin", "*");
@@ -1923,35 +1923,35 @@ namespace confighttp {
     if (!authenticate(response, request)) return;
     print_req(request);
 
-    // 提取请求路径，移除/steam-store前缀
+    // Extract the request path, removing the "/steam-store" prefix
     std::string path = request->path;
     if (path.find("/steam-store") == 0) {
-      path = path.substr(12); // 移除"/steam-store"前缀
+      path = path.substr(12); // Remove the "/steam-store" prefix
     }
 
-    // 构建目标URL
+    // Build the target URL
     std::string targetUrl = "https://store.steampowered.com" + path;
-    
-    // 添加查询参数
+
+    // Append query parameters
     if (!request->query_string.empty()) {
       targetUrl += "?" + request->query_string;
     }
 
     BOOST_LOG(info) << "Steam Store proxy request: " << targetUrl;
 
-    // 安全检查：防止SSRF，确保目标主机确实是store.steampowered.com
+    // Safety check: prevent SSRF by ensuring the target host is store.steampowered.com
     if (http::url_get_host(targetUrl) != "store.steampowered.com") {
       BOOST_LOG(warning) << "Blocked Steam Store proxy request to unauthorized host";
       response->write(SimpleWeb::StatusCode::client_error_bad_request, "Invalid Host");
       return;
     }
 
-    // 使用http模块下载数据
+    // Use the http module to fetch data
     std::string content;
-    
+
     try {
       if (http::fetch_url(targetUrl, content)) {
-        // 设置响应头
+        // Set response headers
         SimpleWeb::CaseInsensitiveMultimap headers;
         headers.emplace("Content-Type", "application/json");
         headers.emplace("Access-Control-Allow-Origin", "*");
@@ -1971,13 +1971,13 @@ namespace confighttp {
 
   // ===== AI LLM Proxy =====
 
-  // 内存缓存 AI 配置，避免每次请求都读文件
+  // In-memory cache for the AI configuration to avoid reading the file on every request
   static std::mutex ai_config_mutex;
   static nlohmann::json ai_config_cache;
   static bool ai_config_loaded = false;
 
   /**
-   * @brief 获取 AI 配置文件路径（与 sunshine.conf 同目录）
+   * @brief Get the AI config file path (same directory as sunshine.conf)
    */
   static std::string
   getAiConfigPath() {
@@ -1986,7 +1986,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 从文件或缓存读取 AI 配置（调用方需持有 ai_config_mutex）
+   * @brief Load AI config from file or cache (caller must hold ai_config_mutex)
    */
   static nlohmann::json
   loadAiConfigLocked() {
@@ -2016,7 +2016,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 从文件或缓存读取 AI 配置（线程安全）
+   * @brief Load AI config from file or cache (thread-safe)
    */
   static nlohmann::json
   loadAiConfig() {
@@ -2025,7 +2025,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 保存 AI 配置并刷新缓存（调用方需持有 ai_config_mutex）
+   * @brief Save AI config and refresh the cache (caller must hold ai_config_mutex)
    */
   static bool
   saveAiConfigLocked(const nlohmann::json &cfg) {
@@ -2045,7 +2045,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 检测 provider 是否为 Anthropic（需要不同的 API 格式）
+   * @brief Detect whether the provider is Anthropic (which uses a different API format)
    */
   static bool
   isAnthropicProvider(const nlohmann::json &cfg) {
@@ -2055,7 +2055,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief 将 OpenAI 格式的请求转换为 Anthropic 格式
+   * @brief Convert an OpenAI-format request to Anthropic format
    */
   static std::string
   convertToAnthropicFormat(const std::string &openaiBody, const std::string &model) {
@@ -2066,7 +2066,7 @@ namespace confighttp {
       anthropic["model"] = input.value("model", model);
       anthropic["max_tokens"] = input.value("max_tokens", 4096);
 
-      // 提取 system message 和 user/assistant messages
+      // Extract the system message and user/assistant messages
       if (input.contains("messages")) {
         nlohmann::json messages = nlohmann::json::array();
         for (auto &msg : input["messages"]) {
@@ -2080,19 +2080,19 @@ namespace confighttp {
         anthropic["messages"] = messages;
       }
 
-      // 转换 temperature, top_p 等通用参数
+      // Forward common parameters such as temperature and top_p
       if (input.contains("temperature")) anthropic["temperature"] = input["temperature"];
       if (input.contains("top_p")) anthropic["top_p"] = input["top_p"];
       if (input.contains("stream")) anthropic["stream"] = input["stream"];
 
       return anthropic.dump();
     } catch (...) {
-      return openaiBody;  // 转换失败，原样返回
+      return openaiBody;  // Conversion failed; return the body unchanged
     }
   }
 
   /**
-   * @brief 将 Anthropic 格式的响应转换回 OpenAI 格式
+   * @brief Convert an Anthropic-format response back to OpenAI format
    */
   static std::string
   convertFromAnthropicFormat(const std::string &anthropicResponse) {
@@ -2104,7 +2104,7 @@ namespace confighttp {
       openai["object"] = "chat.completion";
       openai["model"] = resp.value("model", "");
 
-      // 转换 content blocks
+      // Convert content blocks
       nlohmann::json choice;
       choice["index"] = 0;
       choice["finish_reason"] = resp.value("stop_reason", "stop");
@@ -2121,7 +2121,7 @@ namespace confighttp {
       choice["message"]["content"] = content;
       openai["choices"] = nlohmann::json::array({choice});
 
-      // 转换 usage
+      // Convert usage
       if (resp.contains("usage")) {
         openai["usage"]["prompt_tokens"] = resp["usage"].value("input_tokens", 0);
         openai["usage"]["completion_tokens"] = resp["usage"].value("output_tokens", 0);
@@ -2136,7 +2136,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief GET /api/ai/config — 获取 AI 配置（不返回完整 API key）
+   * @brief GET /api/ai/config — Fetch the AI config (does not return the full API key)
    */
   void
   getAiConfig(resp_https_t response, req_https_t request) {
@@ -2145,7 +2145,7 @@ namespace confighttp {
 
     auto cfg = loadAiConfig();
 
-    // 掩码 API key：仅显示前4+后4字符
+    // Mask the API key: show only the first 4 and last 4 characters
     if (cfg.contains("apiKey") && cfg["apiKey"].is_string()) {
       std::string key = cfg["apiKey"].get<std::string>();
       if (key.length() > 8) {
@@ -2161,7 +2161,7 @@ namespace confighttp {
   }
 
   /**
-   * @brief POST /api/ai/config — 保存 AI 配置
+   * @brief POST /api/ai/config — Save the AI config
    */
   void
   saveAiConfigEndpoint(resp_https_t response, req_https_t request) {
@@ -2175,7 +2175,7 @@ namespace confighttp {
     try {
       auto input = nlohmann::json::parse(ss.str());
 
-      // 用同一把锁包住 load-modify-save，防止并发写入丢失
+      // Wrap load-modify-save under one lock to prevent concurrent write loss
       std::lock_guard<std::mutex> lock(ai_config_mutex);
       auto current = loadAiConfigLocked();
       if (input.contains("enabled")) current["enabled"] = input["enabled"].get<bool>();
@@ -2184,7 +2184,7 @@ namespace confighttp {
       if (input.contains("model")) current["model"] = input["model"].get<std::string>();
       if (input.contains("apiKey")) {
         std::string key = input["apiKey"].get<std::string>();
-        // 如果前端发来的是掩码（包含****），不覆盖
+        // If the frontend sent a masked value (containing ****), don't overwrite
         if (key.find("****") == std::string::npos) {
           current["apiKey"] = key;
         }
@@ -2207,11 +2207,11 @@ namespace confighttp {
   }
 
   /**
-   * @brief POST /api/ai/chat/completions — OpenAI 兼容的 LLM 代理端点
+   * @brief POST /api/ai/chat/completions — OpenAI-compatible LLM proxy endpoint
    *
-   * 支持普通请求和 SSE 流式请求。
-   * 自动适配 Anthropic API 格式。
-   * 客户端无需知道 API key 或实际后端，Sunshine 作为透明代理。
+   * Supports both regular and SSE streaming requests.
+   * Automatically adapts to the Anthropic API format.
+   * The client doesn't need to know the API key or the actual backend; Sunshine acts as a transparent proxy.
    */
   void
   proxyAiChat(resp_https_t response, req_https_t request) {
@@ -2222,7 +2222,7 @@ namespace confighttp {
     ss << request->content.rdbuf();
     std::string requestBody = ss.str();
 
-    // 检测是否请求流式输出
+    // Detect whether streaming output was requested
     bool isStream = false;
     try {
       auto reqJson = nlohmann::json::parse(requestBody);
@@ -2346,7 +2346,7 @@ namespace confighttp {
       : apiBase + "/chat/completions";
 
     if (isAnthropic) {
-      // Anthropic 流式 SSE 格式与 OpenAI 不兼容，强制走非流式以保证响应格式一致
+      // Anthropic streaming SSE format is incompatible with OpenAI, so force non-streaming for a consistent response format
       if (isStream) {
         try {
           auto reqJson = nlohmann::json::parse(processedBody);
@@ -2467,9 +2467,9 @@ namespace confighttp {
   }
 
   /**
-   * @brief 计算文件的SHA256哈希值
-   * @param filepath 文件路径
-   * @return SHA256哈希字符串，如果失败返回空字符串
+   * @brief Compute the SHA256 hash of a file
+   * @param filepath File path
+   * @return SHA256 hash string, or empty on failure
    */
   std::string
   calculate_file_hash(const std::string &filepath) {
@@ -2522,9 +2522,9 @@ namespace confighttp {
   }
 
   /**
-   * @brief 从命令字符串中提取可执行文件路径
-   * @param cmd 完整命令字符串
-   * @return 可执行文件路径
+   * @brief Extract the executable path from a command string
+   * @param cmd Full command string
+   * @return Executable path
    */
   std::string
   extract_executable_path(const std::string &cmd) {
@@ -2533,13 +2533,13 @@ namespace confighttp {
     }
 
     std::string trimmed = cmd;
-    // 移除前导空格
+    // Strip leading whitespace
     size_t start = trimmed.find_first_not_of(" \t");
     if (start != std::string::npos) {
       trimmed = trimmed.substr(start);
     }
 
-    // 处理引号包裹的路径
+    // Handle quoted paths
     if (!trimmed.empty() && trimmed[0] == '"') {
       size_t end = trimmed.find('"', 1);
       if (end != std::string::npos) {
@@ -2547,7 +2547,7 @@ namespace confighttp {
       }
     }
 
-    // 提取第一个空格前的部分（可执行文件路径）
+    // Take the substring before the first space (the executable path)
     size_t space = trimmed.find(' ');
     if (space != std::string::npos) {
       return trimmed.substr(0, space);
@@ -2560,7 +2560,7 @@ namespace confighttp {
   testMenuCmd(resp_https_t response, req_https_t request) {
     if (!authenticate(response, request)) return;
 
-    // 安全限制：只允许局域网访问测试命令功能
+    // Security restriction: only allow LAN access to the test command feature
     auto address = net::addr_to_normalized_string(request->remote_endpoint().address());
     auto ip_type = net::from_address(address);
     
@@ -2595,7 +2595,7 @@ namespace confighttp {
       auto working_dir = inputTree.get<std::string>("working_dir", "");
       auto elevated = inputTree.get<bool>("elevated", false);
 
-      // 安全检查：命令不能为空
+      // Safety check: command must not be empty
       if (cmd.empty()) {
         BOOST_LOG(warning) << "TestMenuCmd: Empty command provided";
         outputTree.put("status", false);
@@ -2603,7 +2603,7 @@ namespace confighttp {
         return;
       }
 
-      // 安全检查：命令长度限制（防止过长的命令）
+      // Safety check: limit command length (prevent overly long commands)
       if (cmd.length() > 4096) {
         BOOST_LOG(warning) << "TestMenuCmd: Command too long (" << cmd.length() << " characters)";
         outputTree.put("status", false);
@@ -2611,15 +2611,15 @@ namespace confighttp {
         return;
       }
 
-      // 提取可执行文件路径并计算SHA256哈希值
+      // Extract the executable path and compute its SHA256 hash
       std::string executable_path = extract_executable_path(cmd);
       std::string file_hash;
-      
+
       if (!executable_path.empty()) {
-        // 如果是相对路径，尝试解析为绝对路径
+        // If it's a relative path, try to resolve it to an absolute path
         boost::filesystem::path exec_path(executable_path);
         if (!exec_path.is_absolute()) {
-          // 在PATH中查找或使用工作目录
+          // Look in PATH or use the working directory
           if (!working_dir.empty()) {
             exec_path = boost::filesystem::path(working_dir) / exec_path;
           }
@@ -2632,7 +2632,7 @@ namespace confighttp {
         }
       }
 
-      // 记录详细信息用于审计（包含文件哈希值）
+      // Log detailed info for auditing (including the file hash)
       BOOST_LOG(info) << "Testing menu command from " << address << ": [" << cmd << "]";
       if (!file_hash.empty()) {
         BOOST_LOG(info) << "Executable SHA256: " << file_hash << " (" << executable_path << ")";
@@ -2645,7 +2645,7 @@ namespace confighttp {
       boost::filesystem::path work_dir;
       
       if (!working_dir.empty()) {
-        // 验证工作目录是否存在
+        // Verify the working directory exists
         if (!boost::filesystem::exists(working_dir) || !boost::filesystem::is_directory(working_dir)) {
           BOOST_LOG(warning) << "TestMenuCmd: Invalid working directory: " << working_dir;
           outputTree.put("status", false);
@@ -2657,7 +2657,7 @@ namespace confighttp {
         work_dir = boost::filesystem::current_path();
       }
 
-      // 执行命令
+      // Execute the command
       auto child = platf::run_command(elevated, true, cmd, work_dir, proc::proc.get_env(), nullptr, ec, nullptr);
       
       if (ec) {

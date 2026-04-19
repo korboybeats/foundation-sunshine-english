@@ -36,20 +36,12 @@ TEST_F(WebhookTest, IsEnabledCheck) {
 }
 
 TEST_F(WebhookTest, AlertMessageLocalization) {
-  // Test Chinese messages
-  config::sunshine.locale = "zh";
-  bool is_chinese = true;
-  
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::CONFIG_PIN_SUCCESS, is_chinese), "🔗 配置配对成功");
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_LAUNCH, is_chinese), "🚀 应用启动");
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_RESUME, is_chinese), "▶️ 应用恢复");
-  
-  // Test English messages
-  is_chinese = false;
-  
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::CONFIG_PIN_SUCCESS, is_chinese), "🔗 Config pairing successful");
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_LAUNCH, is_chinese), "🚀 application launched");
-  EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_RESUME, is_chinese), "▶️ application resumed");
+  // English-only build: messages are always English regardless of is_chinese flag
+  for (bool is_chinese : { true, false }) {
+    EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::CONFIG_PIN_SUCCESS, is_chinese), "🔗 Config pairing successful");
+    EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_LAUNCH, is_chinese), "🚀 application launched");
+    EXPECT_EQ(webhook::get_alert_message(webhook::event_type_t::NV_APP_RESUME, is_chinese), "▶️ application resumed");
+  }
 }
 
 TEST_F(WebhookTest, JsonStringSanitization) {
@@ -66,7 +58,7 @@ TEST_F(WebhookTest, JsonStringSanitization) {
   EXPECT_EQ(webhook::sanitize_json_string(""), "");
   
   // Test special characters that should be preserved
-  EXPECT_EQ(webhook::sanitize_json_string("Hello 世界"), "Hello 世界");
+  EXPECT_EQ(webhook::sanitize_json_string("Hello World"), "Hello World");
   EXPECT_EQ(webhook::sanitize_json_string("Emoji 🚀"), "Emoji 🚀");
 }
 
@@ -104,66 +96,9 @@ TEST_F(WebhookTest, EventStructure) {
   EXPECT_EQ(event.extra_data["fps"], "60");
 }
 
-TEST_F(WebhookTest, GenerateWebhookJson) {
-  // Test Chinese JSON generation
-  config::sunshine.locale = "zh";
-  bool is_chinese = true;
-  
-  webhook::event_t event;
-  event.type = webhook::event_type_t::NV_APP_LAUNCH;
-  event.alert_type = "nv_app_launch";
-  event.timestamp = "2024-01-01T12:00:00.000Z";
-  event.client_name = "Test Client";
-  event.client_ip = "192.168.1.100";
-  event.app_name = "Test App";
-  event.app_id = 123;
-  event.session_id = "session123";
-  event.extra_data = {{"resolution", "1920x1080"}, {"fps", "60"}, {"host_audio", "true"}};
-  
-  std::string json = webhook::generate_webhook_json(event, is_chinese);
-  
-  // Check that JSON contains expected Chinese content
-  EXPECT_TRUE(json.find("🚀 应用启动") != std::string::npos);
-  EXPECT_TRUE(json.find("应用: Test App") != std::string::npos);
-  EXPECT_TRUE(json.find("客户端: Test Client") != std::string::npos);
-  EXPECT_TRUE(json.find("IP地址: 192.168.1.100") != std::string::npos);
-  EXPECT_TRUE(json.find("分辨率: 1920x1080") != std::string::npos);
-  EXPECT_TRUE(json.find("帧率: 60") != std::string::npos);
-  EXPECT_TRUE(json.find("音频: 启用") != std::string::npos);
-  EXPECT_TRUE(json.find("时间: 2024-01-01T12:00:00.000Z") != std::string::npos);
-  
-  // Test English JSON generation
-  is_chinese = false;
-  std::string json_en = webhook::generate_webhook_json(event, is_chinese);
-  
-  // Check that JSON contains expected English content
-  EXPECT_TRUE(json_en.find("🚀 application launched") != std::string::npos);
-  EXPECT_TRUE(json_en.find("App: Test App") != std::string::npos);
-  EXPECT_TRUE(json_en.find("Client: Test Client") != std::string::npos);
-  EXPECT_TRUE(json_en.find("IP: 192.168.1.100") != std::string::npos);
-  EXPECT_TRUE(json_en.find("Resolution: 1920x1080") != std::string::npos);
-  EXPECT_TRUE(json_en.find("FPS: 60") != std::string::npos);
-  EXPECT_TRUE(json_en.find("Audio: Enabled") != std::string::npos);
-  EXPECT_TRUE(json_en.find("Time: 2024-01-01T12:00:00.000Z") != std::string::npos);
-}
-
-TEST_F(WebhookTest, GenerateWebhookJsonPairing) {
-  // Test pairing event JSON generation
-  webhook::event_t event;
-  event.type = webhook::event_type_t::CONFIG_PIN_SUCCESS;
-  event.alert_type = "config_pair_success";
-  event.timestamp = "2024-01-01T12:00:00.000Z";
-  event.client_name = "My Phone";
-  event.client_ip = "192.168.1.50";
-  event.extra_data = {};
-  
-  std::string json = webhook::generate_webhook_json(event, true);
-  
-  // Check that JSON contains pairing information
-  EXPECT_TRUE(json.find("🔗 配置配对成功") != std::string::npos);
-  EXPECT_TRUE(json.find("设备名称: My Phone") != std::string::npos);
-  EXPECT_TRUE(json.find("IP地址: 192.168.1.50") != std::string::npos);
-}
+// Note: tests for `webhook::generate_webhook_json` were removed because the
+// function was declared but never defined. The English-only build relies on
+// `webhook::g_webhook_format.generate_json_payload(...)` instead.
 
 TEST_F(WebhookTest, RateLimiting) {
   // Test rate limiting functionality

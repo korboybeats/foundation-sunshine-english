@@ -591,45 +591,45 @@ namespace proc {
       return DEFAULT_APP_IMAGE_PATH;
     }
 
-    // 处理网络图片下载
+    // Handle network image download
     if (app_image_path.find("http://") == 0 || app_image_path.find("https://") == 0) {
       try {
         std::string original_url = app_image_path;
-        
-        // 移除查询参数
+
+        // Strip query parameters
         size_t query_start = app_image_path.find('?');
         if (query_start != std::string::npos) {
           app_image_path = app_image_path.substr(0, query_start);
         }
 
-        // 从URL提取文件名
+        // Derive a file name from the URL
         auto hash = std::hash<std::string>{}(original_url);
         auto ext = std::filesystem::path(app_image_path).extension().string();
-        
-        // 安全检查：验证文件扩展名
+
+        // Safety check: validate file extension
         std::string ext_lower = ext;
         std::transform(ext_lower.begin(), ext_lower.end(), ext_lower.begin(), ::tolower);
-        if (ext_lower != ".png" && ext_lower != ".jpg" && ext_lower != ".jpeg" && 
+        if (ext_lower != ".png" && ext_lower != ".jpg" && ext_lower != ".jpeg" &&
             ext_lower != ".bmp" && ext_lower != ".webp" && ext_lower != ".ico") {
           BOOST_LOG(warning) << "Blocked download of non-image extension: " << ext;
-          return DEFAULT_APP_IMAGE_PATH; 
+          return DEFAULT_APP_IMAGE_PATH;
         }
 
         std::string filename = "url_" + std::to_string(hash) + (ext.empty() ? ".png" : ext);
-        
-        // 保存到本地 covers 目录 (User requested to save to covers instead of assets)
+
+        // Save to local covers directory (User requested to save to covers instead of assets)
         auto local_path = std::filesystem::path(platf::appdata().string()) / "covers" / filename;
-        
-        // 如果文件不存在则下载
+
+        // Download if the file does not exist
         if (!std::filesystem::exists(local_path)) {
           BOOST_LOG(info) << "Downloading image from URL: " << original_url;
-          // 使用流式校验下载，如果Magic Byte不匹配会直接中断下载
+          // Use streaming download with validation; aborts if the magic bytes don't match
           if (!http::download_image_with_magic_check(original_url, local_path.string())) {
             BOOST_LOG(warning) << "Failed to download image (or rejected by magic check) from URL: " << original_url;
             return DEFAULT_APP_IMAGE_PATH;
           }
         }
-        
+
         app_image_path = local_path.string();
       } catch (const std::exception& e) {
         BOOST_LOG(warning) << "Error processing image URL: " << e.what();
@@ -637,7 +637,7 @@ namespace proc {
       }
     }
 
-    // 特殊处理：桌面壁纸
+    // Special case: desktop wallpaper
     if (app_image_path == "desktop") {
 #ifdef _WIN32
       wchar_t wallpaperPathW[MAX_PATH];
@@ -651,7 +651,7 @@ namespace proc {
 #endif
     }
 
-    // 检查图像扩展名是否支持
+    // Check that the image extension is supported
     auto image_extension = std::filesystem::path(app_image_path).extension().string();
     boost::to_lower(image_extension);
     if (image_extension != ".png" && image_extension != ".jpg" && image_extension != ".jpeg") {
@@ -659,25 +659,25 @@ namespace proc {
       return DEFAULT_APP_IMAGE_PATH;
     }
 
-    // 检查各种可能的图像路径
+    // Check various possible image paths
     std::vector<std::string> paths_to_check = {
-      // 1. 检查assets目录中的相对路径
+      // 1. Check the relative path in the assets directory
       (std::filesystem::path(SUNSHINE_ASSETS_DIR) / app_image_path).string(),
-      // 2. 检查covers目录中的相对路径
+      // 2. Check the relative path in the covers directory
       (std::filesystem::path(platf::appdata().string()) / "covers" / app_image_path).string(),
-      // 2. 处理旧的steam默认图像定义
+      // 2. Handle the legacy steam default image definition
       app_image_path == "./assets/steam.png" ? SUNSHINE_ASSETS_DIR "/steam.png" : "",
-      // 3. 检查绝对路径
+      // 3. Check the absolute path
       app_image_path
     };
-    
+
     for (const auto& path : paths_to_check) {
       if (!path.empty() && std::filesystem::exists(path)) {
         return path;
       }
     }
-    
-    // 如果所有路径都不存在，返回默认图像
+
+    // If none of the paths exist, return the default image
     BOOST_LOG(warning) << "Couldn't find app image at path ["sv << app_image_path << ']';
     return DEFAULT_APP_IMAGE_PATH;
   }
@@ -920,34 +920,35 @@ namespace proc {
     auto proc_opt = proc::parse(file_name);
 
     if (proc_opt) {
-      // 如果当前有应用正在运行，需要保留动态环境变量（SUNSHINE_*）
-      // 这些变量是在 execute() 中动态添加的，不应该被配置文件中的环境变量覆盖
-      // 
-      // 环境变量构成说明：
-      // 1. 系统环境变量：从 boost::this_process::environment() 获取（PATH、HOME 等）
-      // 2. 配置文件环境变量：从 apps.json 的 env 节点读取（用户自定义）
-      // 3. SUNSHINE_* 动态变量：在 execute() 时设置（串流会话相关）
-      // 
-      // refresh() 时的行为：
-      // - 系统环境变量和配置文件环境变量会被重新读取（反映最新状态）
-      // - SUNSHINE_* 变量会被保留（确保正在运行的进程正常工作）
+      // If an app is currently running, preserve the dynamic environment variables (SUNSHINE_*).
+      // These variables are added dynamically inside execute() and must not be overwritten by
+      // environment variables from the configuration file.
+      //
+      // Environment variable composition:
+      // 1. System environment variables: obtained from boost::this_process::environment() (PATH, HOME, etc.)
+      // 2. Configuration-file environment variables: read from the env section of apps.json (user-defined)
+      // 3. SUNSHINE_* dynamic variables: set during execute() (streaming session related)
+      //
+      // Behavior on refresh():
+      // - System and configuration-file environment variables are re-read (reflecting the latest state)
+      // - SUNSHINE_* variables are preserved (so the running process keeps working correctly)
       if (proc.running()) {
-        // 保存当前环境变量中的 SUNSHINE_* 动态变量
+        // Preserve SUNSHINE_* dynamic variables from the current environment
         const boost::process::v1::environment &current_env = proc.get_env();
         boost::process::v1::environment new_env = proc_opt->get_env();
-        
-        // 将当前环境变量中的 SUNSHINE_* 变量复制到新环境变量中
+
+        // Copy SUNSHINE_* variables from the current environment into the new environment
         for (const auto &entry : current_env) {
           const std::string &var_name = entry.get_name();
           if (var_name.find("SUNSHINE_") == 0) {
             new_env[var_name] = entry.to_string();
           }
         }
-        
+
         proc.set_env(std::move(new_env));
       }
       else {
-        // 没有应用运行时，可以安全地替换环境变量
+        // No app running: safe to replace the environment variables
         proc.set_env(proc_opt->get_env());
       }
       proc.set_apps(proc_opt->get_apps());

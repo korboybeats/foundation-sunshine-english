@@ -16,7 +16,7 @@ namespace display_device::vdd_utils {
 
   using namespace std::chrono_literals;
 
-  // 常量定义
+  // Constant definitions
   inline constexpr int kMaxRetryCount = 3;
   inline constexpr auto kInitialRetryDelay = 500ms;
   inline constexpr auto kMaxRetryDelay = 3000ms;
@@ -26,20 +26,20 @@ namespace display_device::vdd_utils {
   extern const DWORD kPipeBufferSize;
   extern const std::chrono::milliseconds kDefaultDebounceInterval;
 
-  // HDR亮度范围结构
+  // HDR brightness range struct
   struct hdr_brightness_t {
     float max_nits = 1000.0f;
     float min_nits = 0.001f;
     float max_full_nits = 1000.0f;
   };
 
-  // 物理尺寸结构（厘米）
+  // Physical size struct (centimeters)
   struct physical_size_t {
-    float width_cm = 0.0f;   // 宽度（厘米），0表示未指定
-    float height_cm = 0.0f;  // 高度（厘米），0表示未指定
+    float width_cm = 0.0f;   // Width in cm; 0 means unspecified
+    float height_cm = 0.0f;  // Height in cm; 0 means unspecified
   };
 
-  // 重试配置结构
+  // Retry configuration struct
   struct RetryConfig {
     int max_attempts = kMaxRetryCount;
     std::chrono::milliseconds initial_delay = kInitialRetryDelay;
@@ -47,54 +47,54 @@ namespace display_device::vdd_utils {
     std::string_view context;
   };
 
-  // VDD设置结构
+  // VDD settings struct
   struct VddSettings {
     std::string resolutions;
     std::string fps;
     bool needs_update = false;
   };
 
-  // 指数退避计算
+  // Exponential backoff calculation
   std::chrono::milliseconds
   calculate_exponential_backoff(int attempt);
 
-  // VDD命令执行
+  // VDD command execution
   bool
   execute_vdd_command(const std::string &action);
 
-  // 管道相关函数
+  // Pipe-related functions
   HANDLE
   connect_to_pipe_with_retry(const wchar_t *pipe_name, int max_retries = 3);
 
   bool
   execute_pipe_command(const wchar_t *pipe_name, const wchar_t *command, std::string *response = nullptr, bool *timed_out = nullptr);
 
-  // 驱动重载函数
+  // Driver reload function
   bool
   reload_driver();
 
   /**
-   * @brief 从客户端标识符生成GUID字符串（用于驱动识别）
-   * @param identifier 客户端标识符，如果为空则返回空字符串
-   * @return GUID格式字符串: {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}，如果identifier为空则返回空字符串
+   * @brief Generate a GUID string from a client identifier (used for driver identification)
+   * @param identifier Client identifier; returns an empty string if empty
+   * @return GUID-formatted string: {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}, or empty if identifier is empty
    */
   std::string
   generate_client_guid(const std::string &identifier);
 
   /**
-   * @brief 从客户端配置中获取物理尺寸
-   * @param client_name 客户端名称
-   * @return 物理尺寸结构，如果未找到则返回默认值（0,0）
+   * @brief Get the physical size from the client configuration
+   * @param client_name Client name
+   * @return Physical size struct, or default (0,0) if not found
    */
   physical_size_t
   get_client_physical_size(const std::string &client_name);
 
   /**
-   * @brief 创建VDD监视器
-   * @param client_identifier 客户端标识符（可选），用于驱动识别客户端并启动对应的显示器
-   * @param hdr_brightness HDR亮度配置
-   * @param physical_size 物理尺寸配置（厘米），可选
-   * @return 创建是否成功
+   * @brief Create the VDD monitor
+   * @param client_identifier Client identifier (optional); used by the driver to identify the client and start the corresponding display
+   * @param hdr_brightness HDR brightness configuration
+   * @param physical_size Physical size configuration in centimeters (optional)
+   * @return Whether creation succeeded
    */
   bool
   create_vdd_monitor(const std::string &client_identifier = "", const hdr_brightness_t &hdr_brightness = {}, const physical_size_t &physical_size = {});
@@ -148,7 +148,7 @@ namespace display_device::vdd_utils {
   VddSettings
   prepare_vdd_settings(const parsed_config_t &config);
 
-  // 重试函数模板
+  // Retry function template
   template <typename Func>
   bool
   retry_with_backoff(Func &&check_func, const RetryConfig &config) {

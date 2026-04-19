@@ -9,10 +9,10 @@
     #define WIN32_LEAN_AND_MEAN
     #include <accctrl.h>
     #include <aclapi.h>
-    #include <commdlg.h>  // 添加文件对话框支持
-    #include <shellapi.h>  // 添加 ShellExecuteW 函数声明
-    #include <shlobj.h>  // 添加 SHGetFolderPathW 函数声明
-    #include <shobjidl.h>  // 添加 IFileDialog COM接口声明
+    #include <commdlg.h>  // File dialog support
+    #include <shellapi.h>  // ShellExecuteW declaration
+    #include <shlobj.h>  // SHGetFolderPathW declaration
+    #include <shobjidl.h>  // IFileDialog COM interface declaration
     #include <tlhelp32.h>
     #include <windows.h>
     #define TRAY_ICON WEB_DIR "images/sunshine.ico"
@@ -73,12 +73,12 @@ namespace system_tray {
   static std::atomic tray_thread_should_exit = false;
   static std::atomic<bool> end_tray_called = false;
 
-  // 前向声明全局变量
+  // Forward declarations of global variables
   extern struct tray_menu tray_menus[];
   extern struct tray tray;
 
-  // 静态字符串变量用于存储本地化的菜单文本
-  // 这些变量必须是静态的，以确保在 tray_menus 的生命周期内有效
+  // Static string variables that hold the localized menu text.
+  // These must be static so they remain valid for the lifetime of tray_menus.
   static std::string s_open_sunshine;
   static std::string s_vdd_base_display;
   static std::string s_vdd_create;
@@ -104,12 +104,12 @@ namespace system_tray {
   static bool s_vdd_in_cooldown = false;
   static std::string s_quit;
 
-  // 用于存储子菜单的静态数组
+  // Static arrays holding the submenus
   static struct tray_menu vdd_submenu[5];
   static struct tray_menu advanced_settings_submenu[7];
   static struct tray_menu visit_project_submenu[3];
 
-  // 更新高级设置菜单项的文本
+  // Update the text of the advanced-settings menu items
   static void update_advanced_settings_menu_text() {
     advanced_settings_submenu[0].text = s_import_config.c_str();
     advanced_settings_submenu[1].text = s_export_config.c_str();
@@ -119,7 +119,7 @@ namespace system_tray {
     advanced_settings_submenu[5].text = s_reset_display_device_config.c_str();
   }
 
-  // 更新 VDD 子菜单项的文本
+  // Update the text of the VDD submenu items
   static void update_vdd_submenu_text() {
     vdd_submenu[0].text = s_vdd_create.c_str();
     vdd_submenu[1].text = s_vdd_close.c_str();
@@ -134,13 +134,13 @@ namespace system_tray {
     tray.notification_cb = NULL;
   }
 
-  // 更新访问项目地址子菜单项的文本
+  // Update the text of the "Visit Project" submenu items
   static void tray_visit_project_submenu_text() {
     visit_project_submenu[0].text = s_visit_project_sunshine.c_str();
     visit_project_submenu[1].text = s_visit_project_moonlight.c_str();
   }
 
-  // 初始化本地化字符串
+  // Initialize the localized strings
   void
   init_localized_strings() {
     s_open_sunshine = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_OPEN_SUNSHINE);
@@ -167,13 +167,13 @@ namespace system_tray {
     s_quit = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_QUIT);
   }
 
-  // 更新所有菜单项的文本
+  // Update the text of all menu items
   void
   update_menu_texts() {
     init_localized_strings();
     tray_menus[0].text = s_open_sunshine.c_str();
     tray_menus[2].text = s_vdd_base_display.c_str();
-    update_vdd_submenu_text();  // 更新 VDD 子菜单文本
+    update_vdd_submenu_text();  // Update VDD submenu text
   #ifdef _WIN32
     tray_menus[3].text = s_advanced_settings.c_str();
     update_advanced_settings_menu_text();
@@ -199,33 +199,33 @@ namespace system_tray {
     launch_ui();
   };
 
-  // 检查 VDD 是否存在
+  // Check whether the VDD exists
   static bool is_vdd_active() {
     auto vdd_device_id = display_device::find_device_by_friendlyname(ZAKO_NAME);
     return !vdd_device_id.empty();
   }
 
-  // 更新 VDD 菜单项的文本和状态
+  // Update the text and state of the VDD menu items
   static void update_vdd_menu_text() {
     bool vdd_active = is_vdd_active();
     bool keep_enabled = config::video.vdd_keep_enabled;
-    
-    // 1. 创建项：启用即勾选，启用后或冷却中禁止点击
+
+    // 1. Create item: checked when active; disabled while active or in cooldown
     vdd_submenu[0].checked = vdd_active ? 1 : 0;
     vdd_submenu[0].disabled = (vdd_active || s_vdd_in_cooldown) ? 1 : 0;
-    
-    // 2. 关闭项：未启用即勾选，未启用、冷却中或保持启用模式下禁止点击
+
+    // 2. Close item: checked when inactive; disabled when inactive, in cooldown, or in keep-enabled mode
     vdd_submenu[1].checked = vdd_active ? 0 : 1;
     vdd_submenu[1].disabled = (!vdd_active || s_vdd_in_cooldown || keep_enabled) ? 1 : 0;
-    
-    // 3. 保持启用项
+
+    // 3. Keep-enabled item
     vdd_submenu[2].checked = keep_enabled ? 1 : 0;
 
-    // 4. 无显示器时自动创建
+    // 4. Auto-create on headless host
     vdd_submenu[3].checked = config::video.vdd_headless_create_enabled ? 1 : 0;
   }
 
-  // 启动统一的 10 秒冷却
+  // Start the unified 10-second cooldown
   static void start_vdd_cooldown() {
     s_vdd_in_cooldown = true;
     update_vdd_menu_text();
@@ -239,7 +239,7 @@ namespace system_tray {
     }).detach();
   }
 
-  // 创建虚拟显示器回调
+  // Create virtual display callback
   auto tray_vdd_create_cb = [](struct tray_menu *item) {
     if (!tray_initialized) return;
     if (s_vdd_in_cooldown || is_vdd_active()) return;
@@ -250,7 +250,7 @@ namespace system_tray {
     }
   };
 
-  // 关闭虚拟显示器回调
+  // Close virtual display callback
   auto tray_vdd_destroy_cb = [](struct tray_menu *item) {
     if (!tray_initialized) return;
     if (s_vdd_in_cooldown || !is_vdd_active() || config::video.vdd_keep_enabled) return;
@@ -260,14 +260,14 @@ namespace system_tray {
     start_vdd_cooldown();
   };
 
-  // 保持启用回调
+  // Keep-enabled callback
   auto tray_vdd_persistent_cb = [](struct tray_menu *item) {
     BOOST_LOG(info) << "Toggling persistent VDD from system tray"sv;
-    
+
     bool is_persistent = config::video.vdd_keep_enabled;
-    
+
     if (!is_persistent) {
-      // 启用保持启用模式前弹出确认
+      // Confirm before enabling keep-enabled mode
 #ifdef _WIN32
       std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_PERSISTENT_CONFIRM_TITLE));
       std::wstring message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_PERSISTENT_CONFIRM_MSG));
@@ -280,23 +280,23 @@ namespace system_tray {
       config::video.vdd_keep_enabled = true;
       BOOST_LOG(info) << "Enabled VDD keep-enabled mode (Auto-creation removed)";
     } else {
-      // 禁用保持启用模式，但不自动关闭 VDD
+      // Disable keep-enabled mode but don't auto-close the VDD
       config::video.vdd_keep_enabled = false;
       BOOST_LOG(info) << "Disabled VDD keep-enabled mode (VDD remains if active)";
     }
-    
-    // 保存配置到文件
+
+    // Persist the configuration to file
     config::update_config({{"vdd_keep_enabled", config::video.vdd_keep_enabled ? "true" : "false"}});
     
     update_vdd_menu_text();
     tray_update(&tray);
   };
 
-  // 无显示器时自动创建
+  // Headless host auto-create
   auto tray_vdd_headless_create_cb = [](struct tray_menu *item) {
     BOOST_LOG(info) << "Toggling headless VDD create from system tray"sv;
     if (!config::video.vdd_headless_create_enabled) {
-      // 启用前二次确认
+      // Confirm before enabling
 #ifdef _WIN32
       std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_HEADLESS_CREATE_CONFIRM_TITLE));
       std::wstring message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_HEADLESS_CREATE_CONFIRM_MSG));
@@ -333,7 +333,7 @@ namespace system_tray {
       BOOST_LOG(info) << "User cancelled clearing cache"sv;
     }
   #else
-    // 非 Windows 平台，直接关闭
+    // Non-Windows platforms: close directly
     BOOST_LOG(info) << "Closing application from system tray"sv;
     proc::proc.terminate();
   #endif
@@ -360,7 +360,7 @@ namespace system_tray {
       BOOST_LOG(info) << "User cancelled resetting display device config"sv;
     }
   #else
-    // 非 Windows 平台，直接重置
+    // Non-Windows platforms: reset directly
     BOOST_LOG(info) << "Resetting display device config from system tray"sv;
     display_device::session_t::get().reset_persistence();
   #endif
@@ -454,36 +454,36 @@ namespace system_tray {
   };
 
 
-  // 文件对话框打开标志
+  // File dialog open flag
   static bool file_dialog_open = false;
 
-  // 安全验证：检查文件路径是否安全
+  // Safety check: verify whether the file path is safe
   auto is_safe_config_path = [](const std::string &path) -> bool {
     try {
       std::filesystem::path p(path);
 
-      // 检查文件是否存在
+      // Check whether the file exists
       if (!std::filesystem::exists(p)) {
         BOOST_LOG(warning) << "[tray_check_config] File does not exist: " << path;
         return false;
       }
 
-      // 规范化路径（解析符号链接和..）
+      // Canonicalize the path (resolve symlinks and ..)
       std::filesystem::path canonical_path = std::filesystem::canonical(p);
 
-      // 检查文件扩展名
+      // Check the file extension
       if (canonical_path.extension() != ".conf") {
         BOOST_LOG(warning) << "[tray_check_config] Invalid file extension: " << canonical_path.extension().string();
         return false;
       }
 
-      // 防止符号链接攻击
+      // Prevent symlink attacks
       if (std::filesystem::is_symlink(p)) {
         BOOST_LOG(warning) << "[tray_check_config] Symlink not allowed: " << path;
         return false;
       }
 
-      // 确保是常规文件
+      // Make sure it is a regular file
       if (!std::filesystem::is_regular_file(canonical_path)) {
         BOOST_LOG(warning) << "[tray_check_config] Not a regular file: " << path;
         return false;
@@ -497,25 +497,25 @@ namespace system_tray {
     }
   };
 
-  // 安全验证：检查配置文件内容是否安全
+  // Safety check: verify whether the configuration file content is safe
   auto is_safe_config_content = [](const std::string &content) -> bool {
-    // 检查文件大小（最大1MB）
+    // Check the file size (max 1MB)
     const size_t MAX_CONFIG_SIZE = 1024 * 1024;
     if (content.size() > MAX_CONFIG_SIZE) {
       BOOST_LOG(warning) << "[tray_check_config] Config file too large: " << content.size() << " bytes";
       return false;
     }
 
-    // 检查是否为空
+    // Check whether it is empty
     if (content.empty()) {
       BOOST_LOG(warning) << "[tray_check_config] Config file is empty";
       return false;
     }
 
-    // 基本格式验证：尝试解析配置
+    // Basic format validation: try to parse the config
     try {
       auto vars = config::parse_config(content);
-      // 如果解析成功，说明格式基本正确
+      // Successful parse implies the format is roughly correct
       BOOST_LOG(debug) << "[tray_check_config] Config validation passed, " << vars.size() << " entries found";
       return true;
     }
@@ -526,7 +526,7 @@ namespace system_tray {
   };
 
 
-  // 配置导入功能
+  // Config import functionality
   auto tray_import_config_cb = [](struct tray_menu *item) {
     if (file_dialog_open) {
       BOOST_LOG(warning) << "[tray_import_config] A file dialog is already open";
@@ -543,9 +543,9 @@ namespace system_tray {
     std::wstring file_path_wide;
     bool file_selected = false;
 
-    // 直接显示文件对话框
+    // Show the file dialog directly
     auto show_file_dialog = [&]() {
-      // 初始化COM
+      // Initialize COM
       HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
       bool com_initialized = SUCCEEDED(hr);
       auto com_cleanup = util::fail_guard([com_initialized]() {
@@ -553,7 +553,7 @@ namespace system_tray {
           CoUninitialize();
         }
       });
-      
+
       IFileOpenDialog *pFileOpen = nullptr;
       hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
       if (FAILED(hr)) {
@@ -563,20 +563,20 @@ namespace system_tray {
       auto dialog_cleanup = util::fail_guard([pFileOpen]() {
         pFileOpen->Release();
       });
-      
-      // 设置对话框选项
-      // FOS_FORCEFILESYSTEM: 强制只使用文件系统
-      // FOS_DONTADDTORECENT: 不添加到最近文件列表
-      // FOS_NOCHANGEDIR: 不改变当前工作目录
-      // FOS_HIDEPINNEDPLACES: 隐藏固定的位置（导航面板中的快速访问等）
-      // FOS_NOVALIDATE: 不验证文件路径（避免访问不存在的系统路径）
+
+      // Set dialog options
+      //   FOS_FORCEFILESYSTEM: only allow file-system items
+      //   FOS_DONTADDTORECENT: don't add to the recent files list
+      //   FOS_NOCHANGEDIR: don't change the current working directory
+      //   FOS_HIDEPINNEDPLACES: hide pinned places (e.g. Quick Access in the navigation pane)
+      //   FOS_NOVALIDATE: don't validate the file path (avoids touching nonexistent system paths)
       DWORD dwFlags;
       pFileOpen->GetOptions(&dwFlags);
-      pFileOpen->SetOptions(dwFlags | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST | 
-                            FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT | 
+      pFileOpen->SetOptions(dwFlags | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST |
+                            FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT |
                             FOS_NOCHANGEDIR | FOS_HIDEPINNEDPLACES | FOS_NOVALIDATE);
-      
-      // 设置文件类型过滤器
+
+      // Set the file type filter
       std::wstring config_files = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_FILE_DIALOG_CONFIG_FILES));
       COMDLG_FILTERSPEC fileTypes[] = {
         { config_files.c_str(), L"*.conf" },
@@ -584,12 +584,12 @@ namespace system_tray {
       };
       pFileOpen->SetFileTypes(2, fileTypes);
       pFileOpen->SetFileTypeIndex(1);
-      
-      // 设置对话框标题
+
+      // Set the dialog title
       std::wstring dialog_title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_FILE_DIALOG_SELECT_IMPORT));
       pFileOpen->SetTitle(dialog_title.c_str());
-      
-      // 设置默认打开路径为应用程序配置目录
+
+      // Default opening path: the application config directory
       IShellItem *psiDefault = NULL;
       std::wstring default_path = platf::appdata().wstring();
       hr = SHCreateItemFromParsingName(default_path.c_str(), NULL, IID_PPV_ARGS(&psiDefault));
@@ -597,8 +597,8 @@ namespace system_tray {
         pFileOpen->SetFolder(psiDefault);
         psiDefault->Release();
       }
-      
-      // 手动添加驱动器到导航栏 (因为使用了 FOS_HIDEPINNEDPLACES)
+
+      // Manually add drives to the navigation pane (because FOS_HIDEPINNEDPLACES is set)
       DWORD dwSize = GetLogicalDriveStringsW(0, NULL);
       if (dwSize > 0) {
         std::vector<wchar_t> buffer(dwSize + 1);
@@ -615,27 +615,27 @@ namespace system_tray {
           }
         }
       }
-      
-      // 添加"此电脑"到导航栏顶部
+
+      // Add "This PC" to the top of the navigation pane
       IShellItem *psiComputer = NULL;
       hr = SHGetKnownFolderItem(FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, NULL, IID_PPV_ARGS(&psiComputer));
       if (SUCCEEDED(hr)) {
         pFileOpen->AddPlace(psiComputer, FDAP_TOP);
         psiComputer->Release();
       }
-      
-      // 添加"网络"到导航栏
+
+      // Add "Network" to the navigation pane
       IShellItem *psiNetwork = NULL;
       hr = SHGetKnownFolderItem(FOLDERID_NetworkFolder, KF_FLAG_DEFAULT, NULL, IID_PPV_ARGS(&psiNetwork));
       if (SUCCEEDED(hr)) {
         pFileOpen->AddPlace(psiNetwork, FDAP_BOTTOM);
         psiNetwork->Release();
       }
-      
-      // 显示对话框
+
+      // Show the dialog
       hr = pFileOpen->Show(NULL);
       if (SUCCEEDED(hr)) {
-        // 获取选择的文件
+        // Get the selected file
         IShellItem *pItem = nullptr;
         hr = pFileOpen->GetResult(&pItem);
         if (SUCCEEDED(hr)) {
@@ -657,53 +657,53 @@ namespace system_tray {
       }
     };
 
-    // 直接显示文件对话框
+    // Show the file dialog directly
     show_file_dialog();
 
     if (file_selected) {
       std::string file_path = platf::to_utf8(file_path_wide);
 
-      // 安全验证：检查文件路径
+      // Safety check: validate the file path
       if (!is_safe_config_path(file_path)) {
         BOOST_LOG(error) << "[tray_import_config] Config import rejected: unsafe file path: " << file_path;
         std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_TITLE));
-        std::wstring message = L"文件路径不安全或文件类型无效。\n只允许 .conf 文件，不允许符号链接。";
+        std::wstring message = L"The file path is unsafe or the file type is invalid.\nOnly .conf files are allowed; symlinks are not permitted.";
         MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
         return;
       }
 
       try {
-        // 读取配置文件内容
+        // Read the config file contents
         std::string config_content = file_handler::read_file(file_path.c_str());
-        
-        // 安全验证：检查配置内容
+
+        // Safety check: validate the config contents
         if (!is_safe_config_content(config_content)) {
           BOOST_LOG(error) << "[tray_import_config] Config import rejected: unsafe content: " << file_path;
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_TITLE));
-          std::wstring message = L"配置文件内容无效、太大或格式错误。\n最大文件大小：1MB";
+          std::wstring message = L"Config file content is invalid, too large, or malformed.\nMaximum file size: 1MB";
           MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
           return;
         }
 
-        // 备份当前配置（检查是否成功）
+        // Back up the current config (verify success)
         std::string backup_path = config::sunshine.config_file + ".backup";
         std::string current_config = file_handler::read_file(config::sunshine.config_file.c_str());
         int backup_result = file_handler::write_file(backup_path.c_str(), current_config);
-        
+
         if (backup_result != 0) {
           BOOST_LOG(error) << "[tray_import_config] Failed to create backup, aborting import";
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_TITLE));
-          std::wstring message = L"无法创建配置备份，导入操作已中止。";
+          std::wstring message = L"Could not create a config backup; the import has been aborted.";
           MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
           return;
         }
 
         BOOST_LOG(info) << "[tray_import_config] Config backup created: " << backup_path;
 
-        // 使用临时文件确保原子性写入
+        // Use a temporary file to ensure atomic write
         std::string temp_path = config::sunshine.config_file + ".tmp";
         int temp_result = file_handler::write_file(temp_path.c_str(), config_content);
-        
+
         if (temp_result != 0) {
           BOOST_LOG(error) << "[tray_import_config] Failed to write temporary config file";
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_TITLE));
@@ -712,19 +712,19 @@ namespace system_tray {
           return;
         }
 
-        // 原子性替换：重命名临时文件为实际配置文件
+        // Atomic replace: rename the temp file to the actual config file
         try {
           std::filesystem::rename(temp_path, config::sunshine.config_file);
           BOOST_LOG(info) << "[tray_import_config] Configuration imported successfully from: " << file_path;
-          
-          // 询问用户是否重启Sunshine以应用新配置
+
+          // Ask the user whether to restart Sunshine to apply the new config
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_SUCCESS_TITLE));
-          std::wstring message = L"配置导入成功！\n\n是否立即重启 Sunshine 以应用新配置？";
+          std::wstring message = L"Config import succeeded!\n\nRestart Sunshine now to apply the new configuration?";
           int result = MessageBoxW(NULL, message.c_str(), title.c_str(), MB_YESNO | MB_ICONQUESTION);
-          
+
           if (result == IDYES) {
             BOOST_LOG(info) << "[tray_import_config] User chose to restart Sunshine"sv;
-            // 重启Sunshine
+            // Restart Sunshine
             platf::restart();
           }
           else {
@@ -733,7 +733,7 @@ namespace system_tray {
         }
         catch (const std::exception &e) {
           BOOST_LOG(error) << "[tray_import_config] Failed to rename temp file: " << e.what();
-          // 清理临时文件
+          // Clean up the temp file
           std::filesystem::remove(temp_path);
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_TITLE));
           std::wstring message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_IMPORT_ERROR_WRITE));
@@ -748,12 +748,12 @@ namespace system_tray {
       }
     }
   #else
-    // 非Windows平台的实现（可以后续添加）
+    // Non-Windows implementation (to be added later)
     BOOST_LOG(info) << "[tray_import_config] Config import not implemented for this platform yet";
   #endif
   };
 
-  // 配置导出功能
+  // Config export functionality
   auto tray_export_config_cb = [](struct tray_menu *item) {
     if (file_dialog_open) {
       BOOST_LOG(warning) << "[tray_export_config] A file dialog is already open";
@@ -770,9 +770,9 @@ namespace system_tray {
     std::wstring file_path_wide;
     bool file_selected = false;
 
-    // 直接显示文件对话框
+    // Show the file dialog directly
     auto show_file_dialog = [&]() {
-      // 初始化COM
+      // Initialize COM
       HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
       bool com_initialized = SUCCEEDED(hr);
       auto com_cleanup = util::fail_guard([com_initialized]() {
@@ -791,19 +791,19 @@ namespace system_tray {
         pFileSave->Release();
       });
 
-      // 设置对话框选项
-      // FOS_FORCEFILESYSTEM: 强制只使用文件系统
-      // FOS_DONTADDTORECENT: 不添加到最近文件列表
-      // FOS_NOCHANGEDIR: 不改变当前工作目录
-      // FOS_HIDEPINNEDPLACES: 隐藏固定的位置（导航面板中的快速访问等）
-      // FOS_NOVALIDATE: 不验证文件路径（避免访问不存在的系统路径）
+      // Set dialog options
+      //   FOS_FORCEFILESYSTEM: only allow file-system items
+      //   FOS_DONTADDTORECENT: don't add to the recent files list
+      //   FOS_NOCHANGEDIR: don't change the current working directory
+      //   FOS_HIDEPINNEDPLACES: hide pinned places (e.g. Quick Access in the navigation pane)
+      //   FOS_NOVALIDATE: don't validate the file path (avoids touching nonexistent system paths)
       DWORD dwFlags;
       pFileSave->GetOptions(&dwFlags);
-      pFileSave->SetOptions(dwFlags | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT | 
-                            FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT | 
+      pFileSave->SetOptions(dwFlags | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT |
+                            FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT |
                             FOS_NOCHANGEDIR | FOS_HIDEPINNEDPLACES | FOS_NOVALIDATE);
 
-      // 设置文件类型过滤器
+      // Set the file type filter
       std::wstring config_files = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_FILE_DIALOG_CONFIG_FILES));
       COMDLG_FILTERSPEC fileTypes[] = {
         { config_files.c_str(), L"*.conf" },
@@ -813,16 +813,16 @@ namespace system_tray {
       pFileSave->SetFileTypeIndex(1);
       pFileSave->SetDefaultExtension(L"conf");
 
-      // 设置对话框标题
+      // Set the dialog title
       std::wstring dialog_title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_FILE_DIALOG_SAVE_EXPORT));
       pFileSave->SetTitle(dialog_title.c_str());
 
-      // 设置默认文件名
+      // Set the default file name
       std::string default_name = "sunshine_config_" + std::to_string(std::time(nullptr)) + ".conf";
       std::wstring wdefault_name(default_name.begin(), default_name.end());
       pFileSave->SetFileName(wdefault_name.c_str());
 
-      // 设置默认保存路径为应用程序配置目录
+      // Default save path: the application config directory
       IShellItem *psiDefault = NULL;
       std::wstring default_path = platf::appdata().wstring();
       hr = SHCreateItemFromParsingName(default_path.c_str(), NULL, IID_PPV_ARGS(&psiDefault));
@@ -831,7 +831,7 @@ namespace system_tray {
         psiDefault->Release();
       }
 
-      // 手动添加驱动器到导航栏 (因为使用了 FOS_HIDEPINNEDPLACES)
+      // Manually add drives to the navigation pane (because FOS_HIDEPINNEDPLACES is set)
       DWORD dwSize = GetLogicalDriveStringsW(0, NULL);
       if (dwSize > 0) {
         std::vector<wchar_t> buffer(dwSize + 1);
@@ -849,7 +849,7 @@ namespace system_tray {
         }
       }
       
-      // 添加"此电脑"到导航栏顶部
+      // Add "This PC" to the top of the navigation pane
       IShellItem *psiComputer = NULL;
       hr = SHGetKnownFolderItem(FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, NULL, IID_PPV_ARGS(&psiComputer));
       if (SUCCEEDED(hr)) {
@@ -857,7 +857,7 @@ namespace system_tray {
         psiComputer->Release();
       }
 
-      // 添加"网络"到导航栏
+      // Add "Network" to the navigation pane
       IShellItem *psiNetwork = NULL;
       hr = SHGetKnownFolderItem(FOLDERID_NetworkFolder, KF_FLAG_DEFAULT, NULL, IID_PPV_ARGS(&psiNetwork));
       if (SUCCEEDED(hr)) {
@@ -865,10 +865,10 @@ namespace system_tray {
         psiNetwork->Release();
       }
 
-      // 显示对话框
+      // Show the dialog
       hr = pFileSave->Show(NULL);
       if (SUCCEEDED(hr)) {
-        // 获取选择的文件
+        // Get the selected file
         IShellItem *pItem = nullptr;
         hr = pFileSave->GetResult(&pItem);
         if (SUCCEEDED(hr)) {
@@ -890,30 +890,30 @@ namespace system_tray {
       }
     };
 
-    // 直接显示文件对话框
+    // Show the file dialog directly
     show_file_dialog();
 
     if (file_selected) {
       std::string file_path = platf::to_utf8(file_path_wide);
 
-      // 安全验证：检查输出文件路径（基本检查）
+      // Safety check: validate the output file path (basic check)
       try {
         std::filesystem::path p(file_path);
-        
-        // 检查文件扩展名
+
+        // Check the file extension
         if (p.extension() != ".conf") {
           BOOST_LOG(warning) << "[tray_export_config] Config export rejected: invalid extension: " << p.extension().string();
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_TITLE));
-          std::wstring message = L"只允许导出为 .conf 文件。";
+          std::wstring message = L"Export is only allowed as .conf files.";
           MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
           return;
         }
 
-        // 如果文件已存在，检查是否为符号链接
+        // If the file exists, make sure it isn't a symlink
         if (std::filesystem::exists(p) && std::filesystem::is_symlink(p)) {
           BOOST_LOG(warning) << "[tray_export_config] Config export rejected: target is symlink: " << file_path;
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_TITLE));
-          std::wstring message = L"不允许导出到符号链接。";
+          std::wstring message = L"Exporting to a symlink is not permitted.";
           MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
           return;
         }
@@ -921,13 +921,13 @@ namespace system_tray {
       catch (const std::exception &e) {
         BOOST_LOG(error) << "[tray_export_config] Path validation error during export: " << e.what();
         std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_TITLE));
-        std::wstring message = L"文件路径无效。";
+        std::wstring message = L"Invalid file path.";
         MessageBoxW(NULL, message.c_str(), title.c_str(), MB_OK | MB_ICONERROR);
         return;
       }
 
       try {
-        // 读取当前配置
+        // Read the current config
         std::string config_content = file_handler::read_file(config::sunshine.config_file.c_str());
         if (config_content.empty()) {
           BOOST_LOG(error) << "[tray_export_config] No configuration to export";
@@ -937,10 +937,10 @@ namespace system_tray {
           return;
         }
 
-        // 使用临时文件确保原子性写入
+        // Use a temporary file to ensure atomic write
         std::string temp_path = file_path + ".tmp";
         int temp_result = file_handler::write_file(temp_path.c_str(), config_content);
-        
+
         if (temp_result != 0) {
           BOOST_LOG(error) << "[tray_export_config] Failed to write temporary export file";
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_TITLE));
@@ -949,7 +949,7 @@ namespace system_tray {
           return;
         }
 
-        // 原子性替换
+        // Atomic replace
         try {
           std::filesystem::rename(temp_path, file_path);
           BOOST_LOG(info) << "[tray_export_config] Configuration exported successfully to: " << file_path;
@@ -959,7 +959,7 @@ namespace system_tray {
         }
         catch (const std::exception &e) {
           BOOST_LOG(error) << "[tray_export_config] Failed to rename temp export file: " << e.what();
-          // 清理临时文件
+          // Clean up the temp file
           std::filesystem::remove(temp_path);
           std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_TITLE));
           std::wstring message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_EXPORT_ERROR_WRITE));
@@ -978,12 +978,12 @@ namespace system_tray {
   #endif
   };
 
-  // 通用语言切换函数
+  // Generic language switch helper
   static auto change_tray_language = [](const std::string &locale, const std::string &language_name) {
     BOOST_LOG(info) << "Changing tray language to " << language_name << " from system tray"sv;
     system_tray_i18n::set_tray_locale(locale);
 
-    // 保存到配置文件
+    // Persist to the config file
     config::update_config({{"tray_locale", locale}});
 
     update_menu_texts();
@@ -1006,7 +1006,7 @@ namespace system_tray {
     BOOST_LOG(info) << "Resetting configuration from system tray"sv;
 
   #ifdef _WIN32
-    // 获取本地化字符串
+    // Fetch localized strings
     std::wstring title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_RESET_CONFIRM_TITLE));
     std::wstring message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_RESET_CONFIRM_MSG));
 
@@ -1018,14 +1018,14 @@ namespace system_tray {
 
     if (msgboxID == IDYES) {
       try {
-        // 备份当前配置
+        // Back up the current config
         std::string backup_path = config::sunshine.config_file + ".backup";
         std::string current_config = file_handler::read_file(config::sunshine.config_file.c_str());
         if (!current_config.empty()) {
           file_handler::write_file(backup_path.c_str(), current_config);
         }
 
-        // 创建空的配置文件（重置为默认值）
+        // Create an empty config file (reset to defaults)
         std::ofstream config_file(config::sunshine.config_file);
         if (config_file.is_open()) {
           config_file.close();
@@ -1053,7 +1053,7 @@ namespace system_tray {
   #endif
   };
 
-  // 菜单数组定义
+  // Menu array definition
   struct tray_menu tray_menus[] = {
     { .text = "Open Sunshine", .cb = tray_open_ui_cb },
     { .text = "-" },
@@ -1088,7 +1088,7 @@ namespace system_tray {
 
   int
   init_tray() {
-    // 初始化本地化字符串并更新菜单文本
+    // Initialize localized strings and update menu text
     update_menu_texts();
 
   #ifdef _WIN32
@@ -1166,7 +1166,7 @@ namespace system_tray {
     }
   #endif
 
-    // 初始化 VDD 子菜单 (创建, 关闭, 保持启用, 无显示器时自动创建)
+    // Initialize the VDD submenu (Create, Close, Keep Enabled, Auto-create on Headless)
     vdd_submenu[0] = { .text = s_vdd_create.c_str(), .cb = tray_vdd_create_cb };
     vdd_submenu[1] = { .text = s_vdd_close.c_str(), .cb = tray_vdd_destroy_cb };
     vdd_submenu[2] = { .text = s_vdd_persistent.c_str(), .checked = 0, .cb = tray_vdd_persistent_cb };
@@ -1183,7 +1183,7 @@ namespace system_tray {
     advanced_settings_submenu[6] = { .text = nullptr };
   #endif
 
-    // 初始化访问项目地址子菜单
+    // Initialize the "Visit Project" submenu
     visit_project_submenu[0] = { .text = s_visit_project_sunshine.c_str(), .cb = tray_visit_project_sunshine_cb };
     visit_project_submenu[1] = { .text = s_visit_project_moonlight.c_str(), .cb = tray_visit_project_moonlight_cb };
     visit_project_submenu[2] = { .text = nullptr };
@@ -1196,13 +1196,13 @@ namespace system_tray {
       BOOST_LOG(info) << "System tray created"sv;
     }
 
-    // 初始化时更新 VDD 菜单状态
+    // Refresh VDD menu state on init
     update_vdd_menu_text();
   #ifdef _WIN32
-    // 初始化时更新高级设置菜单文本
+    // Refresh advanced-settings menu text on init
     update_advanced_settings_menu_text();
   #endif
-    // 初始化时更新访问项目地址子菜单文本
+    // Refresh "Visit Project" submenu text on init
     tray_visit_project_submenu_text();
     tray_update(&tray);
 
@@ -1248,13 +1248,13 @@ namespace system_tray {
     tray_update(&tray);
     tray.icon = TRAY_ICON_PLAYING;
 
-    // 使用本地化字符串（每次都重新获取以支持语言切换）
+    // Use localized strings (re-fetched each time to support language switching)
     static std::string title;
     static std::string msg;
     title = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_STREAM_STARTED);
     std::string msg_template = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_STREAMING_STARTED_FOR);
 
-    // 使用 std::string 格式化消息
+    // Use std::string to format the message
     char buffer[256];
     snprintf(buffer, sizeof(buffer), msg_template.c_str(), app_name.c_str());
     msg = buffer;
@@ -1278,13 +1278,13 @@ namespace system_tray {
     tray.icon = TRAY_ICON_PAUSING;
     tray_update(&tray);
 
-    // 使用本地化字符串（每次都重新获取以支持语言切换）
+    // Use localized strings (re-fetched each time to support language switching)
     static std::string title;
     static std::string msg;
     title = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_STREAM_PAUSED);
     std::string msg_template = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_STREAMING_PAUSED_FOR);
 
-    // 使用 std::string 格式化消息
+    // Use std::string to format the message
     char buffer[256];
     snprintf(buffer, sizeof(buffer), msg_template.c_str(), app_name.c_str());
     msg = buffer;
@@ -1309,13 +1309,13 @@ namespace system_tray {
     tray.icon = TRAY_ICON;
     tray_update(&tray);
 
-    // 使用本地化字符串（每次都重新获取以支持语言切换）
+    // Use localized strings (re-fetched each time to support language switching)
     static std::string title;
     static std::string msg;
     title = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_APPLICATION_STOPPED);
     std::string msg_template = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_APPLICATION_STOPPED_MSG);
 
-    // 使用 std::string 格式化消息
+    // Use std::string to format the message
     char buffer[256];
     snprintf(buffer, sizeof(buffer), msg_template.c_str(), app_name.c_str());
     msg = buffer;
@@ -1341,13 +1341,13 @@ namespace system_tray {
     tray_update(&tray);
     tray.icon = TRAY_ICON;
 
-    // 使用本地化字符串（每次都重新获取以支持语言切换）
+    // Use localized strings (re-fetched each time to support language switching)
     static std::string title;
     static std::string notification_text;
     std::string title_template = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_INCOMING_PAIRING_REQUEST);
     notification_text = system_tray_i18n::get_localized_string(system_tray_i18n::KEY_CLICK_TO_COMPLETE_PAIRING);
 
-    // 使用 std::string 格式化标题
+    // Use std::string to format the title
     char buffer[256];
     snprintf(buffer, sizeof(buffer), title_template.c_str(), pin_name.c_str());
     title = buffer;

@@ -211,7 +211,6 @@ namespace platf {
       if (!VIGEM_SUCCESS(status)) {
         // Log a special fatal message for this case to show the error in the web UI
         BOOST_LOG(fatal) << "ViGEmBus is not installed or running. You must install ViGEmBus for gamepad support! (If you don't need gamepad support, you can ignore this message.)"sv;
-        BOOST_LOG(fatal) << "ViGEmBus 没有安装或运行。您必须安装 ViGEmBus 才能支持游戏手柄！如果不需要使用游戏手柄，可以忽略此提示。"sv;
       }
       else {
         vigem_disconnect(client.get());
@@ -464,12 +463,12 @@ namespace platf {
       }
     }
 
-    // 初始化DSU服务器（延迟初始化）
+    // Initialize the DSU server (lazy initialization)
     void
     init_dsu_server() {
       if (dsu_server != nullptr) return;
 
-      // 获取DSU服务器端口
+      // Get the DSU server port
       uint16_t server_port = config::input.dsu_server_port;
 
       dsu_server = new dsu_server_t { server_port };
@@ -502,10 +501,10 @@ namespace platf {
       raw.vigem = nullptr;
     }
 
-    // 初始化DSU服务器（延迟初始化，只在需要时创建）
+    // Initialize the DSU server (lazy initialization, created only when needed)
     raw.dsu_server = nullptr;
 
-    // 初始化虚拟鼠标设备
+    // Initialize the virtual mouse device
     if (config::input.virtual_mouse) {
       raw.vmouse_dev = new vmouse::device_t(vmouse::create());
       if (raw.vmouse_dev->is_available()) {
@@ -1767,25 +1766,25 @@ namespace platf {
 
     if (raw->dsu_server) {
       if (motion.motionType == LI_MOTION_TYPE_ACCEL) {
-        // 发送加速度数据
-        BOOST_LOG(debug) << "发送加速度数据到DSU服务器";
+        // Send accelerometer data
+        BOOST_LOG(debug) << "Sending accelerometer data to DSU server";
         raw->dsu_server->send_motion_data(motion.id.globalIndex,
           motion.x, motion.y, motion.z,
           0.0f, 0.0f, 0.0f);
       }
       else if (motion.motionType == LI_MOTION_TYPE_GYRO) {
-        // 发送陀螺仪数据
-        BOOST_LOG(debug) << "发送陀螺仪数据到DSU服务器";
+        // Send gyroscope data
+        BOOST_LOG(debug) << "Sending gyroscope data to DSU server";
         raw->dsu_server->send_motion_data(motion.id.globalIndex,
           0.0f, 0.0f, 0.0f,
           motion.x, motion.y, motion.z);
       }
       else {
-        BOOST_LOG(debug) << "未知的运动数据类型: " << (int) motion.motionType;
+        BOOST_LOG(debug) << "Unknown motion data type: " << (int) motion.motionType;
       }
     }
     else {
-      BOOST_LOG(warning) << "DSU服务器未初始化，无法发送运动数据";
+      BOOST_LOG(warning) << "DSU server not initialized; cannot send motion data";
     }
   }
 

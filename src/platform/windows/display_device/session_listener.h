@@ -58,19 +58,19 @@ namespace display_device {
     clear_unlock_task();
 
   private:
-    // 单一mutex管理所有共享状态
+    // Single mutex managing all shared state
     static std::mutex mutex_;
-    
-    // 解锁等待任务（单任务模式避免重复）
+
+    // Pending unlock-wait task (single-task mode to avoid duplication)
     static UnlockCallback pending_task_;
-    
-    // Worker线程执行任务
+
+    // Worker thread executing tasks
     static std::thread worker_thread_;
     static std::queue<UnlockCallback> task_queue_;
     static std::condition_variable cv_;
     static bool worker_running_;
-    
-    // 消息循环线程
+
+    // Message loop thread
     static HWND hidden_window_;
     static std::thread message_thread_;
     static std::atomic<bool> thread_running_;

@@ -142,7 +142,7 @@ namespace display_device {
 
     /**
      * @brief Create VDD monitor
-     * @param client_name 客户端名称，用于驱动识别客户端并启动对应的显示器
+     * @param client_name Client name used by the driver to identify the client and start the corresponding display
      */
     bool
     create_vdd_monitor(const std::string &client_name = "");

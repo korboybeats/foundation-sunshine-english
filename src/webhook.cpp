@@ -41,7 +41,7 @@ namespace webhook {
 
   std::string generate_signature(long long timestamp, const std::string& hostname)
   {
-    // 使用简单的哈希算法生成签名
+    // Use a simple hash algorithm to generate the signature
     std::string data = hostname + std::to_string(timestamp) + "Sunshine_Foundation";
     std::hash<std::string> hasher;
     size_t hash_value = hasher(data);
@@ -51,12 +51,12 @@ namespace webhook {
   SimpleWeb::CaseInsensitiveMultimap generate_webhook_headers()
   {
     SimpleWeb::CaseInsensitiveMultimap headers;
-    // 生成时间戳和签名
+    // Generate timestamp and signature
     auto now = std::chrono::system_clock::now();
     auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     std::string hostname = platf::get_host_name();
     std::string signature = generate_signature(timestamp, hostname);
-    // 校验相关的请求头
+    // Verification-related request headers
     headers.emplace("X-Timestamp", std::to_string(timestamp));
     headers.emplace("X-Hostname", hostname);
     headers.emplace("X-Signature", signature);
@@ -73,8 +73,8 @@ namespace webhook {
   }
 
   /**
-   * @brief 获取本地IP地址
-   * @return 本地IP地址字符串，优先返回IPv4，其次IPv6，都获取不到返回空字符串
+   * @brief Get the local IP address
+   * @return Local IP address string; prefers IPv4, falls back to IPv6, returns empty if neither is available
    */
   std::string get_local_ip() {
     try {
@@ -100,7 +100,7 @@ namespace webhook {
         }
       }
       
-      // 优先返回IPv4，其次IPv6
+      // Prefer IPv4, then IPv6
       if (!ipv4_address.empty()) {
         return ipv4_address;
       } else if (!ipv6_address.empty()) {
@@ -118,7 +118,7 @@ namespace webhook {
   static const int MAX_CONCURRENT_THREADS = 10;
 
   /**
-   * @brief 发送webhook请求
+   * @brief Send a webhook request
    * @param url Webhook URL
    * @param json_payload JSON payload to send
    * @param timeout_duration Request timeout
@@ -149,7 +149,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 发送单个webhook请求
+   * @brief Send a single webhook request
    * @param url Webhook URL
    * @param json_payload JSON payload to send
    * @param timeout_duration Request timeout
@@ -209,8 +209,8 @@ namespace webhook {
 
 
   /**
-   * @brief 异步发送webhook事件
-   * @param event Webhook事件数据
+   * @brief Send a webhook event asynchronously
+   * @param event Webhook event data
    */
   void send_event_async(const event_t& event)
   {
@@ -222,7 +222,7 @@ namespace webhook {
     // Initialize webhook format if not already done
     static bool format_initialized = false;
     if (!format_initialized) {
-      // 默认配置为webhook格式
+      // Default to webhook format
       configure_webhook_format(true);
       format_initialized = true;
     }
@@ -280,7 +280,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 检查webhook是否启用
+   * @brief Check whether the webhook is enabled
    * @return true if enabled, false otherwise
    */
   bool is_enabled()
@@ -289,37 +289,39 @@ namespace webhook {
   }
 
   /**
-   * @brief 获取告警消息
-   * @param type Webhook事件类型
-   * @param is_chinese 是否使用中文
-   * @return 告警消息
+   * @brief Get the alert message
+   * @param type Webhook event type
+   * @param is_chinese Whether to use Chinese localization
+   * @return Alert message
    */
   std::string get_alert_message(event_type_t type, bool is_chinese)
   {
+    // English-only build: ignore is_chinese flag, always return English strings.
+    (void) is_chinese;
     switch (type) {
       case event_type_t::CONFIG_PIN_SUCCESS:
-        return is_chinese ? "🔗 配置配对成功" : "🔗 Config pairing successful";
+        return "🔗 Config pairing successful";
       case event_type_t::CONFIG_PIN_FAILED:
-        return is_chinese ? "❌ 配置配对失败" : "❌ Config pairing failed";
+        return "❌ Config pairing failed";
       case event_type_t::NV_APP_LAUNCH:
-        return is_chinese ? "🚀 应用启动" : "🚀 application launched";
+        return "🚀 application launched";
       case event_type_t::NV_APP_RESUME:
-        return is_chinese ? "▶️ 应用恢复" : "▶️ application resumed";
+        return "▶️ application resumed";
       case event_type_t::NV_APP_TERMINATE:
-        return is_chinese ? "⏹️ 应用终止" : "⏹️ application terminated";
+        return "⏹️ application terminated";
       case event_type_t::NV_SESSION_START:
-        return is_chinese ? "📱 会话开始" : "📱 session started";
+        return "📱 session started";
       case event_type_t::NV_SESSION_END:
-        return is_chinese ? "📱 会话结束" : "📱 session ended";
+        return "📱 session ended";
       default:
-        return is_chinese ? "🔔 系统通知" : "🔔 System notification";
+        return "🔔 System notification";
     }
   }
 
   /**
-   * @brief 清理JSON字符串
-   * @param str 原始字符串
-   * @return 清理后的字符串
+   * @brief Sanitize a JSON string
+   * @param str Original string
+   * @return Sanitized string
    */
   std::string sanitize_json_string(const std::string& str)
   {
@@ -347,8 +349,8 @@ namespace webhook {
   }
 
   /**
-   * @brief 获取当前时间戳
-   * @return 当前时间戳
+   * @brief Get the current timestamp
+   * @return Current timestamp
    */
   std::string get_current_timestamp()
   {
@@ -365,7 +367,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 检查是否达到速率限制
+   * @brief Check whether the rate limit has been reached
    * @return true if rate limited, false otherwise
    */
   bool is_rate_limited()
@@ -388,7 +390,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 记录成功发送
+   * @brief Record a successful send
    */
   void record_successful_send() {
     std::lock_guard<std::mutex> lock(rate_limit_mutex);
@@ -396,7 +398,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 发送速率限制通知
+   * @brief Send a rate-limit notification
    */
   void send_rate_limit_notification()
   {
@@ -412,13 +414,11 @@ namespace webhook {
       rate_limit_notification_sent = false;
     }).detach();
     
-    // Send rate limit notification
-    bool is_chinese = (config::sunshine.locale == "zh" || config::sunshine.locale == "zh_TW");
+    // Send rate limit notification (English-only build)
     std::string hostname = platf::get_host_name();
     std::string local_ip = get_local_ip();
     std::string ip_info = local_ip.empty() ? "" : local_ip;
-    std::string message = is_chinese ? 
-      "主机: " + hostname + " " + ip_info + "\n ⚠️ Webhook 发送频率过高，已限制发送\n最近" + std::to_string(RATE_LIMIT_WINDOW_MINUTES) + "分钟内发送次数超过" + std::to_string(MAX_SENDS_PER_MINUTE) + "次\n时间: " + get_current_timestamp() :
+    std::string message =
       "Host: " + hostname + " " + ip_info + "\n ⚠️ Webhook sending rate too high, sending limited\nExceeded " + std::to_string(MAX_SENDS_PER_MINUTE) + " sends in the last " + std::to_string(RATE_LIMIT_WINDOW_MINUTES) + " minute(s)\nTime: " + get_current_timestamp();
     
     std::ostringstream json_stream;
@@ -445,8 +445,8 @@ namespace webhook {
   }
 
   /**
-   * @brief 检查是否可以创建线程
-   * @return true if can create, false otherwise
+   * @brief Check whether a new thread can be created
+   * @return true if a new thread can be created, false otherwise
    */
   bool can_create_thread()
   {
@@ -454,7 +454,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 注册线程
+   * @brief Register a thread
    */
   void register_thread()
   {
@@ -463,7 +463,7 @@ namespace webhook {
   }
 
   /**
-   * @brief 注销线程
+   * @brief Unregister a thread
    */
   void unregister_thread()
   {

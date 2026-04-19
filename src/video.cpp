@@ -480,21 +480,21 @@ namespace video {
 
       switch (param.type) {
         case dynamic_param_type_e::RESOLUTION:
-          // 分辨率变更需要重新初始化编码器
+          // Resolution change requires encoder reinitialization
           BOOST_LOG(info) << "AVCodec encoder: Resolution change requested (requires encoder reinitialization)";
           break;
         case dynamic_param_type_e::FPS:
-          // FPS变更需要重新配置编码器
+          // FPS change requires encoder reconfiguration
           BOOST_LOG(info) << "AVCodec encoder: FPS change requested: " << param.value.float_value
                           << " fps (requires encoder reconfiguration)";
           break;
         case dynamic_param_type_e::BITRATE: {
-          // 码率调整通过set_bitrate处理
+          // Bitrate adjustment is handled by set_bitrate
           set_bitrate(param.value.int_value);
           break;
         }
         case dynamic_param_type_e::QP: {
-          // 设置量化参数
+          // Set the quantization parameter
           if (param.value.int_value >= 0 && param.value.int_value <= 51) {
             avcodec_ctx->qmin = param.value.int_value;
             avcodec_ctx->qmax = param.value.int_value;
@@ -506,9 +506,9 @@ namespace video {
           break;
         }
         case dynamic_param_type_e::VBV_BUFFER_SIZE: {
-          // 设置VBV缓冲区大小
+          // Set the VBV buffer size
           if (param.value.int_value > 0) {
-            avcodec_ctx->rc_buffer_size = param.value.int_value * 1000;  // 转换为bps
+            avcodec_ctx->rc_buffer_size = param.value.int_value * 1000;  // Convert to bps
             BOOST_LOG(info) << "AVCodec encoder VBV buffer size changed to: " << param.value.int_value << " Kbps";
           }
           break;
@@ -565,8 +565,8 @@ namespace video {
     void
     set_bitrate(int bitrate_kbps) override {
       if (device && device->nvenc) {
-        // 考虑FEC影响，调整编码码率
-        // 当FEC百分比为X%时，实际编码码率需要调整为原始码率的(100-X)%
+        // Account for FEC overhead and adjust the encode bitrate
+        // When the FEC percentage is X%, the effective encode bitrate becomes (100-X)% of the original
         auto adjusted_bitrate_kbps = bitrate_kbps;
         if (config::stream.fec_percentage <= 80) {
           adjusted_bitrate_kbps = (int) (bitrate_kbps * (100 - config::stream.fec_percentage) / 100.0f);
@@ -585,37 +585,37 @@ namespace video {
 
       switch (param.type) {
         case dynamic_param_type_e::RESOLUTION:
-          // 分辨率变更需要重新初始化编码器，这里只记录日志
+          // Resolution change requires encoder reinitialization; just log here
           BOOST_LOG(info) << "NVENC encoder: Resolution change requested (requires encoder reinitialization)";
           break;
         case dynamic_param_type_e::FPS:
-          // FPS变更需要重新配置编码器
+          // FPS change requires encoder reconfiguration
           BOOST_LOG(info) << "NVENC encoder: FPS change requested: " << param.value.float_value
                           << " fps (requires encoder reconfiguration)";
           break;
         case dynamic_param_type_e::BITRATE: {
-          // 码率调整通过set_bitrate处理
+          // Bitrate adjustment is handled by set_bitrate
           set_bitrate(param.value.int_value);
           break;
         }
         case dynamic_param_type_e::QP: {
-          // NVENC的QP调整需要通过重新配置编码器
+          // NVENC QP adjustment requires encoder reconfiguration
           BOOST_LOG(info) << "NVENC encoder QP change requested: " << param.value.int_value
                           << " (requires encoder reconfiguration)";
           break;
         }
         case dynamic_param_type_e::ADAPTIVE_QUANTIZATION: {
-          // 自适应量化开关
+          // Adaptive quantization toggle
           BOOST_LOG(info) << "NVENC encoder adaptive quantization change requested: " << param.value.bool_value;
           break;
         }
         case dynamic_param_type_e::MULTI_PASS: {
-          // 多遍编码设置
+          // Multi-pass encoding setting
           BOOST_LOG(info) << "NVENC encoder multi-pass change requested: " << param.value.int_value;
           break;
         }
         case dynamic_param_type_e::VBV_BUFFER_SIZE: {
-          // VBV缓冲区大小
+          // VBV buffer size
           BOOST_LOG(info) << "NVENC encoder VBV buffer size change requested: " << param.value.int_value << " Kbps";
           break;
         }
@@ -1418,10 +1418,10 @@ namespace video {
       disp.reset();
       disp = platf::display(type, display_name, config);
       if (disp) {
-        BOOST_LOG(debug) << "[reset_display] 成功重置显示器: " << display_name;
+        BOOST_LOG(debug) << "[reset_display] Successfully reset display: " << display_name;
         break;
       }
-      BOOST_LOG(debug) << "[reset_display] 显示器创建失败 (尝试 " << (x + 1) << "/2): " << display_name;
+      BOOST_LOG(debug) << "[reset_display] Display creation failed (attempt " << (x + 1) << "/2): " << display_name;
       // The capture code depends on us to sleep between failures
       std::this_thread::sleep_for(200ms);
     }
@@ -2862,7 +2862,7 @@ namespace video {
         idr_events->pop();
       }
 
-      // 处理动态参数调整
+      // Handle dynamic parameter adjustments
       while (dynamic_param_events_ptr->peek()) {
         if (auto param = dynamic_param_events_ptr->pop(0ms)) {
           BOOST_LOG(info) << "Applying dynamic parameter change: type=" << (int) param->type;
@@ -3857,7 +3857,7 @@ namespace video {
       }
     }
 
-    BOOST_LOG(info) << "Testing for available encoders - Errors during this phase can be ignored (测试可用编码器 - 此阶段的错误可以忽略)";
+    BOOST_LOG(info) << "Testing for available encoders - Errors during this phase can be ignored";
 
     // If we haven't found an encoder yet, but we want one with specific codec support, search for that now.
     if (chosen_encoder == nullptr && (active_hevc_mode >= 2 || active_av1_mode >= 2)) {
@@ -3927,7 +3927,7 @@ namespace video {
       return -1;
     }
 
-    BOOST_LOG(info) << "Ignore any errors, Encoder testing completed (忽略任何错误，编码器测试完成)";
+    BOOST_LOG(info) << "Ignore any errors, encoder testing completed";
 
     auto &encoder = *chosen_encoder;
 

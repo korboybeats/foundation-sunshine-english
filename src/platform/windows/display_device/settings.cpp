@@ -358,22 +358,22 @@ namespace display_device {
       constexpr auto stability_check_interval = std::chrono::milliseconds(500);
       constexpr auto max_wait_time = std::chrono::milliseconds(5000);
 
-      BOOST_LOG(debug) << "等待显示器操作稳定，准备进行HDR切换...";
+      BOOST_LOG(debug) << "Waiting for display operations to settle before HDR switch...";
 
       auto start_time = std::chrono::steady_clock::now();
 
       for (int attempt = 0; attempt < max_attempts; ++attempt) {
-        // 检查是否超时
+        // Check for timeout
         auto elapsed = std::chrono::steady_clock::now() - start_time;
         if (elapsed > max_wait_time) {
-          BOOST_LOG(warning) << "等待显示器稳定超时，继续执行HDR切换";
+          BOOST_LOG(warning) << "Timed out waiting for display stability; continuing with HDR switch";
           return false;
         }
 
-        // 检查当前拓扑是否稳定
+        // Check whether the current topology is stable
         auto current_topology = get_current_topology();
         if (is_topology_the_same(current_topology, metadata.current_topology)) {
-          // 检查显示模式是否稳定
+          // Check whether the display modes are stable
           auto current_modes = get_current_display_modes(get_device_ids_from_topology(current_topology));
           bool modes_stable = true;
 
@@ -386,15 +386,14 @@ namespace display_device {
           }
 
           if (modes_stable) {
-            BOOST_LOG(debug) << "显示器操作已稳定，可以进行HDR切换";
+            BOOST_LOG(debug) << "Display operations have settled; ready for HDR switch";
             return true;
           }
         }
-
         std::this_thread::sleep_for(stability_check_interval);
       }
 
-      BOOST_LOG(warning) << "显示器稳定检查达到最大尝试次数，继续执行HDR切换";
+      BOOST_LOG(warning) << "Display stability check reached maximum attempts; continuing with HDR switch";
       return false;
     }
 
@@ -521,14 +520,14 @@ namespace display_device {
         return true;
       }
 
-      // 在移除VDD之前，先检查拓扑中是否有VDD
-      // 收集VDD的设备ID，分别记录：
-      // - vdd_device_ids: 所有VDD设备ID（用于从HDR/modes中清理）
-      // - vdd_in_modified_only: 只在modified拓扑中的VDD（需要销毁）
+      // Before removing VDD, first check whether there is a VDD in the topology.
+      // Collect VDD device IDs into two sets:
+      // - vdd_device_ids: all VDD device IDs (used to clean up HDR/modes)
+      // - vdd_in_initial: VDDs present in the initial topology (do not destroy these)
       std::unordered_set<std::string> vdd_device_ids;
       std::unordered_set<std::string> vdd_in_initial;
-      
-      // 收集 initial 拓扑中的 VDD
+
+      // Collect VDDs from the initial topology
       for (const auto &group : data.topology.initial) {
         for (const auto &device_id : group) {
           const auto friendly_name = get_display_friendly_name(device_id);
@@ -538,8 +537,8 @@ namespace display_device {
           }
         }
       }
-      
-      // 收集 modified 拓扑中的 VDD
+
+      // Collect VDDs from the modified topology
       for (const auto &group : data.topology.modified) {
         for (const auto &device_id : group) {
           const auto friendly_name = get_display_friendly_name(device_id);
@@ -549,9 +548,9 @@ namespace display_device {
         }
       }
 
-      // 如果有VDD不在initial拓扑中（由Sunshine创建），则销毁
-      // 如果VDD在initial拓扑中（用户常驻VDD），则保留
-      // 如果启用了"保持启用"模式，也保留VDD
+      // If there is a VDD that is NOT in the initial topology (created by Sunshine), destroy it.
+      // If a VDD IS in the initial topology (user's persistent VDD), keep it.
+      // If "keep enabled" mode is on, also keep VDDs.
       bool should_destroy_vdd = false;
       if (!config::video.vdd_keep_enabled) {
         for (const auto &vdd_id : vdd_device_ids) {
@@ -561,19 +560,19 @@ namespace display_device {
           }
         }
       }
-      
+
       if (skip_vdd_destroy) {
-        BOOST_LOG(debug) << "VDD已由调用方销毁，跳过try_revert_settings中的VDD销毁逻辑";
+        BOOST_LOG(debug) << "VDD has already been destroyed by the caller; skipping VDD destruction in try_revert_settings";
       }
       else if (config::video.vdd_keep_enabled) {
-        BOOST_LOG(debug) << "VDD保持启用模式已开启，保留VDD";
+        BOOST_LOG(debug) << "VDD keep-enabled mode is on; preserving VDD";
       }
       else if (should_destroy_vdd) {
-        BOOST_LOG(info) << "检测到Sunshine创建的VDD（不在初始拓扑中），销毁VDD";
+        BOOST_LOG(info) << "Detected a Sunshine-created VDD (not in the initial topology); destroying VDD";
         display_device::session_t::get().destroy_vdd_monitor();
       }
       else if (!vdd_in_initial.empty()) {
-        BOOST_LOG(debug) << "VDD在初始拓扑中（常驻VDD），保留不销毁";
+        BOOST_LOG(debug) << "VDD is in the initial topology (persistent VDD); keeping it";
       }
 
       // Remove VDD devices from topology before reverting, as VDD may have been destroyed
@@ -790,8 +789,8 @@ namespace display_device {
   settings_t::is_changing_settings_going_to_fail() const {
     const bool session_locked = w_utils::is_user_session_locked();
     
-    // 如果会话已锁定，直接返回true，跳过CCD API测试
-    // 这避免了在锁屏状态下频繁调用显示API导致ERROR_ACCESS_DENIED和WATCHDOG事件
+    // If the session is locked, return true immediately and skip the CCD API probe.
+    // This avoids repeatedly calling display APIs while locked, which causes ERROR_ACCESS_DENIED and WATCHDOG events.
     if (session_locked) {
       BOOST_LOG(info) << "Changing settings will fail - session_locked: true";
       return true;
@@ -811,30 +810,30 @@ namespace display_device {
     const rtsp_stream::launch_session_t &session,
     const boost::optional<active_topology_t> &pre_saved_initial_topology) {
     const auto do_apply_config { [this, &pre_saved_initial_topology](const parsed_config_t &config) -> settings_t::apply_result_t {
-      // 检测是否为VDD模式
+      // Detect VDD mode
       const bool is_vdd_mode = config.use_vdd && *config.use_vdd;
 
-      // 根据模式选择不同的拓扑处理方式
+      // Choose topology handling based on mode
       boost::optional<handled_topology_result_t> topology_result;
       bool failed_while_reverting_settings { false };
 
       if (is_vdd_mode) {
-        // VDD模式：拓扑由 vdd_prep 控制（在 prepare_vdd 中已处理），这里只获取 metadata
-        // 这里不修改拓扑，分辨率、刷新率、HDR 等设置仍然会应用
+        // VDD mode: topology is controlled by vdd_prep (already handled in prepare_vdd); just fetch metadata here.
+        // Topology is not modified here, but resolution, refresh rate, HDR, etc. are still applied.
         BOOST_LOG(info) << "VDD mode: topology controlled by vdd_prep in prepare_vdd, only getting current topology metadata";
         topology_result = get_current_topology_metadata(config.device_id);
 
-        // 如果有预保存的初始拓扑（在 VDD 创建前保存的物理显示器拓扑），
-        // 用它替换 get_current_topology_metadata 返回的初始拓扑。
-        // 否则恢复时 remove_vdd_from_topology 会将初始拓扑清空，
-        // 导致物理显示器无法被重新启用。
+        // If a pre-saved initial topology exists (physical displays captured before VDD creation),
+        // use it to replace the initial topology returned by get_current_topology_metadata.
+        // Otherwise, on revert, remove_vdd_from_topology would clear the initial topology and
+        // physical displays could not be re-enabled.
         if (topology_result && pre_saved_initial_topology && !pre_saved_initial_topology->empty()) {
           BOOST_LOG(info) << "VDD mode: using pre-saved initial topology (physical displays) instead of current VDD-only topology";
           topology_result->pair.initial = *pre_saved_initial_topology;
         }
       }
       else {
-        // 普通模式：device_prep 控制拓扑
+        // Normal mode: device_prep controls the topology
         if (config.device_prep == parsed_config_t::device_prep_e::no_operation) {
           BOOST_LOG(info) << "Display device preparation mode is set to no_operation, topology will not be changed";
         }
@@ -942,11 +941,11 @@ namespace display_device {
       current_settings.original_modes = *original_modes;
       filter_vdd_devices(current_settings.original_modes);
 
-      // 如果有HDR切换操作，等待其他操作稳定后再进行HDR切换
+      // If there is an HDR switch, wait for other display operations to settle before performing it
       if (config.change_hdr_state) {
-        BOOST_LOG(info) << "检测到HDR切换操作，等待其他显示器操作稳定...";
+        BOOST_LOG(info) << "Detected HDR switch operation; waiting for other display operations to settle...";
         if (!wait_for_display_stability(topology_result->metadata)) {
-          BOOST_LOG(warning) << "显示器稳定检查未完全通过，但继续执行HDR切换";
+          BOOST_LOG(warning) << "Display stability check did not fully pass, but continuing with HDR switch";
         }
       }
 
@@ -1006,42 +1005,42 @@ namespace display_device {
 
   bool
   settings_t::revert_settings(revert_reason_e reason, bool skip_vdd_destroy) {
-    static const char *reason_strs[] = { "串流结束", "拓扑切换", "配置清理", "重置持久化" };
+    static const char *reason_strs[] = { "stream end", "topology switch", "config cleanup", "persistence reset" };
     const char *reason_str = reason_strs[static_cast<int>(reason)];
-    BOOST_LOG(info) << "正在恢复显示设备设置 (原因: " << reason_str << ")";
+    BOOST_LOG(info) << "Restoring display device settings (reason: " << reason_str << ")";
 
-    // 加载持久化设置数据
+    // Load persistent settings data
     if (!persistent_data) {
-      BOOST_LOG(info) << "加载显示设备持久化设置";
+      BOOST_LOG(info) << "Loading persistent display device settings";
       persistent_data = load_settings(filepath);
     }
 
-    // 如果存在持久化数据，尝试恢复设置
+    // If persistent data exists, attempt to restore settings
     if (persistent_data) {
-      // 尝试恢复设置
+      // Try to restore settings
       bool data_updated { false };
       bool success = try_revert_settings(*persistent_data, data_updated, skip_vdd_destroy);
       if (!success) {
         if (data_updated) {
-          save_settings(filepath, *persistent_data);  // 忽略返回值
+          save_settings(filepath, *persistent_data);  // Ignore return value
         }
-        BOOST_LOG(error) << "恢复显示设备设置失败！如有异常请尝试关闭基地显示器，或手动修改系统显示设置~";
+        BOOST_LOG(error) << "Failed to restore display device settings! If you encounter issues, try closing the foundation display or manually adjusting system display settings.";
       }
 
-      // 清理持久化数据
+      // Clean up persistent data
       remove_file(filepath);
       persistent_data = nullptr;
 
-      // 释放音频数据
+      // Release audio data
       if (reason != revert_reason_e::topology_switch) {
         if (audio_data) {
-          BOOST_LOG(debug) << "释放捕获的音频接收器";
+          BOOST_LOG(debug) << "Releasing captured audio sink";
           audio_data = nullptr;
         }
       }
 
       if (success) {
-        BOOST_LOG(info) << "显示设备配置已恢复";
+        BOOST_LOG(info) << "Display device configuration has been restored";
       }
     }
     return true;

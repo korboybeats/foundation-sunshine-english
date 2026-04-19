@@ -14,13 +14,13 @@ namespace webhook {
    * @brief Webhook event types for different operations
    */
   enum class event_type_t {
-    CONFIG_PIN_SUCCESS,    // 配置配对成功 / Config pairing successful
-    CONFIG_PIN_FAILED,     // 配置配对失败 / Config pairing failed
-    NV_APP_LAUNCH,         // NV应用启动 / NV application launched
-    NV_APP_RESUME,         // NV应用恢复 / NV application resumed
-    NV_APP_TERMINATE,      // NV应用终止 / NV application terminated
-    NV_SESSION_START,      // NV会话开始 / NV session started
-    NV_SESSION_END         // NV会话结束 / NV session ended
+    CONFIG_PIN_SUCCESS,    // Config pairing successful
+    CONFIG_PIN_FAILED,     // Config pairing failed
+    NV_APP_LAUNCH,         // NV application launched
+    NV_APP_RESUME,         // NV application resumed
+    NV_APP_TERMINATE,      // NV application terminated
+    NV_SESSION_START,      // NV session started
+    NV_SESSION_END         // NV session ended
   };
 
   /**
@@ -28,7 +28,7 @@ namespace webhook {
    */
   struct event_t {
     event_type_t type;
-    std::string alert_type;        // 告警类型 / Alert type
+    std::string alert_type;        // Alert type
     std::string timestamp;
     std::string client_name;
     std::string client_ip;
@@ -84,7 +84,7 @@ namespace webhook {
   /**
    * @brief Generate detailed JSON payload for webhook
    * @param event Webhook event data
-   * @param is_chinese Whether to use Chinese locale
+   * @param is_chinese Whether to use Chinese locale (ignored in English-only build)
    * @return JSON string for webhook payload
    */
   std::string generate_webhook_json(const event_t& event, bool is_chinese);
@@ -122,8 +122,8 @@ namespace webhook {
   void unregister_thread();
 
   /**
-   * @brief 获取本地IP地址
-   * @return 本地IP地址字符串，优先返回IPv4，其次IPv6，都获取不到返回空字符串
+   * @brief Get the local IP address
+   * @return Local IP address string; prefers IPv4, falls back to IPv6, returns empty if neither is available
    */
   std::string get_local_ip();
 

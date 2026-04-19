@@ -17,21 +17,21 @@ extern "C" {
 struct AVPacket;
 namespace video {
 
-  // 动态参数调节类型
+  // Dynamic parameter adjustment type
   enum class dynamic_param_type_e : int {
-    RESOLUTION,        // 分辨率 - 值：2个int (width, height)
-    FPS,               // 帧率 - 值：1个float
-    BITRATE,           // 码率 (Kbps) - 值：1个int
-    QP,                // 量化参数 - 值：1个int
-    FEC_PERCENTAGE,    // FEC百分比 - 值：1个int
-    PRESET,            // 编码预设 - 值：1个int
-    ADAPTIVE_QUANTIZATION, // 自适应量化 - 值：1个bool
-    MULTI_PASS,        // 多遍编码 - 值：1个int
-    VBV_BUFFER_SIZE,   // VBV缓冲区大小 - 值：1个int
+    RESOLUTION,        // Resolution - value: 2 ints (width, height)
+    FPS,               // Frame rate - value: 1 float
+    BITRATE,           // Bitrate (Kbps) - value: 1 int
+    QP,                // Quantization parameter - value: 1 int
+    FEC_PERCENTAGE,    // FEC percentage - value: 1 int
+    PRESET,            // Encoder preset - value: 1 int
+    ADAPTIVE_QUANTIZATION, // Adaptive quantization - value: 1 bool
+    MULTI_PASS,        // Multi-pass encoding - value: 1 int
+    VBV_BUFFER_SIZE,   // VBV buffer size - value: 1 int
     MAX_PARAM_TYPE
   };
 
-  // 动态参数值联合体
+  // Dynamic parameter value union
   union dynamic_param_value_t {
     int int_value;
     int int_array_value[2];
@@ -39,14 +39,14 @@ namespace video {
     float float_value;
   };
 
-  // 动态参数结构
+  // Dynamic parameter struct
   struct dynamic_param_t {
     dynamic_param_type_e type;
     dynamic_param_value_t value;
     bool valid;
   };
 
-  // 动态参数调节事件类型
+  // Dynamic parameter change event type
   using dynamic_param_change_event_t = safe::mail_raw_t::event_t<dynamic_param_t>;
 
   /* Encoding configuration requested by remote client */
@@ -283,10 +283,10 @@ namespace video {
     invalidate_ref_frames(int64_t first_frame, int64_t last_frame) = 0;
 
     virtual void
-    set_bitrate(int bitrate_kbps) = 0;  // 新增：动态码率调整方法
+    set_bitrate(int bitrate_kbps) = 0;  // New: dynamic bitrate adjustment method
 
     virtual void
-    set_dynamic_param(const dynamic_param_t &param) = 0;  // 新增：通用动态参数调整方法
+    set_dynamic_param(const dynamic_param_t &param) = 0;  // New: generic dynamic parameter adjustment method
   };
 
   // encoders

@@ -1,7 +1,7 @@
 /**
  * @file tools/qiin-tabtip.cpp
- * @brief 调出或隐藏 Windows 触摸虚拟键盘的工具
- * @note 优化版本 - 不使用 C++ 标准库以减小文件大小
+ * @brief Utility to show or hide the Windows touch virtual keyboard
+ * @note Optimized version - avoids the C++ standard library to reduce file size
  */
 #ifndef UNICODE
 #define UNICODE
@@ -15,7 +15,7 @@
 #include <initguid.h>
 #include <Objbase.h>
 
-// 简单的控制台输出函数（替代 iostream）
+// Simple console output helper (replaces iostream)
 static void Print(const wchar_t* msg) {
   DWORD written;
   HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -30,12 +30,12 @@ static void PrintError(const wchar_t* msg) {
   WriteConsoleW(hConsole, L"\r\n", 2, &written, NULL);
 }
 
-// 字符串比较（不区分大小写）
+// Case-insensitive string comparison
 static bool StrEqualI(const wchar_t* str1, const wchar_t* str2) {
   return lstrcmpiW(str1, str2) == 0;
 }
 
-// ITipInvocation COM 接口 - 这是微软官方的触摸键盘 API
+// ITipInvocation COM interface - this is Microsoft's official touch keyboard API
 // CLSID for UIHostNoLaunch
 DEFINE_GUID(CLSID_UIHostNoLaunch,
     0x4CE576FA, 0x83DC, 0x4f88, 0x95, 0x1C, 0x9D, 0x07, 0x82, 0xB4, 0xE3, 0x76);
@@ -44,33 +44,33 @@ DEFINE_GUID(CLSID_UIHostNoLaunch,
 DEFINE_GUID(IID_ITipInvocation,
     0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0xdc, 0xe1, 0xf1, 0x3b, 0x83, 0x4b);
 
-// ITipInvocation 接口定义
+// ITipInvocation interface definition
 struct ITipInvocation : IUnknown {
     virtual HRESULT STDMETHODCALLTYPE Toggle(HWND wnd) = 0;
 };
 
-// Windows 10/11 触摸键盘路径
+// Path to the Windows 10/11 touch keyboard
 const wchar_t* TABTIP_PATH = L"C:\\Program Files\\Common Files\\microsoft shared\\ink\\TabTip.exe";
 
 /**
- * 检查触摸键盘是否正在运行
+ * Check whether the touch keyboard is currently running
  */
 bool IsKeyboardVisible() {
   HWND hwnd = FindWindow(L"IPTip_Main_Window", NULL);
   if (hwnd == NULL) {
-    // Windows 11 可能使用不同的类名
+    // Windows 11 may use a different class name
     hwnd = FindWindow(L"ApplicationFrameWindow", L"Microsoft Text Input Application");
   }
-  
+
   if (hwnd != NULL) {
-    // 检查窗口是否可见
+    // Check whether the window is visible
     return IsWindowVisible(hwnd);
   }
   return false;
 }
 
 /**
- * 检查 TabTip.exe 是否存在
+ * Check whether TabTip.exe exists
  */
 bool CheckTabTipExists() {
   DWORD dwAttrib = GetFileAttributes(TABTIP_PATH);
@@ -78,8 +78,8 @@ bool CheckTabTipExists() {
 }
 
 /**
- * 启用触摸键盘的桌面模式自动调用
- * 这是 Windows 10/11 中显示 TabTip 的关键设置
+ * Enable desktop-mode auto-invoke for the touch keyboard
+ * This is the key setting for showing TabTip on Windows 10/11
  */
 bool EnableDesktopModeAutoInvoke() {
   HKEY hKey;
@@ -92,7 +92,7 @@ bool EnableDesktopModeAutoInvoke() {
   );
 
   if (result != ERROR_SUCCESS) {
-    // 如果键不存在，尝试创建
+    // If the key does not exist, try to create it
     result = RegCreateKeyEx(
       HKEY_CURRENT_USER,
       L"SOFTWARE\\Microsoft\\TabletTip\\1.7",
@@ -104,13 +104,13 @@ bool EnableDesktopModeAutoInvoke() {
       &hKey,
       NULL
     );
-    
+
     if (result != ERROR_SUCCESS) {
       return false;
     }
   }
 
-  // 设置 EnableDesktopModeAutoInvoke 为 1
+  // Set EnableDesktopModeAutoInvoke to 1
   DWORD value = 1;
   result = RegSetValueEx(
     hKey,
@@ -126,7 +126,7 @@ bool EnableDesktopModeAutoInvoke() {
 }
 
 /**
- * 检查是否已启用桌面模式自动调用
+ * Check whether desktop-mode auto-invoke is enabled
  */
 bool IsDesktopModeAutoInvokeEnabled() {
   HKEY hKey;
@@ -158,53 +158,53 @@ bool IsDesktopModeAutoInvokeEnabled() {
 }
 
 /**
- * 强制显示已存在的键盘窗口
+ * Force-show an existing keyboard window
  */
 bool ForceShowKeyboardWindow() {
-  // 查找键盘窗口
+  // Find the keyboard window
   HWND hwnd = FindWindow(L"IPTip_Main_Window", NULL);
-  
+
   if (hwnd == NULL) {
-    // Windows 11 可能使用不同的类名
+    // Windows 11 may use a different class name
     hwnd = FindWindow(L"ApplicationFrameWindow", L"Microsoft Text Input Application");
   }
 
   if (hwnd != NULL) {
-    // 显示窗口
+    // Show the window
     ShowWindow(hwnd, SW_SHOW);
     SetForegroundWindow(hwnd);
-    
-    // 确保窗口位置在屏幕内
+
+    // Make sure the window is on screen
     RECT rect;
     GetWindowRect(hwnd, &rect);
     int keyboardHeight = rect.bottom - rect.top;
-    
+
     if (keyboardHeight > 0) {
       int screenWidth = GetSystemMetrics(SM_CXSCREEN);
       int screenHeight = GetSystemMetrics(SM_CYSCREEN);
       int keyboardWidth = rect.right - rect.left;
       int x = (screenWidth - keyboardWidth) / 2;
       int y = screenHeight - keyboardHeight - 50;
-      
+
       SetWindowPos(hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
       Sleep(50);
       SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
     }
-    
+
     return IsWindowVisible(hwnd);
   }
-  
+
   return false;
 }
 
 /**
- * 使用 COM 接口显示触摸键盘（推荐方法）
- * 这是 Microsoft 官方的 ITipInvocation 接口
+ * Show the touch keyboard via the COM interface (recommended method)
+ * This uses Microsoft's official ITipInvocation interface
  */
 bool ShowKeyboardViaCOM() {
   HRESULT hr = CoInitialize(NULL);
   bool needsUninit = SUCCEEDED(hr);
-  
+
   ITipInvocation* pTipInvocation = NULL;
   hr = CoCreateInstance(
     CLSID_UIHostNoLaunch,
@@ -213,43 +213,43 @@ bool ShowKeyboardViaCOM() {
     IID_ITipInvocation,
     (void**)&pTipInvocation
   );
-  
+
   bool success = false;
   if (SUCCEEDED(hr) && pTipInvocation) {
     hr = pTipInvocation->Toggle(GetDesktopWindow());
     success = SUCCEEDED(hr);
     pTipInvocation->Release();
   }
-  
+
   if (needsUninit) {
     CoUninitialize();
   }
-  
+
   return success;
 }
 
 /**
- * 显示触摸键盘（综合方法）
+ * Show the touch keyboard (combined methods)
  */
 bool ShowKeyboard() {
-  // 方法 1: 使用 COM 接口（最可靠的方法）
+  // Method 1: COM interface (most reliable)
   if (ShowKeyboardViaCOM()) {
-    Print(L"✓ 触摸键盘已显示");
+    Print(L"Touch keyboard shown");
     return true;
   }
-  
-  // 方法 2: 传统方法作为备选
+
+  // Method 2: legacy fallback
   if (!CheckTabTipExists()) {
-    PrintError(L"✗ 找不到 TabTip.exe");
+    PrintError(L"TabTip.exe not found");
     return false;
   }
 
-  // 确保注册表设置正确
+  // Make sure the registry setting is correct
   if (!IsDesktopModeAutoInvokeEnabled()) {
     EnableDesktopModeAutoInvoke();
   }
 
-  // 检查窗口是否已存在
+  // Check whether the window already exists
   HWND existingWnd = FindWindow(L"IPTip_Main_Window", NULL);
   if (existingWnd == NULL) {
     existingWnd = FindWindow(L"ApplicationFrameWindow", L"Microsoft Text Input Application");
@@ -257,12 +257,12 @@ bool ShowKeyboard() {
 
   if (existingWnd != NULL) {
     if (ForceShowKeyboardWindow()) {
-      Print(L"✓ 触摸键盘已显示");
+      Print(L"Touch keyboard shown");
       return true;
     }
   }
 
-  // 启动 TabTip.exe
+  // Launch TabTip.exe
   SHELLEXECUTEINFO sei = { 0 };
   sei.cbSize = sizeof(SHELLEXECUTEINFO);
   sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
@@ -276,47 +276,47 @@ bool ShowKeyboard() {
       CloseHandle(sei.hProcess);
     }
     Sleep(500);
-    
+
     if (ForceShowKeyboardWindow()) {
-      Print(L"✓ 触摸键盘已显示");
+      Print(L"Touch keyboard shown");
       return true;
     }
   }
 
-  // 最后备选：OSK
+  // Final fallback: OSK
   HINSTANCE result = ShellExecute(NULL, L"open", L"osk.exe", NULL, NULL, SW_SHOW);
   if ((INT_PTR)result > 32) {
-    Print(L"✓ 屏幕键盘已显示");
+    Print(L"On-screen keyboard shown");
     return true;
   }
-  
-  PrintError(L"✗ 无法显示键盘");
+
+  PrintError(L"Unable to show keyboard");
   return false;
 }
 
 /**
- * 隐藏触摸键盘
+ * Hide the touch keyboard
  */
 bool HideKeyboard() {
-  // 查找键盘窗口
+  // Find the keyboard window
   HWND hwnd = FindWindow(L"IPTip_Main_Window", NULL);
   if (hwnd == NULL) {
-    // Windows 11 可能使用不同的类名
+    // Windows 11 may use a different class name
     hwnd = FindWindow(L"ApplicationFrameWindow", L"Microsoft Text Input Application");
   }
 
   if (hwnd != NULL && IsWindowVisible(hwnd)) {
     PostMessage(hwnd, WM_SYSCOMMAND, SC_CLOSE, 0);
-    Print(L"✓ 触摸键盘已隐藏");
+    Print(L"Touch keyboard hidden");
     return true;
   }
-  
-  Print(L"触摸键盘未运行或已隐藏");
+
+  Print(L"Touch keyboard is not running or already hidden");
   return false;
 }
 
 /**
- * 切换触摸键盘状态
+ * Toggle the touch keyboard
  */
 bool ToggleKeyboard() {
   if (IsKeyboardVisible()) {
@@ -327,15 +327,15 @@ bool ToggleKeyboard() {
 }
 
 /**
- * 诊断系统环境
+ * Diagnose the system environment
  */
 void Diagnose() {
   wchar_t buffer[256];
-  
-  Print(L"=== 系统诊断信息 ===");
+
+  Print(L"=== System Diagnostics ===");
   Print(L"");
-  
-  // 检查 Windows 版本
+
+  // Check Windows version
   OSVERSIONINFOEX osvi = { 0 };
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
   #if defined(_MSC_VER)
@@ -346,93 +346,93 @@ void Diagnose() {
   #if defined(_MSC_VER)
   #pragma warning(pop)
   #endif
-  wsprintfW(buffer, L"Windows 版本: %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+  wsprintfW(buffer, L"Windows version: %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
   Print(buffer);
-  
-  // 检查 TabTip.exe
+
+  // Check TabTip.exe
   Print(L"");
-  wsprintfW(buffer, L"TabTip 路径: %s", TABTIP_PATH);
+  wsprintfW(buffer, L"TabTip path: %s", TABTIP_PATH);
   Print(buffer);
-  Print(CheckTabTipExists() ? L"TabTip.exe: ✓ 存在" : L"TabTip.exe: ✗ 不存在");
-  
-  // 检查注册表设置
+  Print(CheckTabTipExists() ? L"TabTip.exe: present" : L"TabTip.exe: missing");
+
+  // Check the registry setting
   Print(L"");
-  Print(L"注册表设置:");
-  Print(IsDesktopModeAutoInvokeEnabled() ? 
-        L"  EnableDesktopModeAutoInvoke: ✓ 已启用" : 
-        L"  EnableDesktopModeAutoInvoke: ✗ 未启用");
-  
-  // 检查键盘窗口
+  Print(L"Registry setting:");
+  Print(IsDesktopModeAutoInvokeEnabled() ?
+        L"  EnableDesktopModeAutoInvoke: enabled" :
+        L"  EnableDesktopModeAutoInvoke: disabled");
+
+  // Check the keyboard window
   Print(L"");
-  Print(L"检查键盘窗口:");
+  Print(L"Keyboard window check:");
   HWND hwnd = FindWindow(L"IPTip_Main_Window", NULL);
   if (hwnd) {
-    Print(L"  IPTip_Main_Window: ✓ 找到 (Windows 10)");
-    Print(IsWindowVisible(hwnd) ? L"  可见性: 可见" : L"  可见性: 隐藏");
+    Print(L"  IPTip_Main_Window: found (Windows 10)");
+    Print(IsWindowVisible(hwnd) ? L"  Visibility: visible" : L"  Visibility: hidden");
   } else {
-    Print(L"  IPTip_Main_Window: ✗ 未找到");
+    Print(L"  IPTip_Main_Window: not found");
   }
-  
+
   hwnd = FindWindow(L"ApplicationFrameWindow", L"Microsoft Text Input Application");
   if (hwnd) {
-    Print(L"  ApplicationFrameWindow: ✓ 找到 (Windows 11)");
-    Print(IsWindowVisible(hwnd) ? L"  可见性: 可见" : L"  可见性: 隐藏");
+    Print(L"  ApplicationFrameWindow: found (Windows 11)");
+    Print(IsWindowVisible(hwnd) ? L"  Visibility: visible" : L"  Visibility: hidden");
   } else {
-    Print(L"  ApplicationFrameWindow: ✗ 未找到");
+    Print(L"  ApplicationFrameWindow: not found");
   }
-  
+
   Print(L"");
-  Print(IsKeyboardVisible() ? L"当前键盘状态: 可见" : L"当前键盘状态: 隐藏");
+  Print(IsKeyboardVisible() ? L"Current keyboard state: visible" : L"Current keyboard state: hidden");
 }
 
 /**
- * 显示屏幕键盘 (OSK)
+ * Show the on-screen keyboard (OSK)
  */
 bool ShowOSK() {
   HINSTANCE result = ShellExecute(NULL, L"open", L"osk.exe", NULL, NULL, SW_SHOW);
   if ((INT_PTR)result > 32) {
-    Print(L"✓ 屏幕键盘已显示");
+    Print(L"On-screen keyboard shown");
     return true;
   }
-  PrintError(L"✗ 无法显示屏幕键盘");
+  PrintError(L"Unable to show the on-screen keyboard");
   return false;
 }
 
 /**
- * 显示使用帮助
+ * Show usage help
  */
 void ShowHelp() {
-  Print(L"Windows 虚拟触摸键盘工具");
+  Print(L"Windows touch virtual keyboard utility");
   Print(L"");
-  Print(L"用法:");
-  Print(L"  qiin-tabtip [选项]");
+  Print(L"Usage:");
+  Print(L"  qiin-tabtip [option]");
   Print(L"");
-  Print(L"选项:");
-  Print(L"  show      - 显示触摸键盘 (TabTip)");
-  Print(L"  hide      - 隐藏触摸键盘");
-  Print(L"  toggle    - 切换键盘显示状态 (默认)");
-  Print(L"  osk       - 显示屏幕键盘 (OSK)");
-  Print(L"  status    - 检查键盘是否可见");
-  Print(L"  diagnose  - 诊断系统环境");
-  Print(L"  help      - 显示此帮助信息");
+  Print(L"Options:");
+  Print(L"  show      - Show the touch keyboard (TabTip)");
+  Print(L"  hide      - Hide the touch keyboard");
+  Print(L"  toggle    - Toggle the keyboard state (default)");
+  Print(L"  osk       - Show the on-screen keyboard (OSK)");
+  Print(L"  status    - Check whether the keyboard is visible");
+  Print(L"  diagnose  - Diagnose the system environment");
+  Print(L"  help      - Show this help message");
   Print(L"");
-  Print(L"示例:");
-  Print(L"  qiin-tabtip              # 切换键盘状态");
-  Print(L"  qiin-tabtip show         # 显示触摸键盘");
-  Print(L"  qiin-tabtip osk          # 显示屏幕键盘");
-  Print(L"  qiin-tabtip diagnose     # 诊断问题");
+  Print(L"Examples:");
+  Print(L"  qiin-tabtip              # Toggle the keyboard state");
+  Print(L"  qiin-tabtip show         # Show the touch keyboard");
+  Print(L"  qiin-tabtip osk          # Show the on-screen keyboard");
+  Print(L"  qiin-tabtip diagnose     # Diagnose problems");
 }
 
 int wmain(int argc, wchar_t* argv[]) {
-  // 设置控制台 UTF-8 输出
+  // Set console output to UTF-8
   SetConsoleOutputCP(CP_UTF8);
 
   const wchar_t* command = L"toggle";
   wchar_t cmdLower[256] = {0};
-  
+
   if (argc > 1) {
     command = argv[1];
-    // 转换为小写用于比较
+    // Convert to lowercase for comparison
     lstrcpynW(cmdLower, command, 255);
     CharLowerW(cmdLower);
     command = cmdLower;
@@ -452,10 +452,10 @@ int wmain(int argc, wchar_t* argv[]) {
   }
   else if (StrEqualI(command, L"status")) {
     if (IsKeyboardVisible()) {
-      Print(L"触摸键盘当前: 可见");
+      Print(L"Touch keyboard currently: visible");
       return 0;
     } else {
-      Print(L"触摸键盘当前: 隐藏");
+      Print(L"Touch keyboard currently: hidden");
       return 1;
     }
   }
@@ -463,37 +463,37 @@ int wmain(int argc, wchar_t* argv[]) {
     Diagnose();
     return 0;
   }
-  else if (StrEqualI(command, L"help") || StrEqualI(command, L"--help") || 
+  else if (StrEqualI(command, L"help") || StrEqualI(command, L"--help") ||
            StrEqualI(command, L"-h") || StrEqualI(command, L"/?")) {
     ShowHelp();
     return 0;
   }
   else {
     wchar_t errMsg[512];
-    wsprintfW(errMsg, L"未知命令: %s", command);
+    wsprintfW(errMsg, L"Unknown command: %s", command);
     PrintError(errMsg);
-    PrintError(L"使用 'qiin-tabtip help' 查看帮助");
+    PrintError(L"Use 'qiin-tabtip help' to see usage");
     return 1;
   }
 
   return 0;
 }
 
-// 如果没有 wmain 支持，使用普通的 main 函数
+// If wmain support is not available, fall back to a normal main function
 #ifndef _UNICODE
 int main(int argc, char* argv[]) {
-  // 获取命令行参数的宽字符版本
+  // Get the wide-character command line
   LPWSTR* szArglist;
   int nArgs;
-  
+
   szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
   if (szArglist == NULL) {
     PrintError(L"CommandLineToArgvW failed");
     return 1;
   }
-  
+
   int result = wmain(nArgs, szArglist);
-  
+
   LocalFree(szArglist);
   return result;
 }

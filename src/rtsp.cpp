@@ -938,7 +938,7 @@ namespace rtsp_stream {
     ss << "a=x-ss-general.encryptionSupported:" << encryption_flags_supported << std::endl;
     ss << "a=x-ss-general.encryptionRequested:" << encryption_flags_requested << std::endl;
     
-    // 记录加密请求状态用于调试
+    // Log encryption request status for debugging
     BOOST_LOG(info) << "RTSP DESCRIBE encryption flags: supported=0x" << std::hex << encryption_flags_supported << std::dec
                     << ", requested=0x" << std::hex << encryption_flags_requested << std::dec
                     << " (CONTROL_V2=" << ((encryption_flags_requested & SS_ENC_CONTROL_V2) ? "1" : "0")
@@ -964,7 +964,7 @@ namespace rtsp_stream {
       ss << "a=fmtp:97 surround-params="sv << session.surround_params << std::endl;
     }
 
-    // 添加麦克风流支持（仅在启用时）
+    // Add microphone stream support (only when enabled)
     if (config::audio.stream_mic) {
       ss << "m=audio " << net::map_port(stream::MIC_STREAM_PORT) << " RTP/AVP 96" << std::endl;
       ss << "a=rtpmap:96 opus/48000/2" << std::endl;
@@ -1302,14 +1302,14 @@ namespace rtsp_stream {
       return;
     }
 
-    // 检测是否仅控制流会话（只有 control 流被设置，没有 video 和 audio）
+    // Detect a control-only session (only control stream is set up, without video and audio)
     session.control_only = session.setup_control && !session.setup_video && !session.setup_audio;
     if (session.control_only) {
       BOOST_LOG(info) << "Control-only session detected: client ["sv << session.client_name << "] will only provide input control"sv;
     }
 
     // Check that any required encryption is enabled
-    // 对于仅控制流会话，跳过视频/音频加密检查
+    // For a control-only session, skip the video/audio encryption check
     if (!session.control_only) {
       auto encryption_mode = net::encryption_mode_for_address(sock.remote_endpoint().address());
       if (encryption_mode == config::ENCRYPTION_MODE_MANDATORY &&

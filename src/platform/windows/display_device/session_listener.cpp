@@ -34,13 +34,13 @@ namespace display_device {
       switch (wparam) {
         case WTS_SESSION_UNLOCK:
           {
-            BOOST_LOG(info) << "[SessionListener] 检测到会话解锁事件";
-            
-            // 将pending_task_移入队列执行
+            BOOST_LOG(info) << "[SessionListener] Session unlock event detected";
+
+            // Move pending_task_ into the queue for execution
             {
               std::lock_guard<std::mutex> lock(mutex_);
               if (pending_task_) {
-                BOOST_LOG(info) << "[SessionListener] 执行解锁任务";
+                BOOST_LOG(info) << "[SessionListener] Executing unlock task";
                 task_queue_.push(std::move(pending_task_));
                 pending_task_ = nullptr;
                 cv_.notify_one();
@@ -49,10 +49,10 @@ namespace display_device {
           }
           break;
         case WTS_SESSION_LOCK:
-          BOOST_LOG(info) << "[SessionListener] 检测到会话锁定事件";
+          BOOST_LOG(info) << "[SessionListener] Session lock event detected";
           break;
         case WTS_CONSOLE_DISCONNECT:
-          BOOST_LOG(info) << "[SessionListener] 检测到控制台断开事件";
+          BOOST_LOG(info) << "[SessionListener] Console disconnect event detected";
           break;
         default:
           break;
@@ -75,7 +75,7 @@ namespace display_device {
     if (!RegisterClassExW(&wc)) {
       DWORD last_error = GetLastError();
       if (last_error != ERROR_CLASS_ALREADY_EXISTS) {
-        BOOST_LOG(error) << "[SessionListener] 注册窗口类失败: " << last_error;
+        BOOST_LOG(error) << "[SessionListener] Failed to register window class: " << last_error;
         {
           std::lock_guard<std::mutex> lock(init_mutex_);
           init_complete_ = true;
@@ -92,7 +92,7 @@ namespace display_device {
     );
 
     if (!hidden_window_) {
-      BOOST_LOG(error) << "[SessionListener] 创建隐藏窗口失败: " << GetLastError();
+      BOOST_LOG(error) << "[SessionListener] Failed to create hidden window: " << GetLastError();
       {
         std::lock_guard<std::mutex> lock(init_mutex_);
         init_complete_ = true;
@@ -103,7 +103,7 @@ namespace display_device {
     }
 
     if (!WTSRegisterSessionNotification(hidden_window_, NOTIFY_FOR_THIS_SESSION)) {
-      BOOST_LOG(warning) << "[SessionListener] 注册会话通知失败: " << GetLastError();
+      BOOST_LOG(warning) << "[SessionListener] Failed to register session notification: " << GetLastError();
       DestroyWindow(hidden_window_);
       hidden_window_ = nullptr;
       {
@@ -115,7 +115,7 @@ namespace display_device {
       return;
     }
 
-    BOOST_LOG(info) << "[SessionListener] 会话事件监听器初始化成功";
+    BOOST_LOG(info) << "[SessionListener] Session event listener initialized successfully";
     
     {
       std::lock_guard<std::mutex> lock(init_mutex_);
@@ -140,7 +140,7 @@ namespace display_device {
 
   void
   SessionEventListener::worker_loop() {
-    BOOST_LOG(info) << "[SessionListener] Worker线程已启动";
+    BOOST_LOG(info) << "[SessionListener] Worker thread started";
     
     while (true) {
       UnlockCallback task;
@@ -163,16 +163,16 @@ namespace display_device {
         task_queue_.pop();
       }
       
-      // 在锁外执行任务，避免死锁
+      // Execute the task outside the lock to avoid deadlock
       try {
         task();
       }
       catch (const std::exception& e) {
-        BOOST_LOG(error) << "[SessionListener] 任务执行异常: " << e.what();
+        BOOST_LOG(error) << "[SessionListener] Task execution exception: " << e.what();
       }
     }
-    
-    BOOST_LOG(info) << "[SessionListener] Worker线程已退出";
+
+    BOOST_LOG(info) << "[SessionListener] Worker thread exited";
   }
 
   bool
@@ -187,18 +187,18 @@ namespace display_device {
       init_success_ = false;
     }
 
-    // 启动worker线程
+    // Start the worker thread
     {
       std::lock_guard<std::mutex> lock(mutex_);
       worker_running_ = true;
     }
     worker_thread_ = std::thread(worker_loop);
 
-    // 启动消息线程
+    // Start the message thread
     thread_running_ = true;
     message_thread_ = std::thread(message_loop);
 
-    // 等待初始化完成
+    // Wait for initialization to complete
     {
       std::unique_lock<std::mutex> lock(init_mutex_);
       init_cv_.wait(lock, [] { return init_complete_; });
@@ -208,7 +208,7 @@ namespace display_device {
     event_based_ = init_success_;
 
     if (!event_based_) {
-      BOOST_LOG(warning) << "[SessionListener] 事件监听器初始化失败";
+      BOOST_LOG(warning) << "[SessionListener] Event listener initialization failed";
       thread_running_ = false;
       if (message_thread_.joinable()) {
         message_thread_.join();
@@ -224,7 +224,7 @@ namespace display_device {
       return;
     }
 
-    BOOST_LOG(info) << "[SessionListener] 开始清理";
+    BOOST_LOG(info) << "[SessionListener] Starting cleanup";
 
     thread_running_ = false;
     if (hidden_window_) {
@@ -234,7 +234,7 @@ namespace display_device {
       message_thread_.join();
     }
 
-    // 停止worker线程
+    // Stop the worker thread
     {
       std::lock_guard<std::mutex> lock(mutex_);
       worker_running_ = false;
@@ -245,7 +245,7 @@ namespace display_device {
       worker_thread_.join();
     }
 
-    // 清理状态
+    // Clear state
     {
       std::lock_guard<std::mutex> lock(mutex_);
       pending_task_ = nullptr;
@@ -256,7 +256,7 @@ namespace display_device {
 
     initialized_ = false;
     event_based_ = false;
-    BOOST_LOG(info) << "[SessionListener] 清理完成";
+    BOOST_LOG(info) << "[SessionListener] Cleanup complete";
   }
 
   bool
@@ -275,14 +275,14 @@ namespace display_device {
     std::lock_guard<std::mutex> lock(mutex_);
     
     if (!is_locked) {
-      // 未锁定：直接提交到队列执行
-      BOOST_LOG(info) << "[SessionListener] 当前未锁定，立即执行任务";
+      // Not locked: submit to the queue immediately
+      BOOST_LOG(info) << "[SessionListener] Currently not locked, executing task immediately";
       task_queue_.push(std::move(task));
       cv_.notify_one();
     }
     else {
-      // 锁定中：保存任务等待解锁
-      BOOST_LOG(info) << "[SessionListener] 任务已加入解锁队列";
+      // Locked: save the task to wait for unlock
+      BOOST_LOG(info) << "[SessionListener] Task added to unlock queue";
       pending_task_ = std::move(task);
     }
   }

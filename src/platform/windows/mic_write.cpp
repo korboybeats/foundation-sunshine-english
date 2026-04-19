@@ -74,17 +74,17 @@ namespace platf::audio {
   mic_write_wasapi_t::cleanup() {
     is_cleaning_up.store(true);
 
-    // 等待音频处理完成
+    // Wait for audio processing to finish
     if (audio_client) {
-      // 停止音频客户端
+      // Stop the audio client
       audio_client->Stop();
 
-      // 等待缓冲区清空
+      // Wait for the buffer to drain
       UINT32 bufferFrameCount = 0;
       UINT32 padding = 0;
       HRESULT status = audio_client->GetBufferSize(&bufferFrameCount);
       if (SUCCEEDED(status)) {
-        // 等待缓冲区完全清空，最多等待 500ms
+        // Wait for the buffer to fully drain, up to 500ms
         int max_wait = 50;
         while (SUCCEEDED(audio_client->GetCurrentPadding(&padding)) && padding > 0 && max_wait-- > 0) {
           Sleep(10);
@@ -92,16 +92,16 @@ namespace platf::audio {
       }
     }
 
-    // COM 接口释放顺序很重要：
-    // 1. audio_render (从 audio_client 获取的子接口)
-    // 2. audio_client
-    // 3. device_enum
+    // COM interface release order matters:
+    //   1. audio_render (sub-interface acquired from audio_client)
+    //   2. audio_client
+    //   3. device_enum
     if (audio_render) {
       audio_render->Release();
       audio_render = nullptr;
     }
 
-    // 显式释放 audio_client 和 device_enum，确保正确的释放顺序
+    // Explicitly release audio_client and device_enum to ensure the correct release order
     audio_client.reset();
     device_enum.reset();
 
@@ -115,7 +115,7 @@ namespace platf::audio {
       mmcss_task_handle = nullptr;
     }
 
-    // 注意: 不在析构函数的 cleanup 中使用 BOOST_LOG，避免静态对象析构顺序问题
+    // Note: do not use BOOST_LOG in the destructor's cleanup to avoid static-object destruction-order issues
   }
 
   capture_e
@@ -132,15 +132,15 @@ namespace platf::audio {
     packet_loss_count = 0;
     fec_recovered_packets = 0;
 
-    // 初始化OPUS解码器
+    // Initialize the OPUS decoder
     int opus_error;
-    opus_decoder = opus_decoder_create(48000, 1, &opus_error);  // 48kHz, 单声道
+    opus_decoder = opus_decoder_create(48000, 1, &opus_error);  // 48kHz, mono
     if (opus_error != OPUS_OK) {
       BOOST_LOG(error) << "Failed to create OPUS decoder: " << opus_strerror(opus_error);
       return -1;
     }
 
-    // 初始化设备枚举器
+    // Initialize the device enumerator
     HRESULT hr = CoCreateInstance(
       CLSID_MMDeviceEnumerator,
       nullptr,
@@ -154,20 +154,20 @@ namespace platf::audio {
       return -1;
     }
 
-    // 存储原始音频设备设置
+    // Store the original audio device settings
     store_original_audio_settings();
 
-    // 尝试创建或使用虚拟音频设备
+    // Try to create or use a virtual audio device
     if (create_virtual_audio_device() != 0) {
       BOOST_LOG(warning) << "Virtual audio device not available, microphone redirection may not work";
     }
 
-    // 设置loopback
+    // Set up loopback
     if (setup_virtual_mic_loopback() != 0) {
       BOOST_LOG(warning) << "Failed to setup virtual microphone loopback";
     }
 
-    // 对于麦克风重定向，我们需要使用虚拟音频输出设备
+    // For microphone redirection we need a virtual audio output device
     device_t device;
 
     auto vb_matched = find_device_id({ { match_field_e::adapter_friendly_name, L"VB-Audio Virtual Cable" } });
@@ -178,7 +178,7 @@ namespace platf::audio {
       }
     }
 
-    // 最后尝试使用默认的扬声器设备
+    // As a last resort, fall back to the default speaker device
     if (FAILED(hr) || !device) {
       hr = device_enum->GetDefaultAudioEndpoint(eRender, eConsole, &device);
       if (SUCCEEDED(hr) && device) {
@@ -192,7 +192,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 激活 IAudioClient
+    // Activate IAudioClient
     auto status = device->Activate(
       IID_IAudioClient,
       CLSCTX_ALL,
@@ -201,7 +201,7 @@ namespace platf::audio {
     if (FAILED(status) || !audio_client) {
       BOOST_LOG(error) << "Failed to activate IAudioClient for mic write: [0x" << util::hex(status).to_string_view() << "]";
 
-      // 获取设备信息以便调试
+      // Get device info for debugging
       wstring_t device_id;
       device->GetId(&device_id);
       BOOST_LOG(error) << "Device ID: " << platf::to_utf8(device_id.get());
@@ -210,15 +210,15 @@ namespace platf::audio {
       return -1;
     }
 
-    // 尝试多种音频格式，从最兼容的开始
+    // Try multiple audio formats, starting with the most compatible
     std::vector<WAVEFORMATEX> formats_to_try = {
-      // 16位单声道，48kHz
+      // 16-bit mono, 48kHz
       { WAVE_FORMAT_PCM, 1, 48000, 96000, 2, 16, 0 },
-      // 16位单声道，44.1kHz
+      // 16-bit mono, 44.1kHz
       { WAVE_FORMAT_PCM, 1, 44100, 88200, 2, 16, 0 },
-      // 16位立体声，48kHz
+      // 16-bit stereo, 48kHz
       { WAVE_FORMAT_PCM, 2, 48000, 192000, 4, 16, 0 },
-      // 16位立体声，44.1kHz
+      // 16-bit stereo, 44.1kHz
       { WAVE_FORMAT_PCM, 2, 44100, 176400, 4, 16, 0 },
     };
 
@@ -231,7 +231,7 @@ namespace platf::audio {
 
       init_status = audio_client->Initialize(
         AUDCLNT_SHAREMODE_SHARED,
-        0,  // 不使用特殊标志
+        0,  // No special flags
         1000000,  // 100ms buffer (10000000 was 10 seconds)
         0,
         &format,
@@ -254,10 +254,10 @@ namespace platf::audio {
       return -1;
     }
 
-    // 保存使用的格式信息
+    // Save the format that was used
     current_format = *used_format;
 
-    // 启动音频客户端
+    // Start the audio client
     status = audio_client->Start();
     if (FAILED(status)) {
       BOOST_LOG(error) << "Failed to start IAudioClient for mic write: [0x" << util::hex(status).to_string_view() << "]";
@@ -265,7 +265,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 获取 IAudioRenderClient - 用于写入音频数据
+    // Get IAudioRenderClient - used to write audio data
     status = audio_client->GetService(IID_IAudioRenderClient, (void **) &audio_render);
     if (FAILED(status) || !audio_render) {
       BOOST_LOG(error) << "Failed to get IAudioRenderClient for mic write: [0x" << util::hex(status).to_string_view() << "]";
@@ -274,7 +274,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 设置MMCSS优先级
+    // Set MMCSS priority
     {
       DWORD task_index = 0;
       mmcss_task_handle = AvSetMmThreadCharacteristics("Pro Audio", &task_index);
@@ -336,7 +336,7 @@ namespace platf::audio {
       first_packet = false;
     }
 
-    // 解码OPUS数据
+    // Decode the OPUS data
     int frame_size = opus_decoder_get_nb_samples(opus_decoder, (const unsigned char *) data, len);
     if (frame_size < 0) {
       BOOST_LOG(error) << "Failed to get OPUS frame size: " << opus_strerror(frame_size);
@@ -384,7 +384,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 获取缓冲区大小和当前填充的帧数
+    // Get the buffer size and the number of frames currently filled
     UINT32 bufferFrameCount = 0;
     UINT32 padding = 0;
     auto status = audio_client->GetBufferSize(&bufferFrameCount);
@@ -406,7 +406,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 确保padding不超过缓冲区大小
+    // Ensure padding does not exceed the buffer size
     if (padding > bufferFrameCount) {
       BOOST_LOG(warning) << "Invalid padding value: " << padding << " > " << bufferFrameCount << ", using 0";
       padding = 0;
@@ -414,22 +414,22 @@ namespace platf::audio {
 
     UINT32 availableFrames = bufferFrameCount - padding;
 
-    // 如果缓冲区空间不足，进行多次等待尝试
+    // If there isn't enough buffer space, try waiting in several iterations
     if (framesToWrite > availableFrames) {
       BOOST_LOG(verbose) << "Buffer full, waiting for space. Need: " << framesToWrite << ", Available: " << availableFrames;
 
-      // 最多尝试3次，每次等待时间递增
+      // Up to 3 attempts, with increasing wait time
       const int max_retries = 3;
       for (int retry = 0; retry < max_retries && framesToWrite > availableFrames; ++retry) {
-        // 根据需要的帧数计算等待时间：帧数 / 48000 * 1000 (ms)
-        // 保守估计，等待所需时间的 80%
+        // Compute the wait time from the frames required: frames / 48000 * 1000 (ms)
+        // Conservative estimate: wait 80% of the required time
         DWORD wait_ms = static_cast<DWORD>((framesToWrite - availableFrames) * 1000 / 48000 * 0.8);
-        wait_ms = std::max(wait_ms, 5ul);  // 最少等待 5ms
-        wait_ms = std::min(wait_ms, 50ul); // 最多等待 50ms
-        
+        wait_ms = std::max(wait_ms, 5ul);  // Wait at least 5ms
+        wait_ms = std::min(wait_ms, 50ul); // Wait at most 50ms
+
         Sleep(wait_ms);
 
-        // 重新检查可用空间
+        // Re-check available space
         status = audio_client->GetCurrentPadding(&padding);
         if (FAILED(status)) {
           BOOST_LOG(error) << "Failed to get current padding after wait: [0x" << util::hex(status).to_string_view() << "]";
@@ -441,14 +441,14 @@ namespace platf::audio {
         }
 
         availableFrames = bufferFrameCount - padding;
-        
+
         if (framesToWrite <= availableFrames) {
           BOOST_LOG(verbose) << "Buffer space available after " << (retry + 1) << " retries";
           break;
         }
       }
 
-      // 如果仍然没有足够空间，降级为 debug 日志并截断
+      // If there's still not enough space, downgrade to a warning and truncate
       if (framesToWrite > availableFrames) {
         BOOST_LOG(warning) << "Mic write buffer still full after retries: " << framesToWrite << " frames requested, " << availableFrames << " available. Truncating.";
         framesToWrite = availableFrames;
@@ -459,7 +459,7 @@ namespace platf::audio {
       return 0;
     }
 
-    // 获取渲染缓冲区
+    // Acquire the render buffer
     BYTE *pData = nullptr;
     status = audio_render->GetBuffer(framesToWrite, &pData);
     if (FAILED(status)) {
@@ -471,10 +471,10 @@ namespace platf::audio {
       return -1;
     }
 
-    // 拷贝解码后的PCM数据到缓冲区
+    // Copy decoded PCM data into the buffer
     memcpy(pData, pcm_output_buffer.data(), framesToWrite * current_format.nBlockAlign);
 
-    // 释放缓冲区
+    // Release the buffer
     status = audio_render->ReleaseBuffer(framesToWrite, 0);
     if (FAILED(status)) {
       if (status == AUDCLNT_E_DEVICE_INVALIDATED) {
@@ -485,7 +485,7 @@ namespace platf::audio {
       return -1;
     }
 
-    return framesToWrite * current_format.nBlockAlign;  // 返回实际写入的字节数
+    return framesToWrite * current_format.nBlockAlign;  // Return the actual number of bytes written
   }
 
   int
@@ -495,10 +495,10 @@ namespace platf::audio {
       return -1;
     }
 
-    // 创建一个简单的测试音频数据（静音）
+    // Build a simple test audio buffer (silence)
     const int test_frames = 480;  // 10ms at 48kHz
     const int test_bytes = test_frames * current_format.nBlockAlign;
-    std::vector<BYTE> test_data(test_bytes, 0);  // 全零数据（静音）
+    std::vector<BYTE> test_data(test_bytes, 0);  // All-zero data (silence)
 
     BOOST_LOG(info) << "Testing client mic redirection with " << test_frames << " frames, " << test_bytes << " bytes";
 
@@ -509,37 +509,37 @@ namespace platf::audio {
   mic_write_wasapi_t::create_virtual_audio_device() {
     BOOST_LOG(info) << "Attempting to create/use virtual audio device for client mic redirection";
 
-    // 检查VB-Cable虚拟设备
+    // Check for the VB-Cable virtual device
     auto vb_matched = find_device_id({ { match_field_e::adapter_friendly_name, L"VB-Audio Virtual Cable" } });
     if (vb_matched) {
       BOOST_LOG(info) << "Found existing VB-Audio Virtual Cable device";
       virtual_device_type = VirtualDeviceType::VB_CABLE;
-      return 0;  // 设备已存在
+      return 0;  // Device already exists
     }
 
     BOOST_LOG(debug) << "VB-Cable not found, attempting to download...";
 
-    // 检查是否已安装VB-Cable驱动程序
+    // Check whether the VB-Cable driver is already installed
     HKEY hKey;
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\VB\\VBAudioVAC", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
       RegCloseKey(hKey);
       BOOST_LOG(info) << "VB-Cable driver is already installed";
-      return -1;  // 已安装但未找到设备，可能是未启用
+      return -1;  // Installed but device not found, likely disabled
     }
 
-    // 检查是否已经下载并解压过（防止重复下载）
+    // Check whether the installer was already downloaded and extracted (avoid duplicate downloads)
     std::wstring extract_path = std::filesystem::temp_directory_path().wstring() + L"\\VBCABLE_Install";
     std::wstring installer_path = extract_path + L"\\VBCABLE_Setup_x64.exe";
     if (std::filesystem::exists(installer_path)) {
-      // 安装程序已存在，只需提示用户安装
+      // Installer already exists; just prompt the user to install it
       BOOST_LOG(warning) << "VB-Cable already downloaded to: " << platf::to_utf8(extract_path) << " ; Please run 'VBCABLE_Setup_x64.exe' as administrator to install, then restart Sunshine";
       return -1;
     }
 
-    // 下载VB-Cable
+    // Download VB-Cable
     BOOST_LOG(debug) << "Downloading VB-Cable...";
 
-    // 下载VB-Cable安装程序
+    // Download the VB-Cable installer
     std::wstring download_url = L"https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack43.zip";
     std::wstring temp_path = std::filesystem::temp_directory_path().wstring() + L"\\VBCABLE_Driver_Pack43.zip";
 
@@ -557,7 +557,7 @@ namespace platf::audio {
     }
     FreeLibrary(urlmon);
 
-    // 解压安装包到用户可访问的位置
+    // Extract the installer to a user-accessible location
     std::error_code ec;
     std::filesystem::create_directories(extract_path, ec);
     if (ec && ec != std::errc::file_exists) {
@@ -565,7 +565,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 解压VB-Cable
+    // Extract VB-Cable
     BOOST_LOG(debug) << "Extracting VB-Cable...";
     std::wstring extract_cmd = L"powershell -command \"Expand-Archive -Path '" + temp_path + L"' -DestinationPath '" + extract_path + L"' -Force\"";
 
@@ -574,7 +574,7 @@ namespace platf::audio {
       return -1;
     }
 
-    // 引导用户手动安装
+    // Guide the user through manual installation
     BOOST_LOG(warning) << "VB-Cable downloaded to: " << platf::to_utf8(extract_path) << " ; Please run 'VBCABLE_Setup_x64.exe' as administrator to install, then restart Sunshine";
 
     return -1;
@@ -714,7 +714,7 @@ namespace platf::audio {
 
     BOOST_LOG(info) << "Setting up virtual microphone loopback for client mic redirection";
 
-    // 根据虚拟设备类型设置循环
+    // Set up loopback based on the virtual device type
     switch (virtual_device_type) {
       case VirtualDeviceType::STEAM:
         return setup_steam_mic_loopback();
@@ -730,8 +730,8 @@ namespace platf::audio {
   mic_write_wasapi_t::setup_steam_mic_loopback() {
     BOOST_LOG(info) << "Setting up Steam virtual microphone loopback";
 
-    // Steam Streaming Speakers 会自动循环到 Steam Streaming Microphone
-    // 我们需要确保Steam Streaming Microphone被设置为默认录音设备
+    // Steam Streaming Speakers automatically loops back to the Steam Streaming Microphone.
+    // We need to make sure the Steam Streaming Microphone is set as the default recording device.
     if (auto steam_mic = find_capture_device_id({ { match_field_e::adapter_friendly_name, L"Steam Streaming Microphone" } })) {
       HRESULT hr = set_default_device_all_roles(steam_mic->second);
       if (FAILED(hr)) {
@@ -746,14 +746,14 @@ namespace platf::audio {
   mic_write_wasapi_t::setup_vb_cable_mic_loopback() {
     BOOST_LOG(info) << "Setting up VB-Cable virtual microphone loopback";
 
-    // 1. 检查VB-Cable输入设备是否存在
+    // 1. Check whether the VB-Cable input device exists
     auto vb_input = find_capture_device_id({ { match_field_e::adapter_friendly_name, L"VB-Audio Virtual Cable" } });
     if (!vb_input) {
       BOOST_LOG(warning) << "VB-Cable Input device not found";
       return -1;
     }
 
-    // 2. 设置VB-Cable为默认录音设备
+    // 2. Set VB-Cable as the default recording device
     HRESULT hr = set_default_device_all_roles(vb_input->second);
     if (FAILED(hr)) {
       BOOST_LOG(error) << "Failed to set VB-Cable as default device: [0x" << util::hex(hr).to_string_view() << "]";
@@ -762,14 +762,14 @@ namespace platf::audio {
     restoration_state.input_device_changed = true;
     BOOST_LOG(info) << "Successfully set VB-Cable as default recording device";
 
-    // 3. 检查VB-Cable输出设备
+    // 3. Check the VB-Cable output device
     auto vb_output = find_device_id({ { match_field_e::adapter_friendly_name, L"VB-Audio Virtual Cable" } });
     if (!vb_output) {
       BOOST_LOG(info) << "VB-Cable output device not found, skipping output device check";
       return 0;
     }
 
-    // 4. 检查VB-Cable是否是默认播放设备
+    // 4. Check whether VB-Cable is currently the default playback device
     device_t default_device;
     if (FAILED(device_enum->GetDefaultAudioEndpoint(eRender, eConsole, &default_device)) || !default_device) {
       BOOST_LOG(warning) << "Failed to get default playback device";
@@ -787,7 +787,7 @@ namespace platf::audio {
       return 0;
     }
 
-    // 5. 寻找替代播放设备
+    // 5. Find an alternative playback device
     BOOST_LOG(info) << "VB-Cable is currently the default playback device, switching to alternative...";
     collection_t collection;
     if (FAILED(device_enum->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &collection))) {
@@ -834,24 +834,24 @@ namespace platf::audio {
       return;
     }
 
-    // 获取并存储当前默认输入设备ID
+    // Fetch and store the current default input device ID
     device_t default_input;
     if (SUCCEEDED(device_enum->GetDefaultAudioEndpoint(eCapture, eConsole, &default_input)) && default_input) {
       wstring_t device_id;
       if (SUCCEEDED(default_input->GetId(&device_id))) {
         restoration_state.original_input_device_id = device_id.get();
-        BOOST_LOG(debug) << "已存储原始输入设备: " << platf::to_utf8(restoration_state.original_input_device_id);
+        BOOST_LOG(debug) << "Stored original input device: " << platf::to_utf8(restoration_state.original_input_device_id);
       }
       else {
-        BOOST_LOG(warning) << "获取输入设备ID失败";
+        BOOST_LOG(warning) << "Failed to obtain input device ID";
       }
     }
     else {
-      BOOST_LOG(warning) << "获取默认输入设备失败";
+      BOOST_LOG(warning) << "Failed to obtain default input device";
     }
 
     restoration_state.settings_stored = true;
-    BOOST_LOG(info) << "原始音频设备设置存储完成";
+    BOOST_LOG(info) << "Original audio device settings have been stored";
   }
 
   int
@@ -873,14 +873,14 @@ namespace platf::audio {
 
     int result = 0;
 
-    // 恢复输入设备
+    // Restore the input device
     if (restoration_state.input_device_changed) {
       if (restore_original_input_device() != 0) {
         result = -1;
       }
     }
 
-    // 重置恢复状态
+    // Reset the restoration state
     restoration_state.input_device_changed = false;
     restoration_state.settings_stored = false;
 

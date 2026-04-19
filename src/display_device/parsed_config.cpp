@@ -189,7 +189,7 @@ namespace display_device {
             parsed_config.resolution = boost::none;
           }
           else if (session.width > 16384 || session.height > 16384) {
-            BOOST_LOG(warning) << "奇怪的分辨率增加了...";
+            BOOST_LOG(warning) << "An unusual resolution was added...";
             parsed_config.resolution = boost::none;
           }
           else if (session.width >= 0 && session.height >= 0) {
@@ -603,25 +603,25 @@ namespace display_device {
   make_parsed_config(const config::video_t &config, const rtsp_stream::launch_session_t &session, bool is_reconfigure) {
     parsed_config_t parsed_config;
     
-    // 优先使用客户端指定的显示器名称，如果没有则使用全局配置
+    // Prefer the display name specified by the client; fall back to the global config
     std::string device_id_to_use = config.output_name;
     if (auto it = session.env.find("SUNSHINE_CLIENT_DISPLAY_NAME"); it != session.env.end()) {
       const std::string client_display_name = it->to_string();
       if (!client_display_name.empty()) {
         device_id_to_use = client_display_name;
-        BOOST_LOG(debug) << "使用客户端指定的显示器: " << device_id_to_use;
+        BOOST_LOG(debug) << "Using client-specified display: " << device_id_to_use;
       }
     }
-    
+
     parsed_config.device_id = device_id_to_use;
     parsed_config.device_prep = static_cast<parsed_config_t::device_prep_e>(config.display_device_prep);
     parsed_config.change_hdr_state = parse_hdr_option(config, session);
 
     const int custom_screen_mode = session.custom_screen_mode;
-    
-    // 客户端自定义屏幕模式（统一覆盖 display_device_prep）
+
+    // Client custom screen mode (uniformly overrides display_device_prep)
     if (custom_screen_mode != -1) {
-      BOOST_LOG(debug) << "客户端自定义屏幕模式: "sv << custom_screen_mode;
+      BOOST_LOG(debug) << "Client custom screen mode: "sv << custom_screen_mode;
       if (custom_screen_mode == static_cast<int>(parsed_config_t::device_prep_e::no_operation)) {
         parsed_config.device_prep = parsed_config_t::device_prep_e::no_operation;
       }
@@ -639,51 +639,51 @@ namespace display_device {
       }
     }
 
-    // 解析分辨率和刷新率配置
+    // Parse resolution and refresh rate config
     if (!parse_resolution_option(config, session, parsed_config) ||
         !parse_refresh_rate_option(config, session, parsed_config) ||
         !remap_display_modes_if_needed(config, session, parsed_config)) {
-      // 任何一步失败都返回空值
+      // Return empty if any step fails
       return boost::none;
     }
 
-    // 记录解析后的配置信息
-    BOOST_LOG(debug) << "解析后的显示设备配置:"sv
-                     << "\n设备ID: "sv << parsed_config.device_id
-                     << "\n设备准备模式: "sv << static_cast<int>(parsed_config.device_prep)
-                     << "\nHDR状态: "sv << (parsed_config.change_hdr_state ? (*parsed_config.change_hdr_state ? "启用" : "禁用") : "不变")
-                     << "\n分辨率: "sv << (parsed_config.resolution ? to_string(*parsed_config.resolution) : "不变")
-                     << "\n刷新率: "sv << (parsed_config.refresh_rate ? to_string(*parsed_config.refresh_rate) : "不变")
+    // Log the parsed configuration
+    BOOST_LOG(debug) << "Parsed display device config:"sv
+                     << "\n  Device ID: "sv << parsed_config.device_id
+                     << "\n  Device prep mode: "sv << static_cast<int>(parsed_config.device_prep)
+                     << "\n  HDR state: "sv << (parsed_config.change_hdr_state ? (*parsed_config.change_hdr_state ? "enabled" : "disabled") : "unchanged")
+                     << "\n  Resolution: "sv << (parsed_config.resolution ? to_string(*parsed_config.resolution) : "unchanged")
+                     << "\n  Refresh rate: "sv << (parsed_config.refresh_rate ? to_string(*parsed_config.refresh_rate) : "unchanged")
                      << "\n"sv;
 
-    // 检查是否需要使用VDD
+    // Check whether VDD is needed
     const auto requested_device_id = display_device::find_one_of_the_available_devices(parsed_config.device_id);
     const bool is_vdd_device = (display_device::get_display_friendly_name(parsed_config.device_id) == ZAKO_NAME);
     const bool needs_vdd = session.use_vdd || requested_device_id.empty() || is_vdd_device;
 
-    // 不需要VDD时，使用物理模式映射
+    // VDD not needed: use the physical mode mapping
     if (!needs_vdd) {
-      BOOST_LOG(debug) << "输出设备已存在，跳过VDD准备"sv;
+      BOOST_LOG(debug) << "Output device already exists; skipping VDD preparation"sv;
       parsed_config.use_vdd = false;
       parsed_config.device_prep = parsed_config_t::to_physical_device_prep(parsed_config.device_prep);
       parsed_config.vdd_prep = parsed_config_t::vdd_prep_e::no_operation;
       return parsed_config;
     }
 
-    // 标记为VDD模式，从统一的 device_prep 映射到内部 vdd_prep
-    // device_prep 保留原始统一值（用于 apply_config 中的 display_may_change 等判断）
+    // Mark as VDD mode; map the unified device_prep to the internal vdd_prep
+    // device_prep keeps the original unified value (used for display_may_change checks in apply_config, etc.)
     parsed_config.use_vdd = true;
     parsed_config.vdd_prep = parsed_config_t::to_vdd_prep(parsed_config.device_prep);
-    BOOST_LOG(debug) << "VDD模式：统一值 " << static_cast<int>(parsed_config.device_prep)
-                     << " 映射为 vdd_prep=" << static_cast<int>(parsed_config.vdd_prep);
+    BOOST_LOG(debug) << "VDD mode: unified value " << static_cast<int>(parsed_config.device_prep)
+                     << " mapped to vdd_prep=" << static_cast<int>(parsed_config.vdd_prep);
 
-    // 不是SYSTEM权限且处于RDP中，强制使用RDP虚拟显示器，不创建VDD
+    // Not running as SYSTEM and in RDP: force-use the RDP virtual display, do not create VDD
     if (!is_running_as_system_user && display_device::w_utils::is_any_rdp_session_active()) {
-      BOOST_LOG(info) << "[Display] RDP环境：强制使用RDP虚拟显示器，跳过VDD准备"sv;
+      BOOST_LOG(info) << "[Display] RDP environment: forcing RDP virtual display, skipping VDD preparation"sv;
       return parsed_config;
     }
 
-    // 准备VDD设备
+    // Prepare the VDD device
     display_device::session_t::get().prepare_vdd(parsed_config, session);
 
     return parsed_config;

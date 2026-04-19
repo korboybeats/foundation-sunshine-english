@@ -71,47 +71,47 @@ namespace logging {
   }
 
   /**
-   * @brief 将现有日志文件转写到带日期的备份文件中
-   * @param log_file 当前日志文件路径
+   * @brief Archive the existing log file to a date-stamped backup file
+   * @param log_file Path to the current log file
    */
   void
   archive_existing_log(const std::string &log_file) {
     namespace fs = std::filesystem;
-    
-    // 检查日志文件是否存在
+
+    // Check whether the log file exists
     if (!fs::exists(log_file)) {
       return;
     }
-    
+
     try {
-      // 获取当前时间
+      // Get the current time
       auto now = std::chrono::system_clock::now();
       auto time_t = std::chrono::system_clock::to_time_t(now);
       auto tm = *std::localtime(&time_t);
-      
-      // 生成带日期的备份文件名（只精确到日期）
+
+      // Build a date-stamped backup file name (date precision only)
       std::ostringstream backup_name;
-      backup_name << "sunshine_" 
-                  << std::put_time(&tm, "%Y%m%d") 
+      backup_name << "sunshine_"
+                  << std::put_time(&tm, "%Y%m%d")
                   << ".log";
-      
-      // 构建备份文件路径
+
+      // Build the backup file path
       fs::path log_path(log_file);
       fs::path backup_path = log_path.parent_path() / backup_name.str();
-      
-      // 如果备份文件已存在，则追加到文件尾部
+
+      // If the backup file already exists, append to its end
       if (fs::exists(backup_path)) {
         std::ifstream source(log_file, std::ios::binary);
         std::ofstream dest(backup_path, std::ios::binary | std::ios::app);
-        
+
         if (source && dest) {
           dest << source.rdbuf();
           dest.close();
           source.close();
-          
-          // 删除原日志文件
+
+          // Remove the original log file
           fs::remove(log_file);
-          
+
           BOOST_LOG(info) << "Appended log file to: " << backup_path.string();
         }
         else {
@@ -119,7 +119,7 @@ namespace logging {
         }
       }
       else {
-        // 备份文件不存在，直接重命名
+        // Backup file does not exist; just rename
         fs::rename(log_file, backup_path);
         BOOST_LOG(info) << "Archived log file to: " << backup_path.string();
       }
@@ -205,7 +205,7 @@ namespace logging {
     bl::core::get()->add_sink(console_sink);
 #endif
 
-    // 转写现有日志文件
+    // Archive the existing log file
     if (config::sunshine.restore_log) {
       archive_existing_log(log_file);
     }

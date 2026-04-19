@@ -129,8 +129,8 @@ namespace nvenc {
       logging::min_max_avg_periodic_logger<double> frame_size_logger = { debug, "NvEnc: encoded frame sizes in kB", "" };
     } encoder_state;
 
-    NV_ENC_INITIALIZE_PARAMS saved_init_params;  // 保存初始化参数
-    NV_ENC_CONFIG current_enc_config;  // 保存当前的编码器配置
+    NV_ENC_INITIALIZE_PARAMS saved_init_params;  // Saved initialization parameters
+    NV_ENC_CONFIG current_enc_config;  // Saved current encoder configuration
 
     // HDR metadata support
     std::optional<nvenc_hdr_metadata> hdr_metadata;

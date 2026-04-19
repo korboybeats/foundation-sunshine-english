@@ -1,6 +1,6 @@
 /**
  * @file src/webhook_format.cpp
- * @brief Webhook格式配置和模板实现
+ * @brief Webhook format configuration and template implementation
  */
 #include "webhook_format.h"
 #include "webhook.h"
@@ -12,7 +12,7 @@
 
 namespace webhook {
 
-  // 全局webhook格式实例
+  // Global webhook format instance
   WebhookFormat g_webhook_format;
 
   WebhookFormat::WebhookFormat(format_type_t format_type)
@@ -52,25 +52,25 @@ namespace webhook {
     if (!simplify_ip_) {
       return ip;
     }
-    // 处理IPv6地址
+    // Handle IPv6 addresses
     if (ip.find(':') != std::string::npos) {
-      // 简化IPv6显示
+      // Simplify IPv6 display
       if (ip.find("fe80::") == 0) {
-        return "IPv6 (本地链路)";
+        return "IPv6 (link-local)";
       } else if (ip.find("::1") != std::string::npos) {
-        return "IPv6 (回环)";
+        return "IPv6 (loopback)";
       } else {
         return "IPv6";
       }
     }
-    
-    // IPv4地址直接返回
+
+    // Return IPv4 address as-is
     return ip;
   }
 
   std::string WebhookFormat::format_timestamp(const std::string& timestamp) const
   {
-    // 将 ISO 8601 格式转换为更友好的格式
+    // Convert ISO 8601 format to a more friendly format
     // 2025-10-07T16:36:33.595 -> 2025-10-07 16:36:33
     std::string formatted = timestamp;
     size_t dot_pos = formatted.find('.');
@@ -96,14 +96,14 @@ namespace webhook {
       case event_type_t::NV_APP_RESUME:
       case event_type_t::NV_SESSION_START:
         return colors::COLOR_INFO;
-        
+
       case event_type_t::CONFIG_PIN_FAILED:
       case event_type_t::NV_APP_TERMINATE:
         return colors::COLOR_WARNING;
-        
+
       case event_type_t::NV_SESSION_END:
         return colors::COLOR_COMMENT;
-        
+
       default:
         return colors::COLOR_COMMENT;
     }
@@ -111,61 +111,65 @@ namespace webhook {
 
   std::string WebhookFormat::get_event_title(event_type_t event_type, bool is_chinese) const
   {
+    // English-only build: ignore is_chinese flag.
+    (void) is_chinese;
     switch (event_type) {
       case event_type_t::CONFIG_PIN_SUCCESS:
-        return is_chinese ? "配置配对成功" : "Config Pairing Successful";
+        return "Config Pairing Successful";
       case event_type_t::CONFIG_PIN_FAILED:
-        return is_chinese ? "配置配对失败" : "Config Pairing Failed";
+        return "Config Pairing Failed";
       case event_type_t::NV_APP_LAUNCH:
-        return is_chinese ? "应用启动" : "Application Launched";
+        return "Application Launched";
       case event_type_t::NV_APP_RESUME:
-        return is_chinese ? "应用恢复" : "Application Resumed";
+        return "Application Resumed";
       case event_type_t::NV_APP_TERMINATE:
-        return is_chinese ? "应用终止" : "Application Terminated";
+        return "Application Terminated";
       case event_type_t::NV_SESSION_START:
-        return is_chinese ? "会话开始" : "Session Started";
+        return "Session Started";
       case event_type_t::NV_SESSION_END:
-        return is_chinese ? "会话结束" : "Session Ended";
+        return "Session Ended";
       default:
-        return is_chinese ? "系统通知" : "System Notification";
+        return "System Notification";
     }
   }
 
   std::string WebhookFormat::generate_markdown_content(const event_t& event, bool is_chinese) const
   {
+    // English-only build: ignore is_chinese flag.
+    (void) is_chinese;
     std::ostringstream content_stream;
-    // 获取主机信息
+    // Get host info
     std::string hostname = platf::get_host_name();
     std::string local_ip = get_local_ip();
     std::string formatted_ip = format_ip_address(local_ip);
-    content_stream << (is_chinese ? "**Sunshine系统通知**" : "**Sunshine System Notification**") << "\n\n";
-    
-    // 根据事件类型设置不同的颜色和内容
-    std::string event_title = get_event_title(event.type, is_chinese);
+    content_stream << "**Sunshine System Notification**" << "\n\n";
+
+    // Set color and content based on event type
+    std::string event_title = get_event_title(event.type, false);
     std::string event_color = get_event_color(event.type);
-    
+
     if (use_colors_ && !event_color.empty()) {
       content_stream << "<font color=\"" << event_color << "\">**" << event_title << "**</font>\n\n";
     } else {
       content_stream << "**" << event_title << "**\n\n";
     }
-    // 添加基本信息
-    content_stream << ">主机名:<font color=\"comment\">" << hostname << "</font>\n";
+    // Add basic info
+    content_stream << ">Hostname:<font color=\"comment\">" << hostname << "</font>\n";
     if (!formatted_ip.empty()) {
-      content_stream << ">IP地址:<font color=\"comment\">" << formatted_ip << "</font>\n";
+      content_stream << ">IP Address:<font color=\"comment\">" << formatted_ip << "</font>\n";
     }
-    // 添加事件特定信息
+    // Add event-specific info
     switch (event.type) {
       case event_type_t::CONFIG_PIN_SUCCESS:
       case event_type_t::CONFIG_PIN_FAILED: {
         if (!event.client_name.empty()) {
-          content_stream << ">客户端名称:<font color=\"comment\">" << event.client_name << "</font>\n";
+          content_stream << ">Client Name:<font color=\"comment\">" << event.client_name << "</font>\n";
         }
         if (!event.client_ip.empty()) {
-          content_stream << ">客户端IP:<font color=\"comment\">" << event.client_ip << "</font>\n";
+          content_stream << ">Client IP:<font color=\"comment\">" << event.client_ip << "</font>\n";
         }
         if (!event.server_ip.empty()) {
-          content_stream << ">服务器IP:<font color=\"comment\">" << event.server_ip << "</font>\n";
+          content_stream << ">Server IP:<font color=\"comment\">" << event.server_ip << "</font>\n";
         }
         break;
       }
@@ -173,29 +177,29 @@ namespace webhook {
       case event_type_t::NV_APP_RESUME:
       case event_type_t::NV_APP_TERMINATE: {
         if (!event.app_name.empty()) {
-          content_stream << ">应用名称:<font color=\"comment\">" << event.app_name << "</font>\n";
+          content_stream << ">App Name:<font color=\"comment\">" << event.app_name << "</font>\n";
         }
         if (event.app_id > 0) {
-          content_stream << ">应用ID:<font color=\"comment\">" << event.app_id << "</font>\n";
+          content_stream << ">App ID:<font color=\"comment\">" << event.app_id << "</font>\n";
         }
         if (!event.client_name.empty()) {
-          content_stream << ">客户端:<font color=\"comment\">" << event.client_name << "</font>\n";
+          content_stream << ">Client:<font color=\"comment\">" << event.client_name << "</font>\n";
         }
         if (!event.client_ip.empty()) {
-          content_stream << ">客户端IP:<font color=\"comment\">" << event.client_ip << "</font>\n";
+          content_stream << ">Client IP:<font color=\"comment\">" << event.client_ip << "</font>\n";
         }
         if (!event.server_ip.empty()) {
-          content_stream << ">服务器IP:<font color=\"comment\">" << event.server_ip << "</font>\n";
+          content_stream << ">Server IP:<font color=\"comment\">" << event.server_ip << "</font>\n";
         }
-        // 添加额外信息
+        // Add extra info
         for (const auto& [key, value] : event.extra_data) {
           if (key == "resolution") {
-            content_stream << ">分辨率:<font color=\"comment\">" << value << "</font>\n";
+            content_stream << ">Resolution:<font color=\"comment\">" << value << "</font>\n";
           } else if (key == "fps") {
-            content_stream << ">帧率:<font color=\"comment\">" << value << "</font>\n";
+            content_stream << ">FPS:<font color=\"comment\">" << value << "</font>\n";
           } else if (key == "host_audio") {
-            content_stream << ">音频:<font color=\"comment\">" 
-                          << (value == "true" ? (is_chinese ? "启用" : "Enabled") : (is_chinese ? "禁用" : "Disabled")) << "</font>\n";
+            content_stream << ">Audio:<font color=\"comment\">"
+                          << (value == "true" ? "Enabled" : "Disabled") << "</font>\n";
           }
         }
         break;
@@ -203,55 +207,57 @@ namespace webhook {
       case event_type_t::NV_SESSION_START:
       case event_type_t::NV_SESSION_END: {
         if (!event.app_name.empty()) {
-          content_stream << ">应用名称:<font color=\"comment\">" << event.app_name << "</font>\n";
+          content_stream << ">App Name:<font color=\"comment\">" << event.app_name << "</font>\n";
         }
         if (!event.client_name.empty()) {
-          content_stream << ">客户端:<font color=\"comment\">" << event.client_name << "</font>\n";
+          content_stream << ">Client:<font color=\"comment\">" << event.client_name << "</font>\n";
         }
         if (!event.session_id.empty()) {
-          content_stream << ">会话ID:<font color=\"comment\">" << event.session_id << "</font>\n";
+          content_stream << ">Session ID:<font color=\"comment\">" << event.session_id << "</font>\n";
         }
         break;
       }
       default:
         break;
     }
-    content_stream << ">时间:<font color=\"comment\">" << format_timestamp(event.timestamp) << "</font>";
-    // 添加错误信息
+    content_stream << ">Time:<font color=\"comment\">" << format_timestamp(event.timestamp) << "</font>";
+    // Add error info
     auto error_it = event.extra_data.find("error");
     if (error_it != event.extra_data.end()) {
-      content_stream << "\n>错误信息:<font color=\"warning\">" << error_it->second << "</font>";
+      content_stream << "\n>Error:<font color=\"warning\">" << error_it->second << "</font>";
     }
     return content_stream.str();
   }
 
   std::string WebhookFormat::generate_text_content(const event_t& event, bool is_chinese) const {
+    // English-only build: ignore is_chinese flag.
+    (void) is_chinese;
     std::ostringstream content_stream;
-    
+
     std::string hostname = platf::get_host_name();
     std::string local_ip = get_local_ip();
     std::string formatted_ip = format_ip_address(local_ip);
-    // 构建纯文本内容
-    content_stream << (is_chinese ? "Sunshine系统通知" : "Sunshine System Notification") << "\n";
+    // Build plain text content
+    content_stream << "Sunshine System Notification" << "\n";
     content_stream << "================================\n";
-    content_stream << (is_chinese ? "事件: " : "Event: ") << get_event_title(event.type, is_chinese) << "\n";
-    content_stream << (is_chinese ? "主机名: " : "Hostname: ") << hostname << "\n";
-    
+    content_stream << "Event: " << get_event_title(event.type, false) << "\n";
+    content_stream << "Hostname: " << hostname << "\n";
+
     if (!formatted_ip.empty()) {
-      content_stream << (is_chinese ? "IP地址: " : "IP Address: ") << formatted_ip << "\n";
+      content_stream << "IP Address: " << formatted_ip << "\n";
     }
-    // 添加事件特定信息
+    // Add event-specific info
     switch (event.type) {
       case event_type_t::CONFIG_PIN_SUCCESS:
       case event_type_t::CONFIG_PIN_FAILED: {
         if (!event.client_name.empty()) {
-          content_stream << (is_chinese ? "客户端名称: " : "Client Name: ") << event.client_name << "\n";
+          content_stream << "Client Name: " << event.client_name << "\n";
         }
         if (!event.client_ip.empty()) {
-          content_stream << (is_chinese ? "客户端IP: " : "Client IP: ") << event.client_ip << "\n";
+          content_stream << "Client IP: " << event.client_ip << "\n";
         }
         if (!event.server_ip.empty()) {
-          content_stream << (is_chinese ? "服务器IP: " : "Server IP: ") << event.server_ip << "\n";
+          content_stream << "Server IP: " << event.server_ip << "\n";
         }
         break;
       }
@@ -259,49 +265,51 @@ namespace webhook {
       case event_type_t::NV_APP_RESUME:
       case event_type_t::NV_APP_TERMINATE: {
         if (!event.app_name.empty()) {
-          content_stream << (is_chinese ? "应用名称: " : "App Name: ") << event.app_name << "\n";
+          content_stream << "App Name: " << event.app_name << "\n";
         }
         if (event.app_id > 0) {
-          content_stream << (is_chinese ? "应用ID: " : "App ID: ") << event.app_id << "\n";
+          content_stream << "App ID: " << event.app_id << "\n";
         }
         if (!event.client_name.empty()) {
-          content_stream << (is_chinese ? "客户端: " : "Client: ") << event.client_name << "\n";
+          content_stream << "Client: " << event.client_name << "\n";
         }
         if (!event.client_ip.empty()) {
-          content_stream << (is_chinese ? "客户端IP: " : "Client IP: ") << event.client_ip << "\n";
+          content_stream << "Client IP: " << event.client_ip << "\n";
         }
         if (!event.server_ip.empty()) {
-          content_stream << (is_chinese ? "服务器IP: " : "Server IP: ") << event.server_ip << "\n";
+          content_stream << "Server IP: " << event.server_ip << "\n";
         }
         break;
       }
       case event_type_t::NV_SESSION_START:
       case event_type_t::NV_SESSION_END: {
         if (!event.app_name.empty()) {
-          content_stream << (is_chinese ? "应用名称: " : "App Name: ") << event.app_name << "\n";
+          content_stream << "App Name: " << event.app_name << "\n";
         }
         if (!event.client_name.empty()) {
-          content_stream << (is_chinese ? "客户端: " : "Client: ") << event.client_name << "\n";
+          content_stream << "Client: " << event.client_name << "\n";
         }
         if (!event.session_id.empty()) {
-          content_stream << (is_chinese ? "会话ID: " : "Session ID: ") << event.session_id << "\n";
+          content_stream << "Session ID: " << event.session_id << "\n";
         }
         break;
       }
       default:
         break;
     }
-    content_stream << (is_chinese ? "时间: " : "Time: ") << format_timestamp(event.timestamp) << "\n";
-    // 添加错误信息
+    content_stream << "Time: " << format_timestamp(event.timestamp) << "\n";
+    // Add error info
     auto error_it = event.extra_data.find("error");
     if (error_it != event.extra_data.end()) {
-      content_stream << (is_chinese ? "错误信息: " : "Error: ") << error_it->second << "\n";
+      content_stream << "Error: " << error_it->second << "\n";
     }
     return content_stream.str();
   }
 
   std::string WebhookFormat::generate_json_content(const event_t& event, bool is_chinese) const
   {
+    // English-only build: ignore is_chinese flag.
+    (void) is_chinese;
     std::ostringstream json_stream;
     std::string hostname = platf::get_host_name();
     std::string local_ip = get_local_ip();
@@ -312,10 +320,10 @@ namespace webhook {
     if (!formatted_ip.empty()) {
       json_stream << "\"ip_address\":\"" << formatted_ip << "\",";
     }
-    json_stream << "\"event_type\":\"" << get_event_title(event.type, is_chinese) << "\",";
+    json_stream << "\"event_type\":\"" << get_event_title(event.type, false) << "\",";
     json_stream << "\"timestamp\":\"" << format_timestamp(event.timestamp) << "\"";
-    
-    // 添加事件特定字段
+
+    // Add event-specific fields
     if (!event.client_name.empty()) {
       json_stream << ",\"client_name\":\"" << event.client_name << "\"";
     }
@@ -334,8 +342,8 @@ namespace webhook {
     if (!event.session_id.empty()) {
       json_stream << ",\"session_id\":\"" << event.session_id << "\"";
     }
-    
-    // 添加额外数据
+
+    // Add extra data
     if (!event.extra_data.empty()) {
       json_stream << ",\"extra_data\":{";
       bool first = true;
@@ -346,7 +354,7 @@ namespace webhook {
       }
       json_stream << "}";
     }
-    
+
     json_stream << "}";
     return json_stream.str();
   }
@@ -357,21 +365,21 @@ namespace webhook {
     if (it != custom_templates_.end()) {
       return replace_template_variables(it->second, event, is_chinese);
     }
-    
-    // 如果没有自定义模板，回退到Markdown格式
+
+    // If no custom template is defined, fall back to Markdown format
     return generate_markdown_content(event, is_chinese);
   }
 
   std::string WebhookFormat::replace_template_variables(const std::string& template_str, const event_t& event, bool is_chinese) const
   {
     std::string result = template_str;
-    
-    // 替换变量
+
+    // Variable substitution
     std::string hostname = platf::get_host_name();
     std::string local_ip = get_local_ip();
     std::string formatted_ip = format_ip_address(local_ip);
-    
-    // 使用正则表达式替换变量
+
+    // Use regex to substitute variables
     result = std::regex_replace(result, std::regex("\\{\\{hostname\\}\\}"), hostname);
     result = std::regex_replace(result, std::regex("\\{\\{ip_address\\}\\}"), formatted_ip);
     result = std::regex_replace(result, std::regex("\\{\\{event_title\\}\\}"), get_event_title(event.type, is_chinese));
@@ -382,7 +390,7 @@ namespace webhook {
     result = std::regex_replace(result, std::regex("\\{\\{app_name\\}\\}"), event.app_name);
     result = std::regex_replace(result, std::regex("\\{\\{app_id\\}\\}"), std::to_string(event.app_id));
     result = std::regex_replace(result, std::regex("\\{\\{session_id\\}\\}"), event.session_id);
-    
+
     return result;
   }
 
@@ -405,22 +413,22 @@ namespace webhook {
   std::string WebhookFormat::generate_json_payload(const event_t& event, bool is_chinese) const
   {
     std::string content = generate_content(event, is_chinese);
-    
-    // 检查内容长度限制（限制4096字节）
+
+    // Enforce content length limit (4096 bytes)
     const size_t MAX_CONTENT_LENGTH = 4096;
     if (content.length() > MAX_CONTENT_LENGTH) {
-      // 截断内容并添加省略号
+      // Truncate content and append ellipsis
       content = content.substr(0, MAX_CONTENT_LENGTH - 10) + "...";
       BOOST_LOG(warning) << "Webhook content truncated to " << MAX_CONTENT_LENGTH << " bytes";
     }
-    
+
     switch (format_type_) {
       case format_type_t::MARKDOWN:
         return "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"" + sanitize_json_string(content) + "\"}}";
       case format_type_t::TEXT:
         return "{\"msgtype\":\"text\",\"text\":{\"content\":\"" + sanitize_json_string(content) + "\"}}";
       case format_type_t::JSON:
-        return content; // JSON格式直接返回内容
+        return content; // JSON format returns content directly
       case format_type_t::CUSTOM:
         return "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"" + sanitize_json_string(content) + "\"}}";
       default:
@@ -430,7 +438,7 @@ namespace webhook {
 
   void init_webhook_format()
   {
-    // 初始化默认格式配置
+    // Initialize default format configuration
     g_webhook_format.set_format_type(format_type_t::MARKDOWN);
     g_webhook_format.set_use_colors(true);
     g_webhook_format.set_simplify_ip(true);
@@ -439,8 +447,8 @@ namespace webhook {
 
   void load_format_config()
   {
-    // 从配置文件加载格式设置
-    // 这里可以添加从config::webhook读取格式配置的逻辑
+    // Load format settings from the configuration file
+    // Logic to read format settings from config::webhook can be added here
     init_webhook_format();
   }
 
@@ -451,12 +459,12 @@ namespace webhook {
     } else {
       g_webhook_format.set_format_type(format_type_t::TEXT);
     }
-    
-    // webhook优化设置
-    g_webhook_format.set_use_colors(true);      // 启用颜色支持
-    g_webhook_format.set_simplify_ip(true);     // 简化IP显示
-    g_webhook_format.set_time_format("%Y-%m-%d %H:%M:%S"); // 标准时间格式
-    
+
+    // Webhook optimization settings
+    g_webhook_format.set_use_colors(true);      // Enable color support
+    g_webhook_format.set_simplify_ip(true);     // Simplify IP display
+    g_webhook_format.set_time_format("%Y-%m-%d %H:%M:%S"); // Standard time format
+
     BOOST_LOG(debug) << "Webhook configured (Markdown: " << use_markdown << ")";
   }
 

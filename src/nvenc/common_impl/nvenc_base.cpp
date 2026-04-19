@@ -717,10 +717,10 @@ namespace nvenc {
                       << video_format_string << quality_preset_string_from_guid(init_params.presetGUID) << extra;
     }
 
-    // 保存当前编码器配置和初始化参数，用于后续动态调整
+    // Save the current encoder config and init params for later dynamic adjustments
     saved_init_params = init_params;
     current_enc_config = enc_config;
-    saved_init_params.encodeConfig = &current_enc_config;  // 确保指针指向我们的成员变量
+    saved_init_params.encodeConfig = &current_enc_config;  // Ensure the pointer references our member variable
 
     encoder_state = {};
     fail_guard.disable();
@@ -972,19 +972,19 @@ namespace nvenc {
   void
   nvenc_base::set_bitrate(int bitrate_kbps) {
     if (!encoder) {
-      BOOST_LOG(warning) << "NvEnc: 编码器未初始化，无法设置码率";
+      BOOST_LOG(warning) << "NvEnc: encoder not initialized, cannot set bitrate";
       return;
     }
     if (!nvenc) {
-      BOOST_LOG(warning) << "NvEnc: NVENC接口未初始化，无法设置码率";
+      BOOST_LOG(warning) << "NvEnc: NVENC interface not initialized, cannot set bitrate";
       return;
     }
     if (NVENC_INT_VERSION < 1100) {
-      BOOST_LOG(error) << "NvEnc: NVENC API版本过低(" << NVENC_INT_VERSION << ")，不支持动态码率调整";
+      BOOST_LOG(error) << "NvEnc: NVENC API version too old (" << NVENC_INT_VERSION << "), dynamic bitrate adjustment not supported";
       return;
     }
     if (bitrate_kbps <= 0 || bitrate_kbps > 800000) {
-      BOOST_LOG(error) << "NvEnc: 码率无效: " << bitrate_kbps << " Kbps (有效范围: 1~800000)";
+      BOOST_LOG(error) << "NvEnc: invalid bitrate: " << bitrate_kbps << " Kbps (valid range: 1~800000)";
       return;
     }
 
@@ -994,12 +994,12 @@ namespace nvenc {
     is_av1 = (saved_init_params.encodeGUID == NV_ENC_CODEC_AV1_GUID);
 #endif
 
-    // 复制当前配置，准备修改
+    // Copy the current config and prepare to modify it
     NV_ENC_CONFIG enc_config = current_enc_config;
     enc_config.rcParams.averageBitRate = bitrate_kbps * 1000;
     enc_config.rcParams.maxBitRate = bitrate_kbps * 1000;
 
-    // HEVC需调整VBV缓冲区应对更大码率
+    // HEVC needs the VBV buffer adjusted to handle the larger bitrate
     if (is_hevc) {
       uint32_t prev_bitrate = current_enc_config.rcParams.averageBitRate;
       uint32_t old_vbv_size = current_enc_config.rcParams.vbvBufferSize;
@@ -1007,30 +1007,30 @@ namespace nvenc {
 
       new_vbv_size = static_cast<uint32_t>((static_cast<uint64_t>(bitrate_kbps) * 1000 * old_vbv_size) / prev_bitrate);
 
-      // 防止VBV缓冲区过小
-      if (new_vbv_size < 1000 * 100) new_vbv_size = 1000 * 100;  // 至少100K
+      // Prevent the VBV buffer from being too small
+      if (new_vbv_size < 1000 * 100) new_vbv_size = 1000 * 100;  // At least 100K
       enc_config.rcParams.vbvBufferSize = new_vbv_size;
-      BOOST_LOG(debug) << "NvEnc: VBV缓冲区调整为 " << new_vbv_size / 1000 << " Kbps";
+      BOOST_LOG(debug) << "NvEnc: VBV buffer adjusted to " << new_vbv_size / 1000 << " Kbps";
     }
 
-    // 构造重配置参数
+    // Build reconfigure parameters
     NV_ENC_RECONFIGURE_PARAMS reconfigure_params = { NV_ENC_RECONFIGURE_PARAMS_VER };
     reconfigure_params.reInitEncodeParams = saved_init_params;
     reconfigure_params.reInitEncodeParams.encodeConfig = &enc_config;
 
-    // HEVC码率提升时重置编码器状态
+    // When raising the HEVC bitrate, reset the encoder state
     if (is_hevc && bitrate_kbps * 1000 > current_enc_config.rcParams.averageBitRate) {
-      BOOST_LOG(debug) << "NvEnc: HEVC码率提升，重置编码器状态";
+      BOOST_LOG(debug) << "NvEnc: HEVC bitrate increased, resetting encoder state";
       reconfigure_params.resetEncoder = 1;
       reconfigure_params.forceIDR = 1;
     }
 
     if (nvenc_failed(nvenc->nvEncReconfigureEncoder(encoder, &reconfigure_params))) {
-      BOOST_LOG(error) << "NvEnc: 设置码率失败(" << bitrate_kbps << " Kbps): " << last_nvenc_error_string;
+      BOOST_LOG(error) << "NvEnc: failed to set bitrate (" << bitrate_kbps << " Kbps): " << last_nvenc_error_string;
       return;
     }
 
-    // 更新当前配置
+    // Update the current config
     current_enc_config.rcParams.averageBitRate = bitrate_kbps * 1000;
     current_enc_config.rcParams.maxBitRate = bitrate_kbps * 1000;
     if (is_hevc) {
@@ -1038,7 +1038,7 @@ namespace nvenc {
     }
 
     const char *codec_name = is_hevc ? "HEVC" : (is_av1 ? "AV1" : "AVC");
-    BOOST_LOG(info) << "NvEnc: " << codec_name << " 码率已成功调整为 " << bitrate_kbps << " Kbps";
+    BOOST_LOG(info) << "NvEnc: " << codec_name << " bitrate successfully adjusted to " << bitrate_kbps << " Kbps";
   }
 
   void

@@ -37,11 +37,11 @@ namespace display_device {
     const DWORD kPipeBufferSize = 4096;
     const std::chrono::milliseconds kDefaultDebounceInterval { 2000 };
 
-    // 上次切换显示器的时间点
+    // Timestamp of the most recent display toggle
     static std::chrono::steady_clock::time_point last_toggle_time { std::chrono::steady_clock::now() };
-    // 防抖间隔
+    // Debounce interval
     static std::chrono::milliseconds debounce_interval { kDefaultDebounceInterval };
-    // 上一次使用的客户端UUID，用于在没有提供UUID时使用
+    // The most recently used client UUID; reused when none is provided
     static std::string last_used_client_uuid;
 
     std::chrono::milliseconds
@@ -79,7 +79,7 @@ namespace display_device {
 
       const char *action_str = vdd_action_to_string(action);
       if (!action_str) {
-        BOOST_LOG(error) << "未知的VDD命令操作";
+        BOOST_LOG(error) << "Unknown VDD command action";
         return false;
       }
 
@@ -92,20 +92,20 @@ namespace display_device {
       for (int attempt = 0; attempt < kMaxRetryCount; ++attempt) {
         auto child = platf::run_command(true, true, cmd, working_dir, _env, nullptr, ec, nullptr);
         if (!ec) {
-          BOOST_LOG(info) << "成功执行VDD " << action_str << " 命令";
+          BOOST_LOG(info) << "Successfully executed VDD " << action_str << " command";
           child.detach();
           return true;
         }
 
         auto delay = calculate_exponential_backoff(attempt);
-        BOOST_LOG(warning) << "执行VDD " << action_str << " 命令失败 (尝试 "
+        BOOST_LOG(warning) << "Failed to execute VDD " << action_str << " command (attempt "
                            << (attempt + 1) << "/" << kMaxRetryCount
-                           << "): " << ec.message() << ". 将在 "
-                           << delay.count() << "ms 后重试";
+                           << "): " << ec.message() << ". Retrying in "
+                           << delay.count() << "ms";
         std::this_thread::sleep_for(delay);
       }
 
-      BOOST_LOG(error) << "执行VDD " << action_str << " 命令失败，已达到最大重试次数";
+      BOOST_LOG(error) << "Failed to execute VDD " << action_str << " command after maximum retries";
       return false;
     }
 
@@ -122,7 +122,7 @@ namespace display_device {
           0,
           NULL,
           OPEN_EXISTING,
-          FILE_FLAG_OVERLAPPED,  // 使用异步IO
+          FILE_FLAG_OVERLAPPED,  // Use asynchronous IO
           NULL);
 
         if (hPipe != INVALID_HANDLE_VALUE) {
@@ -144,7 +144,7 @@ namespace display_device {
     execute_pipe_command(const wchar_t *pipe_name, const wchar_t *command, std::string *response, bool *timed_out) {
       auto hPipe = connect_to_pipe_with_retry(pipe_name);
       if (hPipe == INVALID_HANDLE_VALUE) {
-        BOOST_LOG(error) << "连接MTT虚拟显示管道失败，已重试多次";
+        BOOST_LOG(error) << "Failed to connect to the MTT virtual display pipe after several retries";
         return false;
       }
 
@@ -156,37 +156,37 @@ namespace display_device {
         }
       } pipe_guard { hPipe };
 
-      // 异步IO结构体
+      // Async IO structure
       OVERLAPPED overlapped = { 0 };
       overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
       HandleGuard event_guard { overlapped.hEvent };
 
-      // 发送命令（使用宽字符版本）
+      // Send the command (wide-character form)
       DWORD bytesWritten;
-      size_t cmd_len = (wcslen(command) + 1) * sizeof(wchar_t);  // 包含终止符
+      size_t cmd_len = (wcslen(command) + 1) * sizeof(wchar_t);  // Includes the terminator
       if (!WriteFile(hPipe, command, (DWORD) cmd_len, &bytesWritten, &overlapped)) {
         if (GetLastError() != ERROR_IO_PENDING) {
-          BOOST_LOG(error) << L"发送" << command << L"命令失败，错误代码: " << GetLastError();
+          BOOST_LOG(error) << L"Failed to send command " << command << L", error code: " << GetLastError();
           return false;
         }
 
-        // 等待写入完成
+        // Wait for the write to complete
         DWORD waitResult = WaitForSingleObject(overlapped.hEvent, kPipeTimeoutMs);
         if (waitResult != WAIT_OBJECT_0) {
-          BOOST_LOG(error) << L"发送" << command << L"命令超时";
+          BOOST_LOG(error) << L"Timed out sending command " << command;
           return false;
         }
       }
 
-      // 读取响应
+      // Read the response
       bool read_timed_out = false;
       if (response) {
         char buffer[kPipeBufferSize];
         DWORD bytesRead = 0;
         if (!ReadFile(hPipe, buffer, sizeof(buffer) - 1, &bytesRead, &overlapped)) {
           if (GetLastError() != ERROR_IO_PENDING) {
-            BOOST_LOG(warning) << "读取响应失败，错误代码: " << GetLastError();
+            BOOST_LOG(warning) << "Failed to read response, error code: " << GetLastError();
             return false;
           }
 
@@ -225,7 +225,7 @@ namespace display_device {
         return "";
       }
 
-      // 使用SHA1 name generator确保相同标识符生成相同GUID
+      // Use a SHA1 name generator so the same identifier always yields the same GUID
       static constexpr boost::uuids::uuid ns_id {};
       const auto boost_uuid = boost::uuids::name_generator_sha1 { ns_id }(
         reinterpret_cast<const unsigned char *>(identifier.c_str()),
@@ -235,9 +235,9 @@ namespace display_device {
     }
 
     /**
-     * @brief 从客户端配置中获取物理尺寸
-     * @param client_name 客户端名称
-     * @return 物理尺寸结构，如果未找到则返回默认值（0,0）
+     * @brief Get the physical size from the client configuration
+     * @param client_name Client name
+     * @return Physical size struct, or default (0,0) if not found
      */
     physical_size_t
     get_client_physical_size(const std::string &client_name) {
@@ -245,11 +245,11 @@ namespace display_device {
         return {};
       }
 
-      // 预定义尺寸映射表
+      // Predefined size map
       static const std::unordered_map<std::string, physical_size_t> size_map = {
-        { "small", { 13.3f, 7.5f } },  // 小型设备：约6英寸，16:9比例
-        { "medium", { 34.5f, 19.4f } },  // 中型设备：约15.6英寸，16:9比例
-        { "large", { 70.8f, 39.8f } }  // 大型设备：约32英寸，16:9比例
+        { "small", { 13.3f, 7.5f } },  // Small device: ~6 inches, 16:9 ratio
+        { "medium", { 34.5f, 19.4f } },  // Medium device: ~15.6 inches, 16:9 ratio
+        { "large", { 70.8f, 39.8f } }  // Large device: ~32 inches, 16:9 ratio
       };
 
       try {
@@ -266,7 +266,7 @@ namespace display_device {
         }
       }
       catch (const std::exception &e) {
-        BOOST_LOG(debug) << "获取客户端物理尺寸失败: " << e.what();
+        BOOST_LOG(debug) << "Failed to get client physical size: " << e.what();
       }
 
       return {};
@@ -277,28 +277,28 @@ namespace display_device {
       std::string response;
       std::wstring command = L"CREATEMONITOR";
 
-      // 如果没有提供UUID，使用上一次的UUID
+      // If no UUID was supplied, fall back to the most recently used UUID
       std::string identifier_to_use = client_identifier.empty() && !last_used_client_uuid.empty() ? last_used_client_uuid : client_identifier;
 
       if (identifier_to_use != client_identifier && !identifier_to_use.empty()) {
-        BOOST_LOG(info) << "未提供客户端标识符，使用上一次的UUID: " << identifier_to_use;
+        BOOST_LOG(info) << "No client identifier provided; using last UUID: " << identifier_to_use;
       }
 
-      // 生成GUID并构建命令
+      // Generate the GUID and build the command
       std::string guid_str = generate_client_guid(identifier_to_use);
       if (!guid_str.empty()) {
-        // 构建完整参数: {GUID}:[max_nits,min_nits,maxFALL][widthCm,heightCm]
+        // Build the full parameter string: {GUID}:[max_nits,min_nits,maxFALL][widthCm,heightCm]
         std::ostringstream param_stream;
         param_stream << guid_str << ":[" << hdr_brightness.max_nits << "," << hdr_brightness.min_nits << "," << hdr_brightness.max_full_nits << "]";
 
-        // 如果提供了物理尺寸，添加到参数中
+        // Append the physical size if provided
         if (physical_size.width_cm > 0.0f && physical_size.height_cm > 0.0f) {
           param_stream << "[" << physical_size.width_cm << "," << physical_size.height_cm << "]";
         }
 
         std::string param_str = param_stream.str();
 
-        // 转换为宽字符并添加到命令
+        // Convert to wide characters and append to the command
         int size_needed = MultiByteToWideChar(CP_UTF8, 0, param_str.c_str(), -1, NULL, 0);
         if (size_needed > 0) {
           std::vector<wchar_t> param_wide(size_needed);
@@ -307,61 +307,61 @@ namespace display_device {
         }
 
         std::ostringstream log_stream;
-        log_stream << "创建虚拟显示器，客户端标识符: " << identifier_to_use
+        log_stream << "Creating virtual display, client identifier: " << identifier_to_use
                    << ", GUID: " << guid_str
-                   << ", HDR亮度范围: [" << hdr_brightness.max_nits << ", " << hdr_brightness.min_nits << ", " << hdr_brightness.max_full_nits << "]";
+                   << ", HDR brightness range: [" << hdr_brightness.max_nits << ", " << hdr_brightness.min_nits << ", " << hdr_brightness.max_full_nits << "]";
         if (physical_size.width_cm > 0.0f && physical_size.height_cm > 0.0f) {
-          log_stream << ", 物理尺寸: [" << physical_size.width_cm << "cm, " << physical_size.height_cm << "cm]";
+          log_stream << ", physical size: [" << physical_size.width_cm << "cm, " << physical_size.height_cm << "cm]";
         }
         BOOST_LOG(info) << log_stream.str();
       }
 
-      // 如果使用了有效的UUID，更新上一次使用的UUID
+      // If a valid UUID was used, remember it for future calls
       if (!identifier_to_use.empty()) {
         last_used_client_uuid = identifier_to_use;
       }
 
-      // 尝试发送命令（带GUID或不带GUID）
+      // Try sending the command (with or without GUID)
       bool read_timed_out = false;
       bool success = execute_pipe_command(kVddPipeName, command.c_str(), &response, &read_timed_out);
 
-      // 如果带GUID的命令失败，降级为不带GUID的命令（兼容旧版驱动）
+      // If the GUID-form command failed, fall back to the non-GUID form (compatibility with older drivers)
       if (!success && !guid_str.empty()) {
-        BOOST_LOG(warning) << "带GUID的命令失败，尝试降级为不带GUID的命令";
+        BOOST_LOG(warning) << "Command with GUID failed; falling back to the no-GUID command";
         read_timed_out = false;
         success = execute_pipe_command(kVddPipeName, L"CREATEMONITOR", &response, &read_timed_out);
       }
 
       if (!success) {
-        BOOST_LOG(error) << "创建虚拟显示器失败";
+        BOOST_LOG(error) << "Failed to create virtual display";
         return false;
       }
 
 #if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
       system_tray::update_vdd_menu();
 #endif
-      BOOST_LOG(info) << "创建虚拟显示器完成，响应: " << response << " [return=" << (read_timed_out ? 1 : 0) << "]";
+      BOOST_LOG(info) << "Virtual display creation complete, response: " << response << " [return=" << (read_timed_out ? 1 : 0) << "]";
       return true;
     }
 
     bool
     destroy_vdd_monitor() {
-      // 如果VDD已不存在，直接返回成功
+      // If the VDD is already gone, return success immediately
       if (find_device_by_friendlyname(ZAKO_NAME).empty()) {
-        BOOST_LOG(debug) << "VDD设备已不存在，跳过销毁";
+        BOOST_LOG(debug) << "VDD device no longer exists; skipping destroy";
         return true;
       }
 
       std::string response;
       if (!execute_pipe_command(kVddPipeName, L"DESTROYMONITOR", &response)) {
-        BOOST_LOG(error) << "销毁虚拟显示器失败";
+        BOOST_LOG(error) << "Failed to destroy virtual display";
         return false;
       }
 
-      BOOST_LOG(info) << "销毁虚拟显示器完成，响应: " << response;
+      BOOST_LOG(info) << "Virtual display destroy complete, response: " << response;
 
-      // 等待驱动程序完全卸载，避免WUDFHost.exe崩溃
-      // 这是必要的，因为驱动程序卸载是异步的
+      // Wait for the driver to fully unload, to avoid WUDFHost.exe crashes
+      // This is necessary because driver unload is asynchronous
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 #if defined SUNSHINE_TRAY && SUNSHINE_TRAY >= 1
@@ -411,11 +411,11 @@ namespace display_device {
       auto now = std::chrono::steady_clock::now();
 
       if (now - last_toggle_time < debounce_interval) {
-        BOOST_LOG(debug) << "忽略快速重复的显示器开关请求，请等待"
+        BOOST_LOG(debug) << "Ignoring rapid repeated display toggle request; please wait "
                          << std::chrono::duration_cast<std::chrono::seconds>(
                               debounce_interval - (now - last_toggle_time))
                               .count()
-                         << "秒";
+                         << " second(s)";
         return false;
       }
 
@@ -426,7 +426,7 @@ namespace display_device {
         return true;
       }
 
-      // 创建前先确认
+      // Confirm before creating
       std::wstring confirm_title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_CONFIRM_CREATE_TITLE));
       std::wstring confirm_message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_CONFIRM_CREATE_MSG));
 
@@ -439,13 +439,13 @@ namespace display_device {
         return false;
       }
 
-      // 保存创建虚拟显示器前的物理设备列表
-      // 同时从所有可用设备中查找物理显示器（包括可能被禁用的）
+      // Save the physical device list captured before creating the virtual display.
+      // Also look for physical displays in all available devices (including ones that may be disabled).
       std::unordered_set<std::string> physical_devices_before;
       auto topology_before = get_current_topology();
       auto all_devices_before = enum_available_devices();
 
-      // 从当前拓扑中获取活动的物理设备
+      // Pull active physical devices from the current topology
       for (const auto &group : topology_before) {
         for (const auto &device_id : group) {
           if (get_display_friendly_name(device_id) != ZAKO_NAME) {
@@ -454,17 +454,17 @@ namespace display_device {
         }
       }
 
-      // 如果拓扑中没有物理设备，尝试从所有设备中查找（可能被禁用了）
+      // If the topology contains no physical devices, search all devices (some may be disabled)
       if (physical_devices_before.empty()) {
         for (const auto &[device_id, device_info] : all_devices_before) {
           if (get_display_friendly_name(device_id) != ZAKO_NAME) {
             physical_devices_before.insert(device_id);
-            BOOST_LOG(debug) << "从所有设备中找到物理显示器: " << device_id;
+            BOOST_LOG(debug) << "Found physical display in all-devices list: " << device_id;
           }
         }
       }
 
-      // 后台线程确保VDD处于扩展模式，并进行二次确认
+      // Background thread: ensure the VDD is in extended mode and prompt for second-level confirmation
       std::thread([vdd_device_id = find_device_by_friendlyname(ZAKO_NAME), physical_devices_before]() mutable {
         if (vdd_device_id.empty()) {
           std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -472,17 +472,17 @@ namespace display_device {
         }
 
         if (vdd_device_id.empty()) {
-          BOOST_LOG(warning) << "无法找到基地显示器设备，跳过配置";
+          BOOST_LOG(warning) << "Could not find the foundation display device; skipping configuration";
         }
         else {
-          BOOST_LOG(info) << "找到基地显示器设备: " << vdd_device_id;
+          BOOST_LOG(info) << "Found foundation display device: " << vdd_device_id;
 
           if (ensure_vdd_extended_mode(vdd_device_id, physical_devices_before)) {
-            BOOST_LOG(info) << "已确保基地显示器处于扩展模式";
+            BOOST_LOG(info) << "Foundation display is now confirmed in extended mode";
           }
         }
 
-        // 创建后二次确认，20秒超时
+        // Post-creation confirmation, 20 second timeout
         constexpr auto timeout = std::chrono::seconds(20);
         std::wstring dialog_title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_CONFIRM_KEEP_TITLE));
         std::wstring confirm_message = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_CONFIRM_KEEP_MSG));
@@ -492,11 +492,11 @@ namespace display_device {
         });
 
         if (future.wait_for(timeout) == std::future_status::ready && future.get()) {
-          BOOST_LOG(info) << "用户确认保留基地显示器";
+          BOOST_LOG(info) << "User confirmed keeping the foundation display";
           return;
         }
 
-        BOOST_LOG(info) << "用户未确认或超时，自动销毁基地显示器";
+        BOOST_LOG(info) << "User did not confirm or timed out; auto-destroying the foundation display";
 
         std::wstring w_dialog_title = system_tray_i18n::utf8_to_wstring(system_tray_i18n::get_localized_string(system_tray_i18n::KEY_VDD_CONFIRM_KEEP_TITLE));
         if (HWND hwnd = FindWindowW(L"#32770", w_dialog_title.c_str()); hwnd && IsWindow(hwnd)) {
@@ -508,7 +508,7 @@ namespace display_device {
           }
 
           if (IsWindow(hwnd)) {
-            BOOST_LOG(warning) << "无法正常关闭确认窗口，尝试终止窗口进程";
+            BOOST_LOG(warning) << "Couldn't close the confirmation window normally; attempting to terminate the dialog";
             EndDialog(hwnd, IDNO);
           }
         }
@@ -528,7 +528,7 @@ namespace display_device {
       res_stream << '[';
       fps_stream << '[';
 
-      // 检查分辨率是否已缓存
+      // Check whether the resolution is already cached
       for (const auto &res : config::nvhttp.resolutions) {
         res_stream << res << ',';
         if (config.resolution && res == to_string(*config.resolution)) {
@@ -536,7 +536,7 @@ namespace display_device {
         }
       }
 
-      // 检查帧率是否已缓存
+      // Check whether the refresh rate is already cached
       for (const auto &fps : config::nvhttp.fps) {
         fps_stream << fps << ',';
         if (config.refresh_rate && fps == to_string(*config.refresh_rate)) {
@@ -544,7 +544,7 @@ namespace display_device {
         }
       }
 
-      // 如果需要更新设置
+      // If settings need to be updated
       bool needs_update = (!is_res_cached || !is_fps_cached) && config.resolution;
       if (needs_update) {
         if (!is_res_cached) {
@@ -555,7 +555,7 @@ namespace display_device {
         }
       }
 
-      // 移除最后的逗号并添加结束括号
+      // Strip the trailing comma and append the closing bracket
       auto res_str = res_stream.str();
       auto fps_str = fps_stream.str();
       if (res_str.back() == ',') res_str.pop_back();
@@ -574,11 +574,11 @@ namespace display_device {
 
       auto current_topology = get_current_topology();
       if (current_topology.empty()) {
-        BOOST_LOG(warning) << "无法获取当前显示器拓扑";
+        BOOST_LOG(warning) << "Unable to obtain the current display topology";
         return false;
       }
 
-      // 查找VDD所在的拓扑组
+      // Find the topology group containing the VDD
       std::size_t vdd_group_index = SIZE_MAX;
       for (std::size_t i = 0; i < current_topology.size(); ++i) {
         if (std::find(current_topology[i].begin(), current_topology[i].end(), device_id) != current_topology[i].end()) {
@@ -587,18 +587,18 @@ namespace display_device {
         }
       }
 
-      // 检查是否需要切换
+      // Check whether a switch is needed
       bool is_duplicated = (vdd_group_index != SIZE_MAX && current_topology[vdd_group_index].size() > 1);
       bool is_vdd_only = (current_topology.size() == 1 && current_topology[0].size() == 1 && current_topology[0][0] == device_id);
 
       if (!is_duplicated && !is_vdd_only) {
-        BOOST_LOG(debug) << "VDD已经是扩展模式";
+        BOOST_LOG(debug) << "VDD is already in extended mode";
         return false;
       }
 
-      BOOST_LOG(info) << "检测到VDD处于" << (is_vdd_only ? "仅启用" : "复制") << "模式，切换到扩展模式";
+      BOOST_LOG(info) << "VDD is in " << (is_vdd_only ? "VDD-only" : "duplicated") << " mode; switching to extended mode";
 
-      // 构建新拓扑：分离VDD，保留其他设备
+      // Build a new topology: split out VDD, keep other devices intact
       active_topology_t new_topology;
       std::unordered_set<std::string> included;
 
@@ -606,7 +606,7 @@ namespace display_device {
         const auto &group = current_topology[i];
 
         if (i == vdd_group_index) {
-          // 分离VDD到独立组
+          // Split the VDD into its own group
           for (const auto &id : group) {
             new_topology.push_back({ id });
             included.insert(id);
@@ -620,21 +620,21 @@ namespace display_device {
         }
       }
 
-      // 添加缺失的物理显示器
+      // Add missing physical displays
       auto all_devices = enum_available_devices();
       for (const auto &physical_id : physical_devices_to_preserve) {
         if (included.count(physical_id) == 0 && all_devices.find(physical_id) != all_devices.end()) {
           new_topology.push_back({ physical_id });
-          BOOST_LOG(info) << "添加物理显示器到拓扑: " << physical_id;
+          BOOST_LOG(info) << "Adding physical display to topology: " << physical_id;
         }
       }
 
       if (!is_topology_valid(new_topology) || !set_topology(new_topology)) {
-        BOOST_LOG(error) << "设置拓扑失败";
+        BOOST_LOG(error) << "Failed to set topology";
         return false;
       }
 
-      BOOST_LOG(info) << "成功切换到扩展模式";
+      BOOST_LOG(info) << "Successfully switched to extended mode";
       return true;
     }
 
@@ -642,7 +642,7 @@ namespace display_device {
     set_hdr_state(bool enable_hdr) {
       auto vdd_device_id = find_device_by_friendlyname(ZAKO_NAME);
       if (vdd_device_id.empty()) {
-        BOOST_LOG(info) << "未找到虚拟显示器设备，跳过HDR状态设置";
+        BOOST_LOG(info) << "Virtual display device not found; skipping HDR state set";
         return true;
       }
 
@@ -651,28 +651,28 @@ namespace display_device {
 
       auto hdr_state_it = current_hdr_states.find(vdd_device_id);
       if (hdr_state_it == current_hdr_states.end()) {
-        BOOST_LOG(info) << "虚拟显示器不支持HDR或状态未知";
+        BOOST_LOG(info) << "Virtual display does not support HDR or state is unknown";
         return true;
       }
 
       hdr_state_e target_state = enable_hdr ? hdr_state_e::enabled : hdr_state_e::disabled;
       if (hdr_state_it->second == target_state) {
-        BOOST_LOG(info) << "虚拟显示器HDR状态已是目标状态";
+        BOOST_LOG(info) << "Virtual display HDR state already matches target";
         return true;
       }
 
       hdr_state_map_t new_hdr_states;
       new_hdr_states[vdd_device_id] = target_state;
 
-      const std::string action = enable_hdr ? "启用" : "关闭";
-      BOOST_LOG(info) << "正在" << action << "虚拟显示器HDR...";
+      const std::string action = enable_hdr ? "enabling" : "disabling";
+      BOOST_LOG(info) << "Currently " << action << " HDR on the virtual display...";
 
       if (set_hdr_states(new_hdr_states)) {
-        BOOST_LOG(info) << "成功" << action << "虚拟显示器HDR";
+        BOOST_LOG(info) << "Successfully completed " << action << " HDR on the virtual display";
         return true;
       }
 
-      BOOST_LOG(warning) << action << "虚拟显示器HDR失败";
+      BOOST_LOG(warning) << "Failed " << action << " HDR on the virtual display";
       return false;
     }
 
@@ -680,22 +680,22 @@ namespace display_device {
     apply_vdd_prep(const std::string &vdd_device_id, parsed_config_t::vdd_prep_e vdd_prep,
       const device_info_map_t &pre_vdd_devices) {
       if (vdd_device_id.empty()) {
-        BOOST_LOG(info) << "VDD设备ID为空，跳过vdd_prep处理";
+        BOOST_LOG(info) << "VDD device ID is empty; skipping vdd_prep handling";
         return true;
       }
 
       if (vdd_prep == parsed_config_t::vdd_prep_e::no_operation) {
-        BOOST_LOG(info) << "vdd_prep设置为无操作，跳过物理显示器处理";
+        BOOST_LOG(info) << "vdd_prep is set to no_operation; skipping physical display handling";
         return true;
       }
 
-      // 从 pre_vdd_devices（VDD创建前保存的设备列表）中获取物理显示器，
-      // 确保即使 VDD 创建后物理屏变 inactive 也能正确识别
+      // Read physical displays from pre_vdd_devices (the device list captured before VDD creation),
+      // so we still identify them correctly even if VDD creation made the physical screens inactive.
       std::vector<std::string> physical_devices;
       std::string original_primary_id;
 
       if (!pre_vdd_devices.empty()) {
-        // 使用 VDD 创建前保存的设备信息（可靠）
+        // Use the device info captured before VDD creation (reliable)
         for (const auto &[device_id, info] : pre_vdd_devices) {
           if (info.friendly_name != ZAKO_NAME) {
             physical_devices.push_back(device_id);
@@ -704,12 +704,12 @@ namespace display_device {
             }
           }
         }
-        BOOST_LOG(info) << "使用pre-VDD设备列表: " << physical_devices.size() << "个物理显示器"
-                        << (original_primary_id.empty() ? "" : ", 原主屏: " + original_primary_id);
+        BOOST_LOG(info) << "Using pre-VDD device list: " << physical_devices.size() << " physical display(s)"
+                        << (original_primary_id.empty() ? "" : ", original primary: " + original_primary_id);
       }
       else {
-        // 回退：从当前设备枚举中获取（VDD创建前未保存时的兜底逻辑）
-        BOOST_LOG(warning) << "未提供pre-VDD设备列表，从当前设备枚举中查找物理显示器";
+        // Fallback: read from the current device enumeration (when no pre-VDD list was captured)
+        BOOST_LOG(warning) << "No pre-VDD device list provided; finding physical displays from the current enumeration";
         const auto all_devices = enum_available_devices();
         for (const auto &[device_id, info] : all_devices) {
           if (device_id != vdd_device_id && info.friendly_name != ZAKO_NAME) {
@@ -721,7 +721,7 @@ namespace display_device {
         }
       }
 
-      // 确保原主屏在列表最前面（set_topology 中第一组拥有主屏优先权）
+      // Make sure the original primary is at the front (in set_topology, the first group has primary precedence)
       if (!original_primary_id.empty()) {
         auto it = std::find(physical_devices.begin(), physical_devices.end(), original_primary_id);
         if (it != physical_devices.begin() && it != physical_devices.end()) {
@@ -730,7 +730,7 @@ namespace display_device {
       }
 
       if (physical_devices.empty()) {
-        BOOST_LOG(debug) << "没有物理显示器需要处理";
+        BOOST_LOG(debug) << "No physical displays to process";
         return true;
       }
 
@@ -738,11 +738,11 @@ namespace display_device {
 
       switch (vdd_prep) {
         case parsed_config_t::vdd_prep_e::vdd_as_primary: {
-          // VDD为主屏模式：VDD放在第一位（主屏），物理显示器作为扩展显示器
-          BOOST_LOG(info) << "应用vdd_prep: VDD为主屏，物理显示器为副屏";
-          // VDD单独一组（放在第一位作为主显示器）
+          // VDD-as-primary mode: VDD goes first (primary), physical displays become extended displays
+          BOOST_LOG(info) << "Applying vdd_prep: VDD as primary, physical displays as secondary";
+          // VDD in its own group (placed first as the primary display)
           new_topology.push_back({ vdd_device_id });
-          // 每个物理显示器单独一组（扩展模式）
+          // Each physical display in its own group (extended mode)
           for (const auto &physical_id : physical_devices) {
             new_topology.push_back({ physical_id });
           }
@@ -750,22 +750,22 @@ namespace display_device {
         }
 
         case parsed_config_t::vdd_prep_e::vdd_as_secondary: {
-          // VDD为副屏模式：物理显示器为主屏，VDD作为扩展显示器
-          BOOST_LOG(info) << "应用vdd_prep: 物理显示器为主屏，VDD为副屏";
-          // 物理显示器放在前面（第一个为主显示器）
+          // VDD-as-secondary mode: physical displays are primary, VDD becomes the extended display
+          BOOST_LOG(info) << "Applying vdd_prep: physical displays as primary, VDD as secondary";
+          // Physical displays go first (the first becomes the primary display)
           for (const auto &physical_id : physical_devices) {
             new_topology.push_back({ physical_id });
           }
-          // VDD单独一组（作为副显示器）
+          // VDD in its own group (as secondary display)
           new_topology.push_back({ vdd_device_id });
           break;
         }
 
         case parsed_config_t::vdd_prep_e::display_off: {
-          // 熄屏模式：只保留VDD，关闭所有物理显示器
-          BOOST_LOG(info) << "应用vdd_prep: 关闭物理显示器";
+          // Display-off mode: keep only the VDD; turn off all physical displays
+          BOOST_LOG(info) << "Applying vdd_prep: turn off physical displays";
           new_topology.push_back({ vdd_device_id });
-          // 不添加物理显示器，它们将被禁用
+          // Don't add physical displays; they will be disabled
           break;
         }
 
@@ -774,16 +774,16 @@ namespace display_device {
       }
 
       if (!is_topology_valid(new_topology)) {
-        BOOST_LOG(error) << "新拓扑无效";
+        BOOST_LOG(error) << "New topology is invalid";
         return false;
       }
 
       if (!set_topology(new_topology)) {
-        BOOST_LOG(error) << "设置拓扑失败";
+        BOOST_LOG(error) << "Failed to set topology";
         return false;
       }
 
-      BOOST_LOG(info) << "成功应用vdd_prep设置";
+      BOOST_LOG(info) << "Successfully applied vdd_prep settings";
       return true;
     }
   }  // namespace vdd_utils

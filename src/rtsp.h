@@ -48,7 +48,7 @@ namespace rtsp_stream {
     std::string rtsp_url_scheme;
     uint32_t rtsp_iv_counter;
 
-    // 跟踪已设置的流类型
+    // Track which stream types have been set up
     bool setup_video { false };
     bool setup_audio { false };
     bool setup_control { false };

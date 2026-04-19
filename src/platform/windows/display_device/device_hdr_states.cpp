@@ -34,8 +34,9 @@ namespace display_device {
           return false;
         }
 
-        // 仅当「请求关闭且当前已关闭」时跳过。请求启用 HDR 时始终执行 set，避免因 get_hdr_state
-        // 滞后/错误（如 VDD 或拓扑刚变更）误判为已 enabled 而跳过，导致主机端实际仍为 SDR。
+        // Only skip when "requested off and currently off". When requesting HDR enable, always run set
+        // to avoid get_hdr_state lag/error (e.g. just after VDD or topology change) misreporting as enabled
+        // and skipping, leaving the host actually in SDR.
         if (state == hdr_state_e::disabled && current_state == hdr_state_e::disabled) {
           BOOST_LOG(debug) << "HDR state for " << device_id << " is already disabled, skipping";
           continue;
