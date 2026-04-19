@@ -41,18 +41,18 @@ target_link_libraries(qiin-tabtip
         uuid
         ${PLATFORM_LIBRARIES})
 target_compile_options(qiin-tabtip PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
-# 为 MinGW 设置正确的入口点和子系统
+# Set the correct entry point and subsystem for MinGW
 if(MINGW)
-    # 优化大小：-Os 优化大小, -s 移除调试符号
+    # Optimize for size: -Os optimizes for size, -s strips debug symbols
     target_compile_options(qiin-tabtip PRIVATE -Os)
-    target_link_options(qiin-tabtip PRIVATE 
-        -municode 
+    target_link_options(qiin-tabtip PRIVATE
+        -municode
         -s  # Strip symbols
-        -Wl,--gc-sections  # 移除未使用的section
+        -Wl,--gc-sections  # Remove unused sections
     )
 endif()
 
-# 测试工具：test_args - 仅用于开发测试，不会被打包
+# Test tool: test_args — for development testing only, not packaged
 add_executable(test_args test_args.cpp)
 set_target_properties(test_args PROPERTIES CXX_STANDARD 23)
 target_link_libraries(test_args
@@ -62,5 +62,5 @@ if(WIN32)
     target_link_libraries(test_args advapi32 userenv)
 endif()
 target_compile_options(test_args PRIVATE ${SUNSHINE_COMPILE_OPTIONS})
-# 明确标记为不安装（开发测试工具），但可以正常构建
-# 注意：不会在 cmake/packaging/windows.cmake 中安装，所以不会被打包
+# Explicitly marked not to install (development/test tool); can still be built.
+# Note: not installed via cmake/packaging/windows.cmake, so it won't be packaged.
