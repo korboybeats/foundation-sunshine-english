@@ -244,21 +244,39 @@ _fetch_nefcon()
 
 # ---------------------------------------------------------------------------
 # Verify critical files
+#
+# vmouse files come from a private repo (AlkaidLab/ZakoVirtualMouse) and are
+# treated as optional: if the GITHUB_TOKEN doesn't have access, the build
+# proceeds without the vmouse driver. The install scripts still ship but the
+# driver itself won't be in the package — end users can't install vmouse.
+# VDD + nefcon are public and remain required.
 # ---------------------------------------------------------------------------
-set(_missing)
+set(_missing_required)
+set(_missing_optional)
 foreach(_f
-    "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.dll"
     "${VDD_DRIVER_DIR}/ZakoVDD.dll"
     "${NEFCON_DRIVER_DIR}/nefconw.exe")
   if(NOT EXISTS "${_f}")
-    list(APPEND _missing "${_f}")
+    list(APPEND _missing_required "${_f}")
   endif()
 endforeach()
+if(NOT EXISTS "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.dll")
+  list(APPEND _missing_optional "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.dll")
+endif()
 
-if(_missing)
-  string(REPLACE ";" "\n  " _list "${_missing}")
+if(_missing_optional)
+  string(REPLACE ";" "\n  " _opt_list "${_missing_optional}")
+  message(WARNING
+    "Optional vmouse driver files not fetched (no GITHUB_TOKEN with access to private repo):\n  ${_opt_list}\n"
+    "Build will proceed without vmouse driver. To include it, set DRIVER_DOWNLOAD_TOKEN secret.")
+  set(SUNSHINE_HAS_VMOUSE_DRIVER FALSE CACHE INTERNAL "Whether vmouse driver binaries are available")
+else()
+  set(SUNSHINE_HAS_VMOUSE_DRIVER TRUE CACHE INTERNAL "Whether vmouse driver binaries are available")
+endif()
+
+if(_missing_required)
+  string(REPLACE ";" "\n  " _list "${_missing_required}")
   message(FATAL_ERROR
-    "Missing driver dependencies:\n  ${_list}\n"
-    "For private repos, set -DGITHUB_TOKEN=<token> or env GITHUB_TOKEN.\n"
+    "Missing required driver dependencies:\n  ${_list}\n"
     "To skip downloads: -DFETCH_DRIVER_DEPS=OFF (provide files manually in ${DRIVER_DEPS_CACHE}).")
 endif()

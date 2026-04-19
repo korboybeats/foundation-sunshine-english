@@ -77,12 +77,15 @@ install(FILES "${SUNSHINE_SOURCE_ASSETS_DIR}/windows/misc/vmouse/install-vmouse.
               "${SUNSHINE_SOURCE_ASSETS_DIR}/windows/misc/vmouse/uninstall-vmouse.bat"
         DESTINATION "scripts/vmouse"
         COMPONENT assets)
-install(FILES "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.dll"
-              "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.inf"
-              "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.cat"
-              "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.cer"
-        DESTINATION "scripts/vmouse/driver"
-        COMPONENT assets)
+# Driver binaries are only installed if available (private repo — see FetchDriverDeps.cmake).
+if(SUNSHINE_HAS_VMOUSE_DRIVER)
+  install(FILES "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.dll"
+                "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.inf"
+                "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.cat"
+                "${VMOUSE_DRIVER_DIR}/ZakoVirtualMouse.cer"
+          DESTINATION "scripts/vmouse/driver"
+          COMPONENT assets)
+endif()
 
 install(DIRECTORY "${SUNSHINE_SOURCE_ASSETS_DIR}/windows/misc/helper/"
         DESTINATION "tools"
