@@ -237,22 +237,22 @@ REM ================================================
 
 :LogInfo
 REM Function - Output info level log (white)
-echo [信息] %~1
+echo [INFO] %~1
 goto :eof
 
 :LogSuccess
 REM Function - Output success level log (green)
-powershell -c "Write-Host '[成功] %~1' -ForegroundColor Green"
+powershell -c "Write-Host '[OK] %~1' -ForegroundColor Green"
 goto :eof
 
 :LogWarning
 REM Function - Output warning level log (yellow)
-powershell -c "Write-Host '[警告] %~1' -ForegroundColor Yellow"
+powershell -c "Write-Host '[WARN] %~1' -ForegroundColor Yellow"
 goto :eof
 
 :LogError
 REM Function - Output error level log (red)
-powershell -c "Write-Host '[错误] %~1' -ForegroundColor Red"
+powershell -c "Write-Host '[ERROR] %~1' -ForegroundColor Red"
 goto :eof
 
 :LogStep

@@ -28,7 +28,7 @@ function Resolve-ProbeExe {
         }
     }
 
-    throw "找不到 vmouse_probe.exe，请使用 -ProbeExe 显式指定。"
+    throw "vmouse_probe.exe could not be found. Use -ProbeExe to specify it explicitly."
 }
 
 function Get-VMousePnpInfo {
@@ -44,17 +44,17 @@ function Get-VMousePnpInfo {
         return [pscustomobject]@{
             Installed  = $false
             Running    = $false
-            StatusText = "未安装"
+            StatusText = "Not installed"
             Device     = $null
         }
     }
 
     $running = $device.Status -eq "OK" -and $device.Problem -eq 0
     $statusText = if ($running) {
-        "$($device.FriendlyName) - 正常运行"
+        "$($device.FriendlyName) - Running normally"
     }
     elseif ($device.Problem -eq 21) {
-        "$($device.FriendlyName) - 需要重启"
+        "$($device.FriendlyName) - Restart required"
     }
     else {
         "$($device.FriendlyName) - Status=$($device.Status), Problem=$($device.Problem)"
@@ -104,9 +104,9 @@ function Get-IntValue {
 $probePath = Resolve-ProbeExe -ExplicitPath $ProbeExe
 $pnpInfo = Get-VMousePnpInfo
 
-Write-Host "PnP 状态: $($pnpInfo.StatusText)"
+Write-Host "PnP status: $($pnpInfo.StatusText)"
 if (-not $pnpInfo.Installed) {
-    throw "未检测到 Root\ZakoVirtualMouse。请先安装驱动。"
+    throw "Root\ZakoVirtualMouse was not detected. Please install the driver first."
 }
 
 $listResult = Invoke-Probe -ExePath $probePath -Arguments @(
@@ -119,7 +119,7 @@ if (-not $Quiet) {
 }
 
 if ((Get-IntValue -Table $listResult.Values -Key "MATCHED_DEVICE_PRESENT") -ne 1) {
-    throw "Raw Input 设备枚举中未发现匹配的虚拟鼠标。"
+    throw "No matching virtual mouse was found in the Raw Input device enumeration."
 }
 
 $probeArgs = @(
@@ -130,7 +130,7 @@ $probeArgs = @(
 )
 
 if ($ManualInput) {
-    Write-Host "请在接下来的 $TimeoutMs ms 内，通过 Sunshine/Moonlight 触发一次虚拟鼠标移动或点击。"
+    Write-Host "Within the next $TimeoutMs ms, trigger a virtual mouse move or click via Sunshine/Moonlight."
 }
 else {
     $probeArgs += "--send-test-sequence"
@@ -146,18 +146,18 @@ if (-not $Quiet) {
 }
 
 if ($runResult.ExitCode -ne 0) {
-    throw "探针运行失败，退出码 $($runResult.ExitCode)。"
+    throw "Probe run failed with exit code $($runResult.ExitCode)."
 }
 
 $matchedEvents = Get-IntValue -Table $runResult.Values -Key "MATCHED_EVENT_COUNT"
 $sendOk = Get-IntValue -Table $runResult.Values -Key "SEND_SEQUENCE_OK"
 
 if (-not $ManualInput -and $sendOk -ne 1) {
-    throw "虚拟鼠标发送序列失败，无法连接驱动或发送报告。"
+    throw "Virtual mouse send sequence failed: could not connect to the driver or send the report."
 }
 
 if ($matchedEvents -le 0) {
-    throw "未观察到来自虚拟鼠标驱动的 Raw Input 事件。"
+    throw "No Raw Input events from the virtual mouse driver were observed."
 }
 
-Write-Host "验证通过：驱动已安装、Raw Input 枚举可见、并成功收到虚拟鼠标事件。"
+Write-Host "Verification passed: driver installed, visible in Raw Input enumeration, and virtual mouse events received successfully."

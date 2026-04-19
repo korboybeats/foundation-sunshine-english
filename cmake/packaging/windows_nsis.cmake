@@ -3,32 +3,32 @@
 
 set(CPACK_NSIS_INSTALLED_ICON_NAME "${PROJECT__DIR}\\\\${PROJECT_EXE}")
 
-# 由于 CPack 的 NSIS 模板限制，我们无法直接修改 .onInit 函数
-# 但可以通过以下方式实现：
-# 通过 MUI_PAGE_CUSTOMFUNCTION_PRE 在目录页面显示前读取注册表
+# Due to limitations of CPack's NSIS template, we cannot directly modify the .onInit function
+# but we can achieve the same result with the following approach:
+# Use MUI_PAGE_CUSTOMFUNCTION_PRE to read the registry before the directory page is shown
 #
-# 注意：CPACK_NSIS_INSTALLER_MUI_ICON_CODE 是在页面定义之前的钩子
-# 我们用它来定义自定义函数，并设置 MUI_PAGE_CUSTOMFUNCTION_PRE
+# Note: CPACK_NSIS_INSTALLER_MUI_ICON_CODE is a hook that runs before page definitions.
+# We use it to define custom functions and to set MUI_PAGE_CUSTOMFUNCTION_PRE.
 
 set(CPACK_NSIS_INSTALLER_MUI_ICON_CODE "
-; 定义安装程序图标
+; Define the installer icon
 !define MUI_ICON \\\"${CMAKE_SOURCE_DIR}/sunshine.ico\\\"
 !define MUI_UNICON \\\"${CMAKE_SOURCE_DIR}/sunshine.ico\\\"
 
-; 定义在目录页面显示前执行的函数
+; Define the function to run before the directory page is shown
 !define MUI_PAGE_CUSTOMFUNCTION_PRE PreDirectoryPage
 
-; 从注册表读取之前的安装路径
-; 使用自定义注册表键，避免覆盖安装触发卸载时被清除
+; Read the previous install path from the registry
+; Use a custom registry key so it isn't cleared when an overwrite-install triggers an uninstall
 
 Function PreDirectoryPage
-    ; 只在默认安装目录时才尝试读取注册表
+    ; Only try to read the registry if the install dir is still the default
     StrCmp $IS_DEFAULT_INSTALLDIR '1' 0 SkipRegRead
 
     Push $0
     SetRegView 64
 
-    ; 从自定义注册表读取上次安装目录
+    ; Read the last install directory from our custom registry key
     ReadRegStr $0 HKLM 'SOFTWARE\\\\AlkaidLab\\\\Sunshine' 'InstallDir'
     StrCmp $0 '' DoneRegRead 0
     IfFileExists '$0\\\\*.*' SetPath DoneRegRead
@@ -43,7 +43,7 @@ Function PreDirectoryPage
     SkipRegRead:
 FunctionEnd
 
-; 辅助函数：获取路径的父目录
+; Helper function: get the parent directory of a path
 Function GetParent
     Exch $0
     Push $1
@@ -68,15 +68,15 @@ Function GetParent
         Exch $0
 FunctionEnd
 
-; Finish Page 自定义选项
-; 复选框1: 打开使用教程（默认勾选）
+; Custom Finish Page options
+; Checkbox 1: Open the documentation (checked by default)
 !define MUI_FINISHPAGE_RUN
-!define MUI_FINISHPAGE_RUN_TEXT '打开使用教程'
+!define MUI_FINISHPAGE_RUN_TEXT 'Open documentation'
 !define MUI_FINISHPAGE_RUN_FUNCTION OpenDocumentation
 
-; 复选框2: 启动 Sunshine GUI（默认勾选）
+; Checkbox 2: Launch Sunshine GUI (checked by default)
 !define MUI_FINISHPAGE_SHOWREADME
-!define MUI_FINISHPAGE_SHOWREADME_TEXT '启动 Sunshine GUI'
+!define MUI_FINISHPAGE_SHOWREADME_TEXT 'Launch Sunshine GUI'
 !define MUI_FINISHPAGE_SHOWREADME_FUNCTION LaunchGUI
 
 Function OpenDocumentation
@@ -89,16 +89,16 @@ FunctionEnd
 ")
 
 # ==============================================================================
-# File Conflict Prevention - 在文件解压前停止进程
+# File Conflict Prevention - stop processes before files are extracted
 # ==============================================================================
 
-# 策略：直接禁用 ENABLE_UNINSTALL_BEFORE_INSTALL，手动在安装过程中处理
-# 这样可以避免在选择目录阶段就检查文件导致冲突
+# Strategy: simply disable ENABLE_UNINSTALL_BEFORE_INSTALL and handle it manually
+# during installation. This avoids file-conflict checks during the directory-selection stage.
 
-# 自动卸载功能
+# Automatic uninstall feature
 set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL "ON")
 
-# Windows Restart Manager 支持和高DPI位图优化
+# Windows Restart Manager support and high-DPI bitmap optimizations
 set(CPACK_NSIS_EXTRA_DEFINES "
 \${CPACK_NSIS_EXTRA_DEFINES}
 !define MUI_FINISHPAGE_REBOOTLATER_DEFAULT
@@ -109,12 +109,12 @@ ManifestDPIAware true
 set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\\\sunshine.ico")
 set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}\\\\sunshine.ico")
 
-# 设置DPI感知
+# Set DPI awareness
 set(CPACK_NSIS_MANIFEST_DPI_AWARE ON)
 set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP "${CMAKE_SOURCE_DIR}\\\\welcome.bmp")
 set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP "${CMAKE_SOURCE_DIR}\\\\welcome.bmp")
 
-# 头部图像（需要150x57像素）
+# Header image (must be 150x57 pixels)
 # set(CPACK_NSIS_MUI_HEADERIMAGE_BITMAP "${CMAKE_SOURCE_DIR}\\\\cmake\\\\packaging\\\\welcome.bmp")
 
 # Custom branding
@@ -130,8 +130,8 @@ set(CPACK_NSIS_WELCOME_TITLE "Welcome to Sunshine Foundation Game Streaming Serv
 set(CPACK_NSIS_WELCOME_TITLE_3LINES "ON")
 
 # Custom finish page configuration
-set(CPACK_NSIS_FINISH_TITLE "安装完成！")
-set(CPACK_NSIS_FINISH_TEXT "Sunshine Foundation Game Streaming Server 已成功安装到您的系统中。\\r\\n\\r\\n点击 '完成' 开始使用这个强大的游戏流媒体服务器。")
+set(CPACK_NSIS_FINISH_TITLE "Installation complete!")
+set(CPACK_NSIS_FINISH_TEXT "Sunshine Foundation Game Streaming Server has been successfully installed on your system.\\r\\n\\r\\nClick 'Finish' to start using this powerful game streaming server.")
 
 # ==============================================================================
 # Installation Progress and User Feedback
@@ -139,101 +139,103 @@ set(CPACK_NSIS_FINISH_TEXT "Sunshine Foundation Game Streaming Server 已成功�
 
 # Enhanced installation commands with progress feedback
 SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
-        "${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}        
-        ; 确保覆盖模式仍然生效
+        "${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}
+        ; Make sure overwrite mode is still in effect
         SetOverwrite try
 
         ; ----------------------------------------------------------------------
-        ; 清理便携版脚本：安装版不需要这两个文件
-        ; 需求：如果目录下有 install_portable.bat / uninstall_portable.bat，就删除
-        ; 安全防护：防止符号链接攻击 - 使用 IfFileExists 检查文件是否存在
-        ;           限制在 $INSTDIR 目录内，避免路径遍历攻击
+        ; Clean up portable scripts: the installed version doesn't need these two files
+        ; Requirement: if install_portable.bat / uninstall_portable.bat are in the directory, delete them
+        ; Safety: prevent symlink attacks - use IfFileExists to check that the file exists
+        ;         restrict to within \$INSTDIR to avoid path-traversal attacks
         ; ----------------------------------------------------------------------
-        DetailPrint '🧹 清理便携版脚本...'
-        ; 安全删除：先检查文件是否存在，避免符号链接攻击
+        DetailPrint 'Cleaning up portable scripts...'
+        ; Safe delete: check that the file exists first to avoid symlink attacks
         IfFileExists '\$INSTDIR\\\\install_portable.bat' 0 +2
         Delete '\$INSTDIR\\\\install_portable.bat'
         IfFileExists '\$INSTDIR\\\\uninstall_portable.bat' 0 +2
         Delete '\$INSTDIR\\\\uninstall_portable.bat'
-        
-        ; 重置文件权限
-        DetailPrint '🔓 重置文件权限...'
+
+        ; Reset file permissions
+        DetailPrint 'Resetting file permissions...'
         nsExec::ExecToLog 'icacls \\\"$INSTDIR\\\" /reset /T /C /Q >nul 2>&1'
-        
+
         ; ----------------------------------------------------------------------
-        ; 清理临时文件
-        ; 安全防护：防止符号链接攻击
-        ;           注意：通配符删除（*.tmp, *.old）在遇到符号链接时可能有风险
-        ;           但限制在 $INSTDIR 目录内，且 NSIS 的 Delete 命令会处理符号链接
-        ;           为了更安全，可以考虑逐个检查文件，但通配符删除在安装目录内风险较低
+        ; Clean up temporary files
+        ; Safety: prevent symlink attacks
+        ;         Note: wildcard delete (*.tmp, *.old) can be risky against symlinks,
+        ;         but it's restricted to within \$INSTDIR, and NSIS's Delete command
+        ;         handles symlinks by deleting the link itself rather than the target.
+        ;         For more safety, files could be checked one by one, but wildcard
+        ;         deletes inside the install directory are low-risk in practice.
         ; ----------------------------------------------------------------------
-        DetailPrint '🧹 清理临时文件...'
-        ; 使用通配符删除，限制在 $INSTDIR 目录内
-        ; NSIS 的 Delete 命令在处理符号链接时会删除链接本身，不会跟随到目标
+        DetailPrint 'Cleaning up temporary files...'
+        ; Wildcard delete restricted to within \$INSTDIR
+        ; NSIS's Delete command removes the symlink itself rather than following it
         Delete '\$INSTDIR\\\\*.tmp'
         Delete '\$INSTDIR\\\\*.old'
-        
-        ; 显示安装进度信息
-        DetailPrint '🎯 正在配置 Sunshine Foundation Game Streaming Server...'
-                
-        ; 系统配置
-        DetailPrint '🔧 配置系统权限...'
-        nsExec::ExecToLog 'icacls \\\"$INSTDIR\\\" /reset'
-        
-        DetailPrint '🛣️ 更新系统PATH环境变量...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\update-path.bat\\\" add'
-        
-        DetailPrint '📦 迁移配置文件...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\migrate-config.bat\\\"'
-        
-        DetailPrint '🔥 配置防火墙规则...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\add-firewall-rule.bat\\\"'
-        
-        DetailPrint '📺 安装虚拟显示器驱动...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\install-vdd.bat\\\"'
-        
 
-        DetailPrint '🎯 安装虚拟游戏手柄...'
+        ; Show installation progress info
+        DetailPrint 'Configuring Sunshine Foundation Game Streaming Server...'
+
+        ; System configuration
+        DetailPrint 'Configuring system permissions...'
+        nsExec::ExecToLog 'icacls \\\"$INSTDIR\\\" /reset'
+
+        DetailPrint 'Updating system PATH environment variable...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\update-path.bat\\\" add'
+
+        DetailPrint 'Migrating configuration files...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\migrate-config.bat\\\"'
+
+        DetailPrint 'Configuring firewall rules...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\add-firewall-rule.bat\\\"'
+
+        DetailPrint 'Installing virtual display driver...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\install-vdd.bat\\\"'
+
+
+        DetailPrint 'Installing virtual gamepad...'
         nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\install-gamepad.bat\\\"'
-        
-        DetailPrint '⚙️ 安装并启动系统服务...'
+
+        DetailPrint 'Installing and starting system service...'
         nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\install-service.bat\\\"'
         nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\autostart-service.bat\\\"'
 
-        ; 写入安装目录，供后续覆盖安装读取
+        ; Save the install directory so subsequent overwrite installs can read it
         SetRegView 64
         WriteRegStr HKLM 'SOFTWARE\\\\AlkaidLab\\\\Sunshine' 'InstallDir' '$INSTDIR'
-        
-        DetailPrint '✅ 安装完成！'
-        
+
+        DetailPrint 'Installation complete!'
+
         NoController:
         ")
 
-# 卸载命令配置
+# Uninstall command configuration
 set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
         "${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}
-        ; 显示卸载进度信息
-        DetailPrint '正在卸载 Sunshine Foundation Game Streaming Server...'
-        
-        ; 停止运行的程序
-        DetailPrint '停止运行的程序...'
+        ; Show uninstall progress info
+        DetailPrint 'Uninstalling Sunshine Foundation Game Streaming Server...'
+
+        ; Stop running programs
+        DetailPrint 'Stopping running programs...'
         nsExec::ExecToLog 'taskkill /f /im sunshine-gui.exe'
         nsExec::ExecToLog 'taskkill /f /im sunshine.exe'
-        
-        ; 卸载系统组件
-        DetailPrint '删除防火墙规则...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\delete-firewall-rule.bat\\\"'
-        
-        DetailPrint '卸载系统服务...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\uninstall-service.bat\\\"'
-        
-        DetailPrint '卸载虚拟显示器驱动...'
-        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\uninstall-vdd.bat\\\"'
-        
 
-        DetailPrint '恢复NVIDIA设置...'
+        ; Uninstall system components
+        DetailPrint 'Removing firewall rules...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\delete-firewall-rule.bat\\\"'
+
+        DetailPrint 'Uninstalling system service...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\uninstall-service.bat\\\"'
+
+        DetailPrint 'Uninstalling virtual display driver...'
+        nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\uninstall-vdd.bat\\\"'
+
+
+        DetailPrint 'Restoring NVIDIA settings...'
         nsExec::ExecToLog '\\\"$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe\\\" --restore-nvprefs-undo'
-        
+
         MessageBox MB_YESNO|MB_ICONQUESTION \
             'Do you want to remove Virtual Gamepad?' \
             /SD IDNO IDNO NoGamepad
@@ -246,10 +248,10 @@ set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
             SetRegView 64
             DeleteRegValue HKLM 'SOFTWARE\\\\AlkaidLab\\\\Sunshine' 'InstallDir'
             DeleteRegKey /ifempty HKLM 'SOFTWARE\\\\AlkaidLab\\\\Sunshine'
-        
-        DetailPrint '清理环境变量...'
+
+        DetailPrint 'Cleaning up environment variables...'
         nsExec::ExecToLog '\\\"$INSTDIR\\\\scripts\\\\update-path.bat\\\" remove'
-        
+
         NoDelete:
         DetailPrint 'Uninstall complete!'
         ")
@@ -267,27 +269,27 @@ set(CPACK_NSIS_CREATE_ICONS_EXTRA
         "${CPACK_NSIS_CREATE_ICONS_EXTRA}
         SetOutPath '\$INSTDIR'
 
-        ; 主程序快捷方式 - 使用可执行文件的内嵌图标
+        ; Main program shortcut - uses the executable's embedded icon
         CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Sunshine.lnk' \
             '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' '--shortcut' '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' 0
 
-        ; 安装目录主程序快捷方式 - 使用可执行文件的内嵌图标
+        ; Install-directory main program shortcut - uses the executable's embedded icon
         CreateShortCut '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.lnk' \
             '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' '--shortcut' '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' 0
 
-        ; GUI管理工具快捷方式 - 使用GUI程序的内嵌图标
+        ; GUI management tool shortcut - uses the GUI program's embedded icon
         CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Sunshine GUI.lnk' \
             '\$INSTDIR\\\\assets\\\\gui\\\\sunshine-gui.exe' '' '\$INSTDIR\\\\assets\\\\gui\\\\sunshine-gui.exe' 0
 
-        ; 工具文件夹快捷方式 - 使用主程序图标
+        ; Tools folder shortcut - uses the main program icon
         CreateShortCut '\$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Sunshine Tools.lnk' \
             '\$INSTDIR\\\\tools' '' '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' 0
 
-        ; 创建桌面快捷方式 - 使用可执行文件的内嵌图标
+        ; Create desktop shortcut - uses the executable's embedded icon
         CreateShortCut '\$DESKTOP\\\\Sunshine.lnk' \
             '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' '--shortcut' '\$INSTDIR\\\\${CMAKE_PROJECT_NAME}.exe' 0
 
-        ; 创建桌面快捷方式 - GUI管理工具
+        ; Create desktop shortcut - GUI management tool
         CreateShortCut '\$DESKTOP\\\\Sunshine GUI.lnk' \
             '\$INSTDIR\\\\assets\\\\gui\\\\sunshine-gui.exe' '' '\$INSTDIR\\\\assets\\\\gui\\\\sunshine-gui.exe' 0
         ")
@@ -295,24 +297,28 @@ set(CPACK_NSIS_CREATE_ICONS_EXTRA
 set(CPACK_NSIS_DELETE_ICONS_EXTRA
         "${CPACK_NSIS_DELETE_ICONS_EXTRA}
         ; ----------------------------------------------------------------------
-        ; 安全删除快捷方式：防止符号链接攻击和路径遍历
-        ; 
-        ; 安全分析：
-        ; 1. 符号链接攻击风险：如果攻击者在桌面/开始菜单创建符号链接，使用我们的快捷方式名称，
-        ;    删除时可能误删其他文件。但 NSIS 的 Delete 命令对于符号链接会删除链接本身，不会跟随。
-        ; 2. 路径遍历风险：我们使用固定的系统变量（$DESKTOP, $SMPROGRAMS），不接受外部输入，
-        ;    路径是硬编码的，降低了路径遍历风险。
-        ; 3. 文件类型验证：我们只删除预期的 .lnk 文件，文件名是固定的，降低了误删风险。
-        ; 
-        ; 防护措施：
-        ; - 使用 IfFileExists 检查文件是否存在，避免删除不存在的文件
-        ; - 使用固定的系统路径变量，不接受外部输入
-        ; - 只删除预期的 .lnk 文件，文件名硬编码
-        ; - NSIS 的 Delete 命令会自动处理符号链接，只删除链接本身
+        ; Safe shortcut deletion: prevent symlink attacks and path traversal
+        ;
+        ; Security analysis:
+        ; 1. Symlink attack risk: if an attacker creates a symlink in the desktop/start
+        ;    menu using one of our shortcut names, deleting it could mistakenly remove
+        ;    other files. However, NSIS's Delete command removes the symlink itself
+        ;    rather than following it.
+        ; 2. Path-traversal risk: we use fixed system variables (\$DESKTOP, \$SMPROGRAMS)
+        ;    and accept no external input; the paths are hardcoded, which reduces the
+        ;    risk of path traversal.
+        ; 3. File-type validation: we only delete the expected .lnk files, and their
+        ;    names are fixed, which reduces the risk of accidental deletion.
+        ;
+        ; Protective measures:
+        ; - Use IfFileExists to check that the file exists, to avoid deleting non-existent files
+        ; - Use fixed system path variables and accept no external input
+        ; - Only delete expected .lnk files with hardcoded filenames
+        ; - NSIS's Delete command automatically handles symlinks, only removing the link itself
         ; ----------------------------------------------------------------------
-        
-        ; 删除开始菜单快捷方式（安全删除）
-        ; 注意：$MUI_TEMP 是 NSIS 内部变量，指向开始菜单文件夹，由安装程序控制
+
+        ; Delete Start Menu shortcuts (safe delete)
+        ; Note: \$MUI_TEMP is an NSIS internal variable pointing to the Start Menu folder, controlled by the installer
         IfFileExists '\$SMPROGRAMS\\\\$MUI_TEMP\\\\Sunshine.lnk' 0 +2
         Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\Sunshine.lnk'
         IfFileExists '\$SMPROGRAMS\\\\$MUI_TEMP\\\\Sunshine GUI.lnk' 0 +2
@@ -323,10 +329,10 @@ set(CPACK_NSIS_DELETE_ICONS_EXTRA
         Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\Sunshine Service.lnk'
         IfFileExists '\$SMPROGRAMS\\\\$MUI_TEMP\\\\${CMAKE_PROJECT_NAME}.lnk' 0 +2
         Delete '\$SMPROGRAMS\\\\$MUI_TEMP\\\\${CMAKE_PROJECT_NAME}.lnk'
-        
-        ; 删除桌面快捷方式（安全删除）
-        ; 注意：$DESKTOP 是 NSIS 系统变量，指向当前用户的桌面目录
-        ;       如果攻击者创建符号链接，NSIS 的 Delete 会删除链接本身，不会跟随到目标
+
+        ; Delete desktop shortcuts (safe delete)
+        ; Note: \$DESKTOP is an NSIS system variable pointing to the current user's desktop directory.
+        ;       If an attacker creates a symlink, NSIS's Delete removes the link itself rather than following it.
         IfFileExists '\$DESKTOP\\\\Sunshine.lnk' 0 +2
         Delete '\$DESKTOP\\\\Sunshine.lnk'
         IfFileExists '\$DESKTOP\\\\Sunshine GUI.lnk' 0 +2

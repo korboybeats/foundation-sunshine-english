@@ -120,7 +120,7 @@ set(CPACK_COMPONENT_APPLICATION_DEPENDS assets)
 
 # Virtual Display Driver
 set(CPACK_COMPONENT_VDD_DISPLAY_NAME "Zako Display Driver")
-set(CPACK_COMPONENT_VDD_DESCRIPTION "支持HDR的虚拟显示器驱动安装")
+set(CPACK_COMPONENT_VDD_DESCRIPTION "Virtual display driver installation with HDR support")
 set(CPACK_COMPONENT_VDD_GROUP "Core")
 
 

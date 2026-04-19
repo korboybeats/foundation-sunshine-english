@@ -48,8 +48,8 @@ export default defineConfig({
     outDir: resolve(assetsDstPath),
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
-    // 在 Vite 7 中，同时配置 rollupOptions 和 rolldownOptions
-    // rollupOptions 用于 HTML 文件生成，rolldownOptions 用于打包优化
+    // In Vite 7, configure both rollupOptions and rolldownOptions
+    // rollupOptions handles HTML file generation; rolldownOptions handles bundling optimization
     rollupOptions: {
       input: {
         apps: resolve(assetsSrcPath, 'apps.html'),
@@ -63,11 +63,11 @@ export default defineConfig({
     },
     rolldownOptions: {
       output: {
-        // 优化chunk命名
+        // Optimize chunk naming
         chunkFileNames: 'assets/[name]-[hash].js',
-        // 优化入口文件命名（只影响 JS 文件）
+        // Optimize entry file naming (only affects JS files)
         entryFileNames: 'assets/[name]-[hash].js',
-        // 优化资源文件命名
+        // Optimize asset file naming
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || ''
           const ext = name.split('.').pop()
@@ -85,16 +85,16 @@ export default defineConfig({
         },
       },
     },
-    // 启用CSS代码分割
+    // Enable CSS code splitting
     cssCodeSplit: true,
-    // 启用源码映射（生产环境可选）
+    // Enable source maps (optional in production)
     sourcemap: false,
-    // 优化依赖预构建
+    // Optimize dependency pre-bundling
     commonjsOptions: {
       include: [/node_modules/],
     },
   },
-  // 优化依赖预构建
+  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: ['vue', 'vue-i18n', 'bootstrap', '@popperjs/core', 'marked', 'nanoid', 'vuedraggable'],
   },

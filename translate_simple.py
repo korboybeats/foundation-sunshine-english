@@ -2,10 +2,10 @@ import os
 import re
 import requests
 
-# 项目名和术语保护列表
+# Protected list of project names and terminology
 PROTECTED_TERMS = [
     'Sunshine', 'README', 'GitHub', 'CI', 'API', 'Markdown', 'OpenAI', 'DeepL', 'Google Translate',
-    # 可在此添加更多术语
+    # Add more terms here as needed
 ]
 
 def mask_terms(text):
@@ -19,12 +19,12 @@ def unmask_terms(text):
     return text
 
 def translate_with_deepseek(text, target_lang):
-    # 使用 DeepSeek API 进行翻译
+    # Translate using the DeepSeek API
     api_key = os.getenv('DEEPSEEK_API_KEY')
     if not api_key:
-        raise Exception('DEEPSEEK_API_KEY 环境变量未设置')
+        raise Exception('DEEPSEEK_API_KEY environment variable is not set')
     url = 'https://api.deepseek.com/v1/chat/completions'
-    prompt = f"请将以下 Markdown 内容翻译为{target_lang}，但不要翻译项目名和术语：{', '.join(PROTECTED_TERMS)}。保持原有格式、链接和图片。\n\n{text}"
+    prompt = f"Please translate the following Markdown content into {target_lang}, but do not translate the project name or these terms: {', '.join(PROTECTED_TERMS)}. Preserve the original formatting, links, and images.\n\n{text}"
     headers = {
         'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json'
@@ -58,7 +58,7 @@ def translate_readme():
                 masked = mask_terms(content)
                 translated = translate_with_deepseek(masked, lang_name)
                 translated = unmask_terms(translated)
-                # 去除 DeepSeek 返回的多余提示，只保留第一个 Markdown 标题及后面内容
+                # Strip the extra prefix DeepSeek returns; keep only the first Markdown heading and everything after it
                 lines = translated.splitlines()
                 for idx, line in enumerate(lines):
                     if line.strip().startswith('#'):

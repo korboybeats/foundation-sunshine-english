@@ -5,12 +5,12 @@ import { ViteEjsPlugin } from './vite-plugin-ejs-v7.js'
 import vue from '@vitejs/plugin-vue'
 import mkcert from 'vite-plugin-mkcert'
 
-// 静态资源路径
+// Static assets path
 const assetsSrcPath = 'src_assets/common/assets/web'
-// 读取开发环境模板头文件
+// Read the development template header file
 const header = fs.readFileSync(resolve(assetsSrcPath, 'template_header_dev.html'))
 
-// 支持无.html后缀访问的中间件
+// Middleware that supports access without the .html suffix
 function htmlExtensionMiddleware(htmlFiles) {
   return (req, res, next) => {
     if (req.method !== 'GET') return next()
@@ -26,10 +26,10 @@ function htmlExtensionMiddleware(htmlFiles) {
   }
 }
 
-// 需要支持的html页面
+// HTML pages that need to be supported
 const htmlPages = ['apps', 'config', 'index', 'password', 'pin', 'troubleshooting', 'welcome']
 
-// 代理配置复用函数
+// Reusable function for proxy configuration
 function createProxyLogger(prefix, target, rewritePath) {
   return {
     target,
@@ -38,10 +38,10 @@ function createProxyLogger(prefix, target, rewritePath) {
     rewrite: (path) => path.replace(rewritePath, ''),
     configure(proxy) {
       proxy.on('proxyReq', (proxyReq, req) => {
-        console.log(`${prefix}请求:`, req.method, req.url, '-> ' + target + req.url.replace(rewritePath, ''))
+        console.log(`${prefix} request:`, req.method, req.url, '-> ' + target + req.url.replace(rewritePath, ''))
       })
       proxy.on('proxyRes', (proxyRes, req) => {
-        console.log(`✅ ${prefix}响应:`, req.url, '状态码:', proxyRes.statusCode)
+        console.log(`OK ${prefix} response:`, req.url, 'status:', proxyRes.statusCode)
       })
     },
   }
@@ -80,33 +80,33 @@ export default defineConfig({
     host: '0.0.0.0',
     open: true,
     cors: true,
-    // HMR 配置：确保 WebSocket 直接连接到 Vite 服务器，而不是通过代理
+    // HMR config: ensure the WebSocket connects directly to the Vite server rather than through a proxy
     hmr: {
       protocol: 'wss',
       host: 'localhost',
       port: 3000,
     },
     proxy: {
-      '/steam-api': createProxyLogger('🎮 Steam API', 'https://api.steampowered.com', /^\/steam-api/),
-      '/steam-store': createProxyLogger('🛒 Steam Store', 'https://store.steampowered.com', /^\/steam-store/),
+      '/steam-api': createProxyLogger('Steam API', 'https://api.steampowered.com', /^\/steam-api/),
+      '/steam-store': createProxyLogger('Steam Store', 'https://store.steampowered.com', /^\/steam-store/),
       '/boxart': {
         target: 'https://localhost:47990',
         changeOrigin: true,
         secure: false,
         configure(proxy) {
           proxy.on('error', (err, req, res) => {
-            console.log('❌ Boxart 代理错误:', err.message)
+            console.log('Boxart proxy error:', err.message)
             if (!res.headersSent) {
               res.writeHead(500, { 'Content-Type': 'text/plain' })
             }
             res.end('Boxart proxy error: ' + err.message)
           })
           proxy.on('proxyReq', (proxyReq, req) => {
-            console.log('🖼️  Boxart 请求:', req.method, req.url, '-> https://localhost:47990' + req.url)
+            console.log('Boxart request:', req.method, req.url, '-> https://localhost:47990' + req.url)
           })
           proxy.on('proxyRes', (proxyRes, req) => {
-            console.log('✅ Boxart 响应:', req.url, '状态码:', proxyRes.statusCode)
-            // 清理可能有问题的响应头
+            console.log('OK Boxart response:', req.url, 'status:', proxyRes.statusCode)
+            // Strip response headers that may cause issues
             delete proxyRes.headers['content-encoding']
           })
         },
@@ -118,7 +118,7 @@ export default defineConfig({
         configure(proxy) {
           proxy.on('error', (err, req, res) => {
             console.log('API proxy error:', err.message)
-            // 如果响应头已发送，不能再次发送
+            // If headers have already been sent, we can't send them again
             if (res.headersSent) {
               return
             }
@@ -175,7 +175,7 @@ export default defineConfig({
               '/api/restart': { status: 'ok', message: 'Restart initiated (mock)' },
             }
 
-            // 处理特殊端点
+            // Handle special endpoints
             if (req.url === '/api/logs') {
               const mockData = mockResponses[req.url] || 'No logs available (mock)'
               res.writeHead(200, { 'Content-Type': 'text/plain' })
@@ -187,10 +187,10 @@ export default defineConfig({
             }
           })
           proxy.on('proxyReq', (proxyReq, req) => {
-            console.log('🔗 代理请求:', req.method, req.url, '-> https://localhost:47990' + req.url)
+            console.log('Proxy request:', req.method, req.url, '-> https://localhost:47990' + req.url)
           })
           proxy.on('proxyRes', (proxyRes, req) => {
-            console.log('✅ 代理响应:', req.url, '状态码:', proxyRes.statusCode)
+            console.log('OK Proxy response:', req.url, 'status:', proxyRes.statusCode)
           })
         },
       },
@@ -200,7 +200,7 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 1000, // 提高警告阈值到1MB
+    chunkSizeWarningLimit: 1000, // Raise the warning threshold to 1MB
     rolldownOptions: {
       input: htmlPages.reduce((acc, name) => {
         acc[name] = resolve(assetsSrcPath, `${name}.html`)
@@ -209,15 +209,15 @@ export default defineConfig({
       output: {
         advancedChunks: {
           groups: [
-            // 将Vue相关库分离到单独的chunk
+            // Split Vue-related libraries into a separate chunk
             { name: 'vue-vendor', test: /[\\/]node_modules[\\/](vue|vue-i18n)[\\/]/ },
-            // 将Bootstrap和FontAwesome分离
+            // Split out Bootstrap and FontAwesome
             { name: 'ui-vendor', test: /[\\/]node_modules[\\/](bootstrap|@fortawesome|@popperjs)[\\/]/ },
-            // 将其他第三方库分离
+            // Split out other third-party libraries
             { name: 'utils-vendor', test: /[\\/]node_modules[\\/](marked|nanoid|vuedraggable)[\\/]/ },
           ],
         },
-        // 优化chunk命名
+        // Optimize chunk naming
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId
           if (facadeModuleId) {
@@ -229,7 +229,7 @@ export default defineConfig({
           }
           return 'assets/[name]-[hash].js'
         },
-        // 优化资源文件命名
+        // Optimize asset file naming
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.')
           const ext = info[info.length - 1]

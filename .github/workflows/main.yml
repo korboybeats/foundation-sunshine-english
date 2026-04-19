@@ -200,7 +200,7 @@ jobs:
         shell: msys2 {0}
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
-          BUILD_VERSION: ${{ needs.setup_release.outputs.release_tag }}.杂鱼
+          BUILD_VERSION: ${{ needs.setup_release.outputs.release_tag }}.zako
           COMMIT: ${{ needs.setup_release.outputs.release_commit }}
           GITHUB_TOKEN: ${{ secrets.DRIVER_DOWNLOAD_TOKEN }}
         run: |
@@ -245,14 +245,14 @@ jobs:
           mkdir -p artifacts
           cd build
 
-          # package - 生成 Inno Setup 安装包和 ZIP 便携版
-          # 先安装到 staging 目录
+          # package - generate Inno Setup installer and ZIP portable
+          # first install to staging directory
           cmake --install . --prefix ./inno_staging
-          
-          # 运行 Inno Setup 编译器
+
+          # run Inno Setup compiler
           "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" sunshine_installer.iss
-          
-          # 生成 ZIP 便携版
+
+          # generate ZIP portable
           cpack -G ZIP --config ./CPackConfig.cmake --verbose
 
           # move
@@ -262,7 +262,7 @@ jobs:
       - name: Generate Checksums
         shell: pwsh
         run: |
-          # 生成 SHA256 校验和
+          # generate SHA256 checksums
           .\scripts\generate-checksums.ps1 -Path .\artifacts -Output "SHA256SUMS.txt"
 
       - name: Package Windows Debug Info
@@ -292,7 +292,7 @@ jobs:
             NEWTAG="v${YEAR}.${DATE_PADDED}"
           fi
 
-          # 重命名安装包和便携版
+          # rename installer and portable archive
           mv artifacts/sunshine-windows-installer.exe "artifacts/Sunshine.${NEWTAG}.WindowsInstaller.exe"
           mv artifacts/sunshine-windows-portable.zip "artifacts/Sunshine.${NEWTAG}.WindowsPortable.zip"
 
@@ -314,7 +314,7 @@ jobs:
           allowUpdates: true
           body: ${{ needs.setup_release.outputs.release_body }}
           generateReleaseNotes: ${{ needs.setup_release.outputs.release_generate_release_notes }}
-          name: ${{ needs.setup_release.outputs.release_tag }}.杂鱼
+          name: ${{ needs.setup_release.outputs.release_tag }}.zako
           prerelease: true
-          tag: ${{ needs.setup_release.outputs.release_tag }}.杂鱼
+          tag: ${{ needs.setup_release.outputs.release_tag }}.zako
           token: ${{ secrets.GH_BOT_TOKEN }}

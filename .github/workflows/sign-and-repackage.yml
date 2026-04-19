@@ -1,12 +1,12 @@
-# 签名并重新打包工作流（仅用于正式发布版本）
-# 流程：
-# 1. 编译当前分支的代码（只编译一次）
-# 2. 生成未签名的 ZIP 和 Inno Setup staging 目录
-# 3. 将所有 EXE/DLL 文件提交到 SignPath 签名
-# 4. 用签名文件重新打包 ZIP 便携版
-# 5. 用签名文件替换 Inno Setup staging 目录中的文件并重新打包
-# 6. 签名最终的 Inno Setup 安装包
-# 注意：只在正式发布（非预发布）时运行，确保代码版本和签名文件一致
+# Sign and repackage workflow (only for official release builds)
+# Flow:
+# 1. Compile the current branch code (compile only once)
+# 2. Generate the unsigned ZIP and Inno Setup staging directory
+# 3. Submit all EXE/DLL files to SignPath for signing
+# 4. Repackage the signed files into the ZIP portable build
+# 5. Replace files in the Inno Setup staging directory with signed versions and repackage
+# 6. Sign the final Inno Setup installer
+# Note: only runs on official releases (not pre-releases), to ensure the code version and signed files are consistent
 
 name: Sign and Repackage (Release Only)
 
@@ -27,7 +27,7 @@ jobs:
   sign-and-repackage:
     name: Sign Files and Repackage
     runs-on: windows-latest
-    # 只在正式发布时运行（不是预发布）
+    # only run on official releases (not pre-releases)
     if: ${{ (github.event_name == 'release' && !github.event.release.prerelease) || github.event_name == 'workflow_dispatch' }}
 
     steps:
@@ -150,7 +150,7 @@ jobs:
         shell: msys2 {0}
         env:
           BRANCH: master
-          BUILD_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.release-tag }}.杂鱼
+          BUILD_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.release-tag }}.zako
           COMMIT: ${{ github.sha }}
         run: |
           # add Rust to PATH for Tauri GUI build
@@ -181,26 +181,26 @@ jobs:
           Start-Process -FilePath $installer -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait
           echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
 
-      # 生成未签名的打包产物
+      # generate the unsigned package artifacts
       - name: Package unsigned files
         shell: msys2 {0}
         run: |
           cd build
 
-          # 生成 ZIP 便携版（包含所有文件）
+          # generate ZIP portable build (contains all files)
           cpack -G ZIP --verbose
 
-          # 生成 Inno Setup staging 目录
+          # generate the Inno Setup staging directory
           echo "Generating Inno Setup staging directory..."
           cmake --install . --prefix ./inno_staging
 
           cd ..
-          
-          # 列出生成的文件
+
+          # list the generated files
           echo "Generated files:"
           ls -lh build/cpack_artifacts/
 
-      # 解压 Portable ZIP 获取所有需要签名的文件
+      # extract the portable ZIP to get all the files that need signing
       - name: Extract files for signing
         shell: bash
         run: |
@@ -216,7 +216,7 @@ jobs:
             exit 1
           fi
 
-      # 上传所有未签名的文件到 SignPath
+      # upload all unsigned files to SignPath
       - name: Upload unsigned files for signing
         id: upload-unsigned
         uses: actions/upload-artifact@v4
@@ -224,7 +224,7 @@ jobs:
           name: files-for-signing
           path: unsigned-files/
 
-      # 提交到 SignPath 签名（使用生产策略）
+      # submit to SignPath for signing (using the production policy)
       - name: Submit to SignPath for signing
         uses: signpath/github-action-submit-signing-request@v1
         with:
@@ -239,7 +239,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 600
           service-unavailable-timeout-in-seconds: 600
 
-      # 验证签名
+      # verify signatures
       - name: Verify all signatures
         shell: pwsh
         run: |
@@ -258,12 +258,12 @@ jobs:
           }
           Write-Host "`n✓ All signatures are VALID!" -ForegroundColor Green
 
-      # 使用签名后的文件重新打包 ZIP 便携版
+      # repackage the ZIP portable build using the signed files
       - name: Repackage signed Portable ZIP
         shell: bash
         run: |
           cd signed-files
-          # 使用与输入一致的版本号
+          # use the same version string as the input
           if [ -n "${{ github.event.inputs.release-tag }}" ]; then
             VERSION="${{ github.event.inputs.release-tag }}"
           elif [ -n "${{ github.event.release.tag_name }}" ]; then
@@ -276,7 +276,7 @@ jobs:
           echo "Created signed portable package:"
           ls -lh Sunshine-*-Portable-Signed.zip
 
-      # 使用签名文件重新打包 Inno Setup 安装包
+      # repackage the Inno Setup installer using the signed files
       - name: Repackage signed Inno Setup installer
         shell: msys2 {0}
         run: |
@@ -284,16 +284,16 @@ jobs:
 
           STAGING_DIR="build/inno_staging"
 
-          # 检查 staging 目录是否存在
+          # check if the staging directory exists
           if [ ! -d "$STAGING_DIR" ]; then
             echo "Error: Inno Setup staging directory not found: $STAGING_DIR"
             ls -laR build/
             exit 1
           fi
 
-          # 替换为签名后的文件
+          # replace with the signed files
           SIGNED_SRC="signed-files/Sunshine"
-          
+
           echo "Replacing with signed files..."
           cp -fv "$SIGNED_SRC/sunshine.exe"                 "$STAGING_DIR/sunshine.exe"
           cp -fv "$SIGNED_SRC/zlib1.dll"                    "$STAGING_DIR/zlib1.dll"
@@ -308,11 +308,11 @@ jobs:
           cp -fv "$SIGNED_SRC/tools/dxgi-info.exe"          "$STAGING_DIR/tools/dxgi-info.exe"
           cp -fv "$SIGNED_SRC/assets/gui/sunshine-gui.exe"  "$STAGING_DIR/assets/gui/sunshine-gui.exe"
 
-          # 运行 Inno Setup 编译器重新打包
+          # run the Inno Setup compiler to repackage
           echo "Running ISCC to repackage installer..."
           "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "build/sunshine_installer.iss"
 
-          # 使用与 Portable ZIP 一致的版本号
+          # use the same version string as the portable ZIP
           if [ -n "${{ github.event.inputs.release-tag }}" ]; then
             VERSION="${{ github.event.inputs.release-tag }}"
           elif [ -n "${{ github.event.release.tag_name }}" ]; then
@@ -325,7 +325,7 @@ jobs:
           echo "Created signed installer:"
           ls -lh Sunshine-*-Installer-Signed.exe
 
-      # 签名最终的 Inno Setup 安装包
+      # sign the final Inno Setup installer
       - name: Upload installer for final signing
         id: upload-installer
         uses: actions/upload-artifact@v4
@@ -347,7 +347,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 600
           service-unavailable-timeout-in-seconds: 600
 
-      # 验证最终签名
+      # verify the final signature
       - name: Verify final installer signature
         shell: pwsh
         run: |
@@ -361,7 +361,7 @@ jobs:
             }
           }
 
-      # 上传最终的签名文件
+      # upload the final signed packages
       - name: Upload final signed packages
         uses: actions/upload-artifact@v4
         with:
@@ -371,7 +371,7 @@ jobs:
             final-signed/*.exe
           if-no-files-found: error
 
-      # 发布到 GitHub Release
+      # publish to GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:

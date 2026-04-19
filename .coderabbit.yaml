@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-language: zh-CN
+language: en-US
 early_access: true
 
 reviews:
@@ -32,29 +32,31 @@ reviews:
   path_instructions:
     - path: "src/**/*.{cpp,c,h}"
       instructions: >
-        Sunshine 核心 C++ 源码，自托管游戏串流服务器。审查要点：内存安全、
-        线程安全、RAII 资源管理、安全漏洞。注意预处理宏控制的平台相关代码。
+        Sunshine core C++ sources for the self-hosted game streaming server. Review focus:
+        memory safety, thread safety, RAII resource management, security vulnerabilities.
+        Pay attention to platform-specific code controlled by preprocessor macros.
     - path: "src/platform/**"
       instructions: >
-        平台抽象层代码（Windows/Linux/macOS）。确保各平台实现一致，
-        注意 Windows API 调用的错误处理和资源释放。
+        Platform abstraction layer code (Windows/Linux/macOS). Make sure the
+        implementations across platforms are consistent, and pay attention to
+        error handling and resource cleanup around Windows API calls.
     - path: "cmake/**"
       instructions: >
-        CMake 构建系统文件。审查跨平台兼容性、现代 CMake 实践。
+        CMake build system files. Review cross-platform compatibility and modern CMake practices.
     - path: "src_assets/**/*.{vue,js,html}"
       instructions: >
-        基于 Vue.js 的 Web 配置面板。审查 XSS/CSRF 安全性、
-        组件设计、状态管理和可访问性。
+        Vue.js-based web configuration panel. Review XSS/CSRF security,
+        component design, state management, and accessibility.
     - path: "docker/**"
       instructions: >
-        Docker 配置文件。审查最小化基础镜像、层缓存、安全性。
+        Docker configuration files. Review minimal base images, layer caching, and security.
     - path: "packaging/**"
       instructions: >
-        打包配置（Inno Setup、Flatpak、DEB 等）。审查安装路径、
-        权限设置和依赖声明的正确性。
+        Packaging configuration (Inno Setup, Flatpak, DEB, etc.). Review install paths,
+        permission settings, and the correctness of dependency declarations.
     - path: "tests/**"
       instructions: >
-        测试文件。验证测试覆盖率、边界情况和断言正确性。
+        Test files. Verify test coverage, edge cases, and assertion correctness.
 
   auto_review:
     enabled: true

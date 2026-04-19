@@ -1,5 +1,5 @@
-# SignPath 测试工作流
-# 用于手动测试 SignPath 签名功能
+# SignPath test workflow
+# Used to manually test the SignPath signing flow
 
 name: Test SignPath Signing
 
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      # 如果提供了 run-id，从指定的 run 下载
+      # if a run-id is provided, download from that specific run
       - name: Download specific artifact
         if: ${{ github.event.inputs.run-id != '' }}
         uses: actions/download-artifact@v4
@@ -33,7 +33,7 @@ jobs:
           run-id: ${{ github.event.inputs.run-id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
-      # 如果没有提供 run-id，尝试从最近的成功构建下载
+      # if no run-id is provided, try downloading from the most recent successful build
       - name: Download latest artifact
         if: ${{ github.event.inputs.run-id == '' }}
         uses: dawidd6/action-download-artifact@v3
@@ -50,7 +50,7 @@ jobs:
           echo "Downloaded files:"
           ls -lR artifacts/
       
-      # 查找文件
+      # find files
       - name: Find installer file
         id: find-installer
         shell: bash
@@ -79,7 +79,7 @@ jobs:
             echo "has-portable=true" >> $GITHUB_OUTPUT
           fi
       
-      # 解压 Portable ZIP 以减少一层嵌套
+      # extract the portable ZIP to reduce one level of nesting
       - name: Extract Portable ZIP
         if: ${{ steps.find-portable.outputs.has-portable == 'true' }}
         shell: bash
@@ -89,7 +89,7 @@ jobs:
           echo "Extracted portable files:"
           ls -laR artifacts/portable-extracted/
       
-      # 为 Installer 创建单独的 artifact
+      # create a dedicated artifact for the installer
       - name: Upload Installer for SignPath
         id: upload-installer
         if: ${{ steps.find-installer.outputs.has-installer == 'true' }}
@@ -98,7 +98,7 @@ jobs:
           name: installer-for-signing
           path: ${{ steps.find-installer.outputs.installer-file }}
       
-      # 为 Portable 创建单独的 artifact（上传解压后的文件夹）
+      # create a dedicated artifact for the portable build (upload the extracted folder)
       - name: Upload Portable for SignPath
         id: upload-portable
         if: ${{ steps.find-portable.outputs.has-portable == 'true' }}
@@ -107,7 +107,7 @@ jobs:
           name: portable-for-signing
           path: artifacts/portable-extracted/
       
-      # 测试签名 - Installer
+      # test signing - installer
       - name: Test SignPath - Installer
         if: ${{ steps.find-installer.outputs.has-installer == 'true' }}
         uses: signpath/github-action-submit-signing-request@v1
@@ -123,7 +123,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 600
           service-unavailable-timeout-in-seconds: 600
       
-      # 测试签名 - Portable
+      # test signing - portable
       - name: Test SignPath - Portable
         if: ${{ steps.find-portable.outputs.has-portable == 'true' }}
         uses: signpath/github-action-submit-signing-request@v1
@@ -139,7 +139,7 @@ jobs:
           wait-for-completion-timeout-in-seconds: 600
           service-unavailable-timeout-in-seconds: 600
       
-      # 列出签名后的文件
+      # list the signed files
       - name: List signed files
         shell: bash
         run: |
@@ -150,14 +150,14 @@ jobs:
             echo "No signed files directory found"
           fi
       
-      # 验证签名
+      # verify signatures
       - name: Verify Signatures
         shell: pwsh
         run: |
           if (Test-Path "artifacts/signed") {
             Write-Host "Verifying signatures..."
             
-            # 递归搜索所有签名文件
+            # recursively search for all signed files
             $signedFiles = Get-ChildItem -Path "artifacts/signed" -Recurse -File
             
             if ($signedFiles.Count -eq 0) {
@@ -192,7 +192,7 @@ jobs:
             Write-Warning "Signed files directory not found"
           }
       
-      # 上传已签名的文件
+      # upload the signed files
       - name: Upload Signed Files
         uses: actions/upload-artifact@v4
         with:

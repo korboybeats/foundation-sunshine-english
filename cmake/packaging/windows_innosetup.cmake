@@ -3,10 +3,10 @@
 # 
 # Usage:
 #   cmake --build build --target innosetup
-#   或直接:
+#   or directly:
 #   iscc build/sunshine_installer.iss
 #
-# 依赖: Inno Setup 6.x (https://jrsoftware.org/isinfo.php)
+# Dependency: Inno Setup 6.x (https://jrsoftware.org/isinfo.php)
 
 # Find Inno Setup compiler
 find_program(ISCC_EXECUTABLE iscc

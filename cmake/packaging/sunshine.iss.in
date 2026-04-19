@@ -15,7 +15,7 @@
 #define MyLicenseFile "@CMAKE_SOURCE_DIR@\LICENSE"
 
 [Setup]
-; 基本设置
+; Basic settings
 AppId={{B16E5C0D-7B8A-4E3B-9F1A-2D4C6E8F0A1B}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -26,16 +26,16 @@ AppSupportURL={#MyAppURL}/support
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={code:GetPreviousInstallDir|{autopf}\{#MyAppName}}
 DefaultGroupName={#MyAppName}
-; 管理员权限
+; Administrator privileges
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
-; 输出设置
+; Output settings
 OutputDir=@CPACK_PACKAGE_DIRECTORY@
 OutputBaseFilename=Sunshine
-; 压缩
+; Compression
 Compression=lzma2/ultra64
 SolidCompression=yes
-; UI 设置
+; UI settings
 SetupIconFile={#MyIconFile}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 WizardStyle=modern hidebevels
@@ -43,20 +43,20 @@ WizardImageFile={#MyWelcomeBmp}
 WizardSmallImageFile={#MySmallBmp}
 WizardImageAlphaFormat=defined
 WizardSizePercent=120
-; 版本信息 (VersionInfoVersion requires X.X.X.X format, use AppVersion for display)
+; Version info (VersionInfoVersion requires X.X.X.X format, use AppVersion for display)
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription=Sunshine Foundation Game Streaming Server
 VersionInfoProductName={#MyAppName}
-; 其他
+; Other
 LicenseFile={#MyLicenseFile}
-; 允许覆盖安装
+; Allow overwrite install
 UsePreviousAppDir=yes
-; 最小 Windows 版本 (Windows 10)
+; Minimum Windows version (Windows 10)
 MinVersion=10.0
-; 64 位安装
+; 64-bit install
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; 重启管理器
+; Restart manager
 CloseApplications=yes
 RestartApplications=yes
 

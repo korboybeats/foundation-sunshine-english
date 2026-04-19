@@ -1,24 +1,24 @@
 ## What's Changed
 
 ### ✨ New Features
-* **feat:** 功能描述 by [@用户名](https://github.com/用户名) in [#PR号](https://github.com/qiin2333/Sunshine-Foundation/pull/PR号)
+* **feat:** feature description by [@username](https://github.com/username) in [#PR_NUMBER](https://github.com/qiin2333/Sunshine-Foundation/pull/PR_NUMBER)
 
 ### 🔧 Improvements & Refactors
-* **refactor:** 改进描述 by [@用户名](https://github.com/用户名) in [#PR号](https://github.com/qiin2333/Sunshine-Foundation/pull/PR号)
-* **chore:** 任务描述 by [@用户名](https://github.com/用户名) in [#PR号](https://github.com/qiin2333/Sunshine-Foundation/pull/PR号)
+* **refactor:** improvement description by [@username](https://github.com/username) in [#PR_NUMBER](https://github.com/qiin2333/Sunshine-Foundation/pull/PR_NUMBER)
+* **chore:** chore description by [@username](https://github.com/username) in [#PR_NUMBER](https://github.com/qiin2333/Sunshine-Foundation/pull/PR_NUMBER)
 
 ### 🐛 Bug Fixes
-* **fix:** 修复描述 by [@用户名](https://github.com/用户名) in [#PR号](https://github.com/qiin2333/Sunshine-Foundation/pull/PR号)
+* **fix:** fix description by [@username](https://github.com/username) in [#PR_NUMBER](https://github.com/qiin2333/Sunshine-Foundation/pull/PR_NUMBER)
 
 ---
 
-## ⚠️ 注意事项
-* 版本特定的注意事项，例如驱动更新要求、配置变更等
+## ⚠️ Notes
+* Version-specific notes, e.g. driver update requirements, configuration changes, etc.
 
 ---
 
 ## 🎉 New Contributors
-* [@用户名](https://github.com/用户名) made their first contribution in [#PR号](https://github.com/qiin2333/Sunshine-Foundation/pull/PR号)
+* [@username](https://github.com/username) made their first contribution in [#PR_NUMBER](https://github.com/qiin2333/Sunshine-Foundation/pull/PR_NUMBER)
 
 ---
 
@@ -28,5 +28,5 @@
 
 ## 👥 Contributors
 
-| <a href="https://github.com/用户名"><img src="https://avatars.githubusercontent.com/用户名?s=80" width="80" height="80" alt="用户名"/><br/><sub><b>用户名</b></sub></a><br/><sub>合并次数 merges</sub> |
+| <a href="https://github.com/username"><img src="https://avatars.githubusercontent.com/username?s=80" width="80" height="80" alt="username"/><br/><sub><b>username</b></sub></a><br/><sub>merge_count merges</sub> |
 | :---: |
