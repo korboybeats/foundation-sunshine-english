@@ -31,6 +31,14 @@ set(INNO_STAGING_DIR "${CMAKE_BINARY_DIR}/inno_staging")
 set(CMAKE_INSTALL_PREFIX_SAVED "${CMAKE_INSTALL_PREFIX}")
 set(CMAKE_INSTALL_PREFIX "${INNO_STAGING_DIR}")
 
+# vmouse driver files are optional (private repo). Only include the [Files] entry
+# if the driver was fetched; otherwise emit an Inno comment so the line is a no-op.
+if(SUNSHINE_HAS_VMOUSE_DRIVER)
+  set(VMOUSE_DRIVER_FILES_ENTRY "Source: \"{#MySourceDir}\\scripts\\vmouse\\driver\\*\"; DestDir: \"{app}\\scripts\\vmouse\\driver\"; Flags: ignoreversion recursesubdirs; Components: vmouse")
+else()
+  set(VMOUSE_DRIVER_FILES_ENTRY "; vmouse driver files entry skipped: driver binaries not available")
+endif()
+
 configure_file(
     "${CMAKE_MODULE_PATH}/packaging/sunshine.iss.in"
     "${CMAKE_BINARY_DIR}/sunshine_installer.iss"
