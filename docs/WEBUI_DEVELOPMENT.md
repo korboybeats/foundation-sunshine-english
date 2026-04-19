@@ -1,170 +1,170 @@
-# WebUI 开发指南
+# WebUI Development Guide
 
-Sunshine 包含一个现代化的 Web 控制界面，基于 Vue 3 和 Composition API 构建，遵循 Vue 最佳实践。
+Sunshine includes a modern web control interface, built on Vue 3 and the Composition API and following Vue best practices.
 
-> **注意**: 本文档已更新以反映最新的项目结构优化。所有页面已重构为使用 Composition API 和模块化架构。
+> **Note**: This document has been updated to reflect the latest project structure improvements. All pages have been refactored to use the Composition API and a modular architecture.
 
-## 🛠️ 技术栈
+## 🛠️ Tech Stack
 
-- **前端框架**: Vue 3 + Composition API
-- **构建工具**: Vite 5.4+ (支持 Rolldown)
-- **打包器**: Rolldown (实验性，更快)
-- **UI 组件**: Bootstrap 5
-- **图标库**: FontAwesome 6
-- **国际化**: Vue-i18n 11 (Composition API 模式)
-- **拖拽功能**: Vuedraggable 4
-- **模块系统**: ES Modules (`"type": "module"`)
+- **Frontend framework**: Vue 3 + Composition API
+- **Build tool**: Vite 5.4+ (Rolldown supported)
+- **Bundler**: Rolldown (experimental, faster)
+- **UI components**: Bootstrap 5
+- **Icon library**: FontAwesome 6
+- **Internationalization**: Vue-i18n 11 (Composition API mode)
+- **Drag and drop**: Vuedraggable 4
+- **Module system**: ES Modules (`"type": "module"`)
 
-> **注意**: 本文档已更新以反映最新的项目结构优化。所有页面已重构为使用 Composition API 和模块化架构。
+> **Note**: This document has been updated to reflect the latest project structure improvements. All pages have been refactored to use the Composition API and a modular architecture.
 
-## 🚀 开发环境设置
+## 🚀 Setting Up the Development Environment
 
-### 1. 安装依赖
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 开发命令
+### 2. Development commands
 
 ```bash
-# 开发模式 - 实时构建和监听文件变化
+# Development mode — incremental build with file watching
 npm run dev
 
-# 开发服务器 - 启动HTTPS开发服务器 (推荐)
+# Dev server — start an HTTPS development server (recommended)
 npm run dev-server
 
-# 完整开发环境 - 包含模拟API服务
+# Full development environment — includes mock API services
 npm run dev-full
 
-# 构建生产版本
+# Build the production bundle
 npm run build
 
-# 清理构建目录并重新构建
+# Clean the build directory and rebuild
 npm run build-clean
 
-# 预览生产构建
+# Preview the production build
 npm run preview
 
-# 自动构建并预览生产版本（推荐）
+# Build and preview the production bundle in one step (recommended)
 npm run preview:build
 ```
 
-> **注意**: 项目已配置为使用 Rolldown（Vite 5.1+ 的实验性打包器）以获得更快的构建速度。所有构建命令默认启用 Rolldown。
+> **Note**: The project is configured to use Rolldown (Vite 5.1+'s experimental bundler) for faster builds. All build commands have Rolldown enabled by default.
 
-### 3. 开发服务器特性
+### 3. Dev server features
 
-- **HTTPS支持**: 自动生成本地SSL证书
-- **热重载**: 实时更新代码变更
-- **代理配置**: 自动代理API请求到Sunshine服务
-- **模拟数据**: 开发模式下提供模拟API响应
-- **端口**: 默认运行在 `https://localhost:3000`
+- **HTTPS support**: a local SSL certificate is generated automatically
+- **Hot reload**: live updates on code changes
+- **Proxy configuration**: API requests are automatically proxied to the Sunshine service
+- **Mock data**: mock API responses are available in development mode
+- **Port**: defaults to `https://localhost:3000`
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 src_assets/common/assets/web/
-├── views/                    # 页面组件（路由级组件）
-│   ├── Home.vue             # 首页
-│   ├── Apps.vue             # 应用管理页面
-│   ├── Config.vue            # 配置管理页面
-│   ├── Troubleshooting.vue  # 故障排除页面
-│   ├── Pin.vue              # PIN 配对页面
-│   ├── Password.vue         # 密码修改页面
-│   └── Welcome.vue          # 欢迎页面
+├── views/                    # Page components (route-level components)
+│   ├── Home.vue             # Home page
+│   ├── Apps.vue             # Application management page
+│   ├── Config.vue           # Configuration management page
+│   ├── Troubleshooting.vue  # Troubleshooting page
+│   ├── Pin.vue              # PIN pairing page
+│   ├── Password.vue         # Password change page
+│   └── Welcome.vue          # Welcome page
 │
-├── components/              # Vue 组件
-│   ├── layout/              # 布局组件
-│   │   ├── Navbar.vue       # 导航栏
-│   │   └── PlatformLayout.vue # 平台布局组件
-│   ├── common/              # 通用组件
-│   │   ├── ThemeToggle.vue  # 主题切换
-│   │   ├── ResourceCard.vue  # 资源卡片
-│   │   ├── VersionCard.vue  # 版本信息卡片
-│   │   ├── ErrorLogs.vue    # 错误日志组件
-│   │   └── Locale.vue        # 语言组件
-│   ├── SetupWizard.vue       # 设置向导
-│   └── ...                  # 其他功能组件
+├── components/              # Vue components
+│   ├── layout/              # Layout components
+│   │   ├── Navbar.vue       # Navigation bar
+│   │   └── PlatformLayout.vue # Platform layout component
+│   ├── common/              # Shared components
+│   │   ├── ThemeToggle.vue  # Theme switcher
+│   │   ├── ResourceCard.vue # Resource card
+│   │   ├── VersionCard.vue  # Version-info card
+│   │   ├── ErrorLogs.vue    # Error log component
+│   │   └── Locale.vue       # Locale component
+│   ├── SetupWizard.vue      # Setup wizard
+│   └── ...                  # Other feature components
 │
-├── composables/             # 组合式函数（可复用逻辑）
-│   ├── useVersion.js        # 版本管理
-│   ├── useLogs.js           # 日志管理
-│   ├── useSetupWizard.js    # 设置向导逻辑
-│   ├── useApps.js           # 应用管理
-│   ├── useConfig.js         # 配置管理
-│   ├── useTroubleshooting.js # 故障排除
-│   ├── usePin.js            # PIN 配对
-│   ├── useWelcome.js        # 欢迎页面
-│   └── useTheme.js          # 主题管理
+├── composables/             # Composables (reusable logic)
+│   ├── useVersion.js        # Version management
+│   ├── useLogs.js           # Log management
+│   ├── useSetupWizard.js    # Setup wizard logic
+│   ├── useApps.js           # Application management
+│   ├── useConfig.js         # Configuration management
+│   ├── useTroubleshooting.js # Troubleshooting
+│   ├── usePin.js            # PIN pairing
+│   ├── useWelcome.js        # Welcome page
+│   └── useTheme.js          # Theme management
 │
-├── config/                  # 配置文件
-│   ├── firebase.js          # Firebase 配置
-│   └── i18n.js              # 国际化配置
+├── config/                  # Configuration files
+│   ├── firebase.js          # Firebase configuration
+│   └── i18n.js              # Internationalization configuration
 │
-├── services/                # API 服务
-│   └── appService.js         # 应用服务
+├── services/                # API services
+│   └── appService.js        # Application service
 │
-├── utils/                   # 工具函数
-│   ├── constants.js         # 常量定义
-│   ├── helpers.js           # 辅助函数
-│   ├── validation.js        # 表单验证
-│   ├── theme.js             # 主题工具
+├── utils/                   # Utility functions
+│   ├── constants.js         # Constants
+│   ├── helpers.js           # Helper functions
+│   ├── validation.js        # Form validation
+│   ├── theme.js             # Theme utilities
 │   └── ...
 │
-├── styles/                  # 样式文件
-│   ├── apps.css             # 应用页面样式
-│   ├── welcome.css          # 欢迎页面样式
+├── styles/                  # Stylesheets
+│   ├── apps.css             # Application page styles
+│   ├── welcome.css          # Welcome page styles
 │   └── ...
 │
-├── public/                  # 静态资源
+├── public/                  # Static assets
 │   ├── assets/
-│   │   ├── css/             # 全局样式
-│   │   └── locale/          # 国际化文件
-│   └── images/              # 图片资源
+│   │   ├── css/             # Global styles
+│   │   └── locale/          # i18n files
+│   └── images/              # Image assets
 │
-├── configs/                  # 配置页面子组件
-│   └── tabs/                # 配置标签页组件
+├── configs/                 # Sub-components for the config page
+│   └── tabs/                # Configuration tab components
 │
-├── *.html                   # 页面入口文件（已简化）
-└── init.js                  # 应用初始化
+├── *.html                   # Page entry files (simplified)
+└── init.js                  # Application initialization
 ```
 
-## 🎯 架构设计原则
+## 🎯 Architectural Principles
 
-### 1. 目录组织
+### 1. Directory organization
 
-- **views/**: 页面级组件，对应路由
-- **components/layout/**: 布局相关组件（Navbar, PlatformLayout）
-- **components/common/**: 通用可复用组件
-- **components/**: 功能特定组件
-- **composables/**: 可复用的业务逻辑
-- **config/**: 配置文件
-- **services/**: API 服务层
-- **utils/**: 纯函数工具
+- **views/**: page-level components, each mapped to a route
+- **components/layout/**: layout-related components (Navbar, PlatformLayout)
+- **components/common/**: reusable, generic components
+- **components/**: feature-specific components
+- **composables/**: reusable business logic
+- **config/**: configuration files
+- **services/**: API service layer
+- **utils/**: pure utility functions
 
-### 2. 组件分类
+### 2. Component categories
 
-#### 页面组件 (views/)
-- 对应一个完整的页面
-- 使用 Composition API (`<script setup>`)
-- 组合多个子组件和 composables
-- 处理页面级状态和生命周期
+#### Page components (views/)
+- Correspond to a complete page
+- Use the Composition API (`<script setup>`)
+- Compose child components and composables
+- Manage page-level state and lifecycle
 
-#### 布局组件 (components/layout/)
-- 页面布局相关（如导航栏）
-- 可跨页面复用
+#### Layout components (components/layout/)
+- Page-layout related (e.g. navigation bar)
+- Reusable across pages
 
-#### 通用组件 (components/common/)
-- 高度可复用的 UI 组件
-- 无业务逻辑或逻辑简单
+#### Shared components (components/common/)
+- Highly reusable UI components
+- No business logic, or only trivial logic
 
-#### 功能组件 (components/)
-- 特定功能的组件
-- 包含一定业务逻辑
+#### Feature components (components/)
+- Components tied to a specific feature
+- Contain a meaningful amount of business logic
 
-### 3. Composables 设计
+### 3. Composable design
 
-Composables 用于提取可复用的业务逻辑：
+Composables extract reusable business logic:
 
 ```javascript
 // composables/useExample.js
@@ -175,11 +175,11 @@ export function useExample() {
   const loading = ref(false)
   
   const computedValue = computed(() => {
-    // 计算逻辑
+    // computation
   })
   
   const fetchData = async () => {
-    // 数据获取逻辑
+    // data fetching
   }
   
   return {
@@ -191,11 +191,11 @@ export function useExample() {
 }
 ```
 
-## 📝 开发规范
+## 📝 Development Conventions
 
-### 1. 创建新页面
+### 1. Creating a new page
 
-#### 步骤 1: 创建页面组件
+#### Step 1: Create the page component
 
 ```vue
 <!-- views/NewPage.vue -->
@@ -204,27 +204,27 @@ export function useExample() {
     <Navbar />
     <div class="container">
       <h1>{{ $t('newpage.title') }}</h1>
-      <!-- 页面内容 -->
+      <!-- page content -->
     </div>
   </div>
 </template>
 
 <script setup>
 import Navbar from '../components/layout/Navbar.vue'
-// 导入需要的 composables
+// import the composables you need
 import { useNewPage } from '../composables/useNewPage.js'
 
 const {
-  // 解构需要的状态和方法
+  // destructure the state and methods you need
 } = useNewPage()
 </script>
 
 <style scoped>
-/* 页面特定样式 */
+/* page-specific styles */
 </style>
 ```
 
-#### 步骤 2: 创建 Composable（如需要）
+#### Step 2: Create a composable (if needed)
 
 ```javascript
 // composables/useNewPage.js
@@ -234,7 +234,7 @@ export function useNewPage() {
   const data = ref(null)
   
   const fetchData = async () => {
-    // 数据获取逻辑
+    // data fetching
   }
   
   return {
@@ -244,7 +244,7 @@ export function useNewPage() {
 }
 ```
 
-#### 步骤 3: 创建 HTML 入口文件
+#### Step 3: Create the HTML entry file
 
 ```html
 <!-- newpage.html -->
@@ -255,7 +255,7 @@ export function useNewPage() {
   </head>
 
   <body id="app" v-cloak>
-    <!-- Vue 应用挂载点 -->
+    <!-- Vue mount point -->
   </body>
 
   <script type="module">
@@ -269,9 +269,9 @@ export function useNewPage() {
 </html>
 ```
 
-### 2. 使用 Composition API
+### 2. Using the Composition API
 
-**推荐使用 `<script setup>` 语法：**
+**Prefer the `<script setup>` syntax:**
 
 ```vue
 <script setup>
@@ -284,23 +284,23 @@ const count = ref(0)
 const doubleCount = computed(() => count.value * 2)
 
 onMounted(() => {
-  // 初始化逻辑
+  // initialization
 })
 </script>
 ```
 
-### 3. 国际化使用
+### 3. Internationalization
 
-#### 在模板中
+#### In templates
 
 ```vue
 <template>
   <div>
-    <!-- 在模板中使用 $t (通过 globalInjection) -->
+    <!-- Use $t in templates (via globalInjection) -->
     <h1>{{ $t('common.title') }}</h1>
     <p>{{ $t('common.description') }}</p>
     
-    <!-- 在属性中使用 -->
+    <!-- Use in attributes -->
     <input :placeholder="$t('common.placeholder')" />
     <button :title="$t('common.tooltip')">{{ $t('common.button') }}</button>
   </div>
@@ -308,14 +308,14 @@ onMounted(() => {
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-// 在 script 中使用 useI18n() 获取 t 函数
+// In script, use useI18n() to get the t function
 const { t } = useI18n()
 </script>
 ```
 
-#### 在 `<script setup>` 中使用
+#### In `<script setup>`
 
-当需要在 JavaScript 代码中使用翻译（如 `alert()`, `confirm()` 等），必须使用 `useI18n()`：
+When you need translations in JavaScript (e.g. `alert()`, `confirm()`), you must use `useI18n()`:
 
 ```vue
 <script setup>
@@ -323,10 +323,10 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-// 在函数中使用
+// Use it in functions
 const handleConfirm = () => {
   if (confirm(t('common.confirm_message'))) {
-    // 处理确认
+    // handle confirmation
   }
 }
 
@@ -336,7 +336,7 @@ const showError = () => {
 </script>
 ```
 
-#### 在 Composables 中
+#### In composables
 
 ```javascript
 import { useI18n } from 'vue-i18n'
@@ -352,15 +352,15 @@ export function useExample() {
 }
 ```
 
-### 4. 样式组织
+### 4. Style organization
 
-- **全局样式**: `public/assets/css/` 或 `styles/`
-- **组件样式**: 使用 `<style scoped>` 在组件内
-- **页面特定样式**: 在对应的页面组件中
+- **Global styles**: `public/assets/css/` or `styles/`
+- **Component styles**: use `<style scoped>` inside the component
+- **Page-specific styles**: kept in the corresponding page component
 
-### 5. API 调用
+### 5. API calls
 
-使用 `services/` 目录组织 API 调用：
+Organize API calls under `services/`:
 
 ```javascript
 // services/exampleService.js
@@ -381,29 +381,29 @@ export class ExampleService {
 }
 ```
 
-## 🚀 开发流程
+## 🚀 Development Workflow
 
-### 1. 开发新功能
+### 1. Building a new feature
 
-1. **分析需求**：确定是页面、组件还是功能增强
-2. **创建 Composables**：提取可复用的业务逻辑
-3. **创建组件**：实现 UI 和交互
-4. **创建页面**：组合组件和 composables
-5. **添加路由**：创建 HTML 入口文件
-6. **测试验证**：确保功能正常
+1. **Analyze the requirements**: decide whether it is a page, a component, or an enhancement
+2. **Create composables**: extract reusable business logic
+3. **Create components**: implement the UI and interactions
+4. **Create the page**: compose components and composables
+5. **Add the route**: create the HTML entry file
+6. **Test and verify**: make sure the feature works
 
-### 2. 代码审查要点
+### 2. Code review checklist
 
-- ✅ 是否遵循目录结构规范
-- ✅ 是否使用 Composition API
-- ✅ 业务逻辑是否提取到 composables
-- ✅ 组件是否可复用
-- ✅ 样式是否合理组织
-- ✅ 是否添加了必要的错误处理
+- ✅ Follows the directory structure conventions
+- ✅ Uses the Composition API
+- ✅ Business logic is extracted into composables
+- ✅ Components are reusable
+- ✅ Styles are sensibly organized
+- ✅ Required error handling is in place
 
-## 📚 示例代码
+## 📚 Example Code
 
-### 完整页面示例
+### Complete page example
 
 ```vue
 <!-- views/Example.vue -->
@@ -456,7 +456,7 @@ onMounted(async () => {
 </style>
 ```
 
-### Composables 示例
+### Composable example
 
 ```javascript
 // composables/useExample.js
@@ -488,7 +488,7 @@ export function useExample() {
   const handleAction = async (itemId) => {
     try {
       await ExampleService.performAction(itemId)
-      await fetchItems() // 刷新列表
+      await fetchItems() // refresh the list
     } catch (err) {
       console.error('Action failed:', err)
     }
@@ -505,145 +505,146 @@ export function useExample() {
 }
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration Notes
 
-### i18n 配置
+### i18n configuration
 
 ```javascript
 // config/i18n.js
 const i18n = createI18n({
-  legacy: false,           // 使用 Composition API 模式
+  legacy: false,           // use Composition API mode
   locale: locale,
   fallbackLocale: 'en',
   messages: messages,
-  globalInjection: true,   // 允许在模板中使用 $t
+  globalInjection: true,   // allow $t in templates
 })
 ```
 
-### Firebase 配置
+### Firebase configuration
 
 ```javascript
 // config/firebase.js
 import { initFirebase, trackEvents } from './config/firebase.js'
 
-// 初始化
+// initialize
 initFirebase()
 
-// 使用
+// usage
 trackEvents.pageView('page_name')
 trackEvents.userAction('action_name', { data })
 trackEvents.gpuReported({ platform: 'windows', adapters: [...] })
 ```
 
-**可用事件**:
-- `pageView(pageName)` - 页面访问
-- `userAction(actionName, data)` - 用户操作
-- `errorOccurred(errorType, message)` - 错误发生
-- `gpuReported(gpuInfo)` - 显卡信息上报（24小时内仅上报一次）
+**Available events**:
+- `pageView(pageName)` — page view
+- `userAction(actionName, data)` — user action
+- `errorOccurred(errorType, message)` — error occurrence
+- `gpuReported(gpuInfo)` — GPU info reporting (only reported once per 24 hours)
 
-## 🎨 样式指南
+## 🎨 Style Guide
 
-### 使用 Bootstrap 5
+### Using Bootstrap 5
 
-项目使用 Bootstrap 5 作为 UI 框架，优先使用 Bootstrap 组件和工具类。
+The project uses Bootstrap 5 as its UI framework. Prefer Bootstrap components and utility classes wherever possible.
 
-### 自定义样式
+### Custom styles
 
-- 组件特定样式使用 `<style scoped>`
-- 全局样式放在 `styles/` 目录
-- 使用 CSS 变量进行主题定制
+- Use `<style scoped>` for component-specific styles
+- Put global styles under `styles/`
+- Use CSS variables for theming
 
-## 📦 依赖管理
+## 📦 Dependency Management
 
-主要依赖：
-- `vue` - Vue 3 框架
-- `vue-i18n` - 国际化（Composition API 模式）
-- `bootstrap` - UI 框架
-- `vuedraggable` - 拖拽功能
-- `marked` - Markdown 解析
+Main dependencies:
+- `vue` — Vue 3 framework
+- `vue-i18n` — internationalization (Composition API mode)
+- `bootstrap` — UI framework
+- `vuedraggable` — drag and drop
+- `marked` — Markdown parsing
 
-## 🐛 调试技巧
+## 🐛 Debugging Tips
 
-1. **使用 Vue DevTools**：安装 Vue DevTools 浏览器扩展
-2. **控制台日志**：使用 `console.log` 进行调试
-3. **网络请求**：使用浏览器开发者工具查看 API 请求
-4. **组件检查**：在 Vue DevTools 中检查组件状态
+1. **Use Vue DevTools**: install the Vue DevTools browser extension
+2. **Console logging**: use `console.log` for ad-hoc debugging
+3. **Network requests**: inspect API requests in the browser dev tools
+4. **Component inspection**: inspect component state in Vue DevTools
 
-## 🔧 开发配置
+## 🔧 Build Configuration
 
-### Vite 配置
+### Vite configuration
 
-- **开发配置**: `vite.dev.config.js` - 开发环境专用配置
-- **生产配置**: `vite.config.js` - 生产构建配置
-- **EJS模板**: 支持HTML模板预处理
-- **路径别名**: 配置了Vue和Bootstrap的路径别名
-- **Rolldown支持**: 使用 Rolldown 作为实验性打包器（更快）
-- **ESM模式**: 项目使用 ES 模块（`"type": "module"`）
+- **Dev configuration**: `vite.dev.config.js` — development-only configuration
+- **Production configuration**: `vite.config.js` — production build configuration
+- **EJS templates**: HTML template preprocessing supported
+- **Path aliases**: aliases for Vue and Bootstrap are configured
+- **Rolldown support**: uses Rolldown as the experimental bundler (faster)
+- **ESM mode**: the project uses ES modules (`"type": "module"`)
 
-### 代理配置
+### Proxy configuration
 
-开发服务器包含以下代理设置：
+The dev server includes the following proxies:
 - `/api/*` → `https://localhost:47990` (Sunshine API)
-- `/steam-api/*` → Steam API服务
-- `/steam-store/*` → Steam商店服务
+- `/steam-api/*` → Steam API service
+- `/steam-store/*` → Steam Store service
 
-### 预览模式
+### Preview mode
 
-预览模式用于测试生产构建，但需要注意：
+Preview mode is for testing the production build, but be aware that:
 
-1. **API 不可用**: 预览模式下没有后端 API 服务器
-2. **错误处理**: 代码已优化，在预览模式下会优雅降级
-3. **使用场景**: 主要用于验证构建产物和静态资源
+1. **No API available**: there is no backend API server in preview mode
+2. **Error handling**: the code is written to degrade gracefully under preview mode
+3. **Use case**: mainly for verifying the build artifacts and static assets
 
 ```bash
-# 构建并预览
+# Build and preview
 npm run preview:build
 
-# 或分步执行
+# Or step by step
 npm run build
 npm run preview
 ```
 
-访问地址：`http://localhost:3000`
+URL: `http://localhost:3000`
 
-### 代码分包策略
+### Code-splitting strategy
 
-> **注意**: 手动分包 (`manualChunks`) 当前已禁用，因为可能导致 Bootstrap 和 Popper.js 的依赖关系问题，影响下拉菜单等功能的正常工作。Vite 会自动进行代码分割优化。
+> **Note**: manual chunking (`manualChunks`) is currently disabled because it can break the dependency relationship between Bootstrap and Popper.js, breaking features like dropdown menus. Vite handles code splitting automatically.
 
-## 🌍 国际化支持
+## 🌍 Internationalization Support
 
-- 支持多语言切换
-- 基于 Vue-i18n 11 (Composition API 模式)
-- 语言文件位于 `public/assets/locale/` 目录
-- 配置在 `config/i18n.js` 中
+- Multi-language switching
+- Built on Vue-i18n 11 (Composition API mode)
+- Locale files live under `public/assets/locale/`
+- Configured in `config/i18n.js`
 
-### i18n 开发工作流
+### i18n development workflow
 
-项目提供了一套完整的国际化（i18n）工具链，用于确保翻译文件的质量和一致性。基准语言文件是 `en.json`，所有其他语言文件需要与其保持同步。
+The project ships with a complete i18n toolchain to keep translation files in good shape. The reference language file is `en.json`, and all other language files must stay in sync with it.
 
-#### 可用命令
+#### Available commands
 
 ```bash
-# 验证所有语言文件的完整性
+# Validate the integrity of all language files
 npm run i18n:validate
 
-# 检查并自动同步缺失的翻译键（仅为补充键，缺失键会用英文占位值填充）
-# 注意：sync 只保证“键齐全”，不会做翻译。其他语言文件中的英文占位值仍需人工改为对应语言。
+# Auto-sync missing keys (only adds keys; missing values are filled with the English placeholder)
+# Note: sync only ensures "the keys are complete"; it does not translate. The English placeholders
+# in other language files still need to be manually translated.
 npm run i18n:sync
 
-# 格式化并排序所有语言文件（按字母顺序）
+# Format and sort all language files (alphabetically)
 npm run i18n:format
 
-# 检查文件格式
+# Check the file format
 npm run i18n:format:check
 
-# 验证翻译完整性
+# Validate translation completeness
 npm run i18n:validate
 ```
 
-#### 添加新的翻译键
+#### Adding new translation keys
 
-1. **在基准文件中添加新键**：首先在 `en.json` 中添加新的翻译键和英文值
+1. **Add the new key to the reference file**: add the key and English value to `en.json` first
    ```json
    {
      "myfeature": {
@@ -654,48 +655,48 @@ npm run i18n:validate
    }
    ```
 
-2. **同步到其他语言文件**：
+2. **Sync to other language files**:
    ```bash
    npm run i18n:sync
    ```
-   这将自动在所有语言文件中添加缺失的键，并用英文值作为占位符。**sync 只负责补全键，不负责翻译**；各语言文件中的英文占位值需要人工改成对应语言。
+   This automatically adds the missing keys to all language files, using the English value as a placeholder. **Sync only fills in the keys; it does not translate.** You still need to manually replace the English placeholder values in each language file with proper translations.
 
-3. **格式化文件**：
+3. **Format the files**:
    ```bash
    npm run i18n:format
    ```
-   这将对所有语言文件进行统一排序和格式化，减少 Git 冲突
+   This sorts and formats all language files consistently, reducing Git conflicts.
 
-4. **翻译占位符（必做）**：将各语言文件中由 sync 填入的英文占位值，手动修改为该语言的实际译文。未修改时界面会显示英文。
+4. **Translate the placeholders (required)**: manually replace the English placeholders that `sync` inserted with proper translations for each language. Until you do, the UI will display English.
 
-5. **验证**：
+5. **Validate**:
    ```bash
    npm run i18n:validate
    ```
-   确保所有语言文件都包含完整的翻译键
+   Confirms that every language file contains all the required translation keys.
 
-#### 国际化现有组件示例
+#### Internationalizing an existing component
 
-以下是一个完整的国际化现有组件的示例：
+A complete worked example follows.
 
-**步骤 1：识别硬编码文本**
+**Step 1: Identify hardcoded text**
 ```vue
-<!-- 原始组件 -->
+<!-- Original component -->
 <template>
   <div>
-    <h2>客户端列表</h2>
+    <h2>Client List</h2>
     <table>
       <thead>
         <tr>
-          <th>名称</th>
-          <th>操作</th>
+          <th>Name</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="client in clients" :key="client.id">
-          <td>{{ client.name || '未知客户端' }}</td>
+          <td>{{ client.name || 'Unknown Client' }}</td>
           <td>
-            <button @click="handleDelete">删除</button>
+            <button @click="handleDelete">Delete</button>
           </td>
         </tr>
       </tbody>
@@ -705,14 +706,14 @@ npm run i18n:validate
 
 <script setup>
 const handleDelete = () => {
-  if (confirm('确定要删除吗？')) {
-    // 删除逻辑
+  if (confirm('Are you sure you want to delete?')) {
+    // delete logic
   }
 }
 </script>
 ```
 
-**步骤 2：在 `en.json` 中添加翻译键**
+**Step 2: Add translation keys to `en.json`**
 ```json
 {
   "client": {
@@ -726,7 +727,7 @@ const handleDelete = () => {
 }
 ```
 
-**步骤 3：更新组件使用翻译**
+**Step 3: Update the component to use translations**
 ```vue
 <template>
   <div>
@@ -757,92 +758,92 @@ const { t } = useI18n()
 
 const handleDelete = () => {
   if (confirm(t('client.confirm_delete'))) {
-    // 删除逻辑
+    // delete logic
   }
 }
 </script>
 ```
 
-**步骤 4：同步和验证**
+**Step 4: Sync and validate**
 ```bash
 npm run i18n:sync
 npm run i18n:format
 npm run i18n:validate
 ```
 
-#### 最佳实践
+#### Best practices
 
-- **提交前验证**：在提交代码前运行 `npm run i18n:validate` 确保没有缺失的翻译
-- **保持格式一致**：定期运行 `npm run i18n:format` 保持文件格式统一
-- **避免直接编辑**：不要直接删除或重命名翻译键，应先在 `en.json` 中修改，然后同步
-- **CI 集成**：CI 会自动检查翻译文件的完整性和格式，确保代码质量
+- **Validate before committing**: run `npm run i18n:validate` before committing to make sure no translations are missing
+- **Keep formatting consistent**: run `npm run i18n:format` periodically so files stay tidy
+- **Avoid direct edits**: don't directly delete or rename translation keys in non-English files; modify `en.json` first and then sync
+- **CI integration**: CI automatically checks the integrity and format of translation files to enforce quality
 
-#### 脚本说明
+#### Script reference
 
-- **validate-i18n.js**：验证所有语言文件是否包含 `en.json` 中定义的所有键，并报告缺失或多余的键
-- **format-i18n.js**：对所有语言文件的键进行字母排序，并应用统一的格式化（2 空格缩进）
+- **validate-i18n.js**: verifies that every language file contains all keys defined in `en.json`, and reports any missing or extra keys
+- **format-i18n.js**: alphabetizes the keys in every language file and applies consistent formatting (2-space indentation)
 
-这些工具确保了：
-- ✅ 所有语言文件具有相同的翻译键
-- ✅ 文件格式统一，减少不必要的 Git 冲突  
-- ✅ 翻译缺失可以快速被发现和修复
-- ✅ 代码审查更加容易
+These tools ensure:
+- ✅ All language files share the same set of translation keys
+- ✅ Files have a consistent format, reducing unnecessary Git conflicts
+- ✅ Missing translations are easy to spot and fix
+- ✅ Code review is easier
 
-## 🎨 主题系统
+## 🎨 Theming
 
-- 支持明暗主题切换
-- 基于 CSS 变量实现
-- 主题工具在 `utils/theme.js` 中
-- 使用 `composables/useTheme.js` 在组件中管理主题
+- Light and dark themes are supported
+- Implemented with CSS variables
+- Theme utilities live in `utils/theme.js`
+- Use `composables/useTheme.js` to manage themes inside components
 
-## 📱 响应式设计
+## 📱 Responsive Design
 
-- 基于 Bootstrap 5 的响应式布局
-- 支持桌面端和移动端
-- 优化的触摸交互体验
+- Bootstrap 5 responsive layout
+- Supports both desktop and mobile
+- Optimized touch interactions
 
-## 🧪 测试和调试
+## 🧪 Testing & Debugging
 
-- 开发模式下启用源码映射
-- 详细的代理请求日志
-- 模拟 API 数据用于前端开发
-- 使用 Vue DevTools 进行组件调试
+- Source maps are enabled in development
+- Detailed proxy request logging
+- Mock API data for frontend development
+- Use Vue DevTools to inspect components
 
-## 📦 构建和部署
+## 📦 Build & Deploy
 
-### 构建命令
+### Build commands
 
 ```bash
-# 生产构建
+# Production build
 npm run build
 
-# 构建输出目录: build/assets/web/
-# 包含所有静态资源和HTML文件
+# Build output: build/assets/web/
+# Includes all static assets and HTML files
 ```
 
-## 📖 相关资源
+## 📖 Related Resources
 
-- [Vue 3 文档](https://vuejs.org/)
-- [Vue I18n 文档](https://vue-i18n.intlify.dev/)
-- [Bootstrap 5 文档](https://getbootstrap.com/docs/5.3/)
-- [Composition API 指南](https://vuejs.org/guide/extras/composition-api-faq.html)
-- [Vue I18n Composition API 模式](https://vue-i18n.intlify.dev/guide/advanced/composition.html)
+- [Vue 3 Docs](https://vuejs.org/)
+- [Vue I18n Docs](https://vue-i18n.intlify.dev/)
+- [Bootstrap 5 Docs](https://getbootstrap.com/docs/5.3/)
+- [Composition API Guide](https://vuejs.org/guide/extras/composition-api-faq.html)
+- [Vue I18n Composition API mode](https://vue-i18n.intlify.dev/guide/advanced/composition.html)
 
-## 🔄 迁移指南
+## 🔄 Migration Guide
 
-### 从 Options API 迁移到 Composition API
+### Migrating from Options API to Composition API
 
-如果遇到旧的 Options API 组件，可以按以下步骤迁移：
+When you encounter a legacy Options API component, migrate it like so:
 
-1. 将 `data()` 改为 `ref()` 或 `reactive()`
-2. 将 `computed` 改为 `computed()`
-3. 将 `methods` 改为普通函数
-4. 将生命周期钩子改为组合式 API 版本
-5. 使用 `<script setup>` 简化代码
+1. Replace `data()` with `ref()` or `reactive()`
+2. Replace `computed` with `computed()`
+3. Replace `methods` with plain functions
+4. Replace lifecycle hooks with their Composition API equivalents
+5. Use `<script setup>` to simplify the code
 
-### 示例迁移
+### Example migration
 
-**之前 (Options API):**
+**Before (Options API):**
 ```javascript
 export default {
   data() {
@@ -863,7 +864,7 @@ export default {
 }
 ```
 
-**之后 (Composition API):**
+**After (Composition API):**
 ```javascript
 <script setup>
 import { ref, computed } from 'vue'
@@ -874,109 +875,109 @@ const increment = () => count.value++
 </script>
 ```
 
-## ✅ 最佳实践检查清单
+## ✅ Best-Practices Checklist
 
-- [ ] 使用 Composition API (`<script setup>`)
-- [ ] 业务逻辑提取到 composables
-- [ ] 组件按功能分类到正确目录
-- [ ] 样式使用 scoped 或放在 styles 目录
-- [ ] 使用 TypeScript 类型（如适用）
-- [ ] 添加错误处理
-- [ ] 使用国际化 (`$t` 或 `t`)
-- [ ] 添加必要的用户反馈
-- [ ] 代码格式化统一
-- [ ] 添加必要的注释
+- [ ] Use the Composition API (`<script setup>`)
+- [ ] Extract business logic into composables
+- [ ] Place components into the right directory by category
+- [ ] Use scoped styles, or put styles in the styles directory
+- [ ] Use TypeScript types where applicable
+- [ ] Add error handling
+- [ ] Use i18n (`$t` or `t`)
+- [ ] Add appropriate user feedback
+- [ ] Format code consistently
+- [ ] Add comments where helpful
 
-## 📋 快速参考
+## 📋 Quick Reference
 
-### 文件命名规范
+### File naming conventions
 
-- **页面组件**: `PascalCase.vue` (如 `Home.vue`, `Apps.vue`)
-- **Composables**: `useXxx.js` (如 `useVersion.js`, `useApps.js`)
-- **服务类**: `xxxService.js` (如 `appService.js`)
-- **工具函数**: `camelCase.js` (如 `helpers.js`, `validation.js`)
+- **Page components**: `PascalCase.vue` (e.g. `Home.vue`, `Apps.vue`)
+- **Composables**: `useXxx.js` (e.g. `useVersion.js`, `useApps.js`)
+- **Service classes**: `xxxService.js` (e.g. `appService.js`)
+- **Utility functions**: `camelCase.js` (e.g. `helpers.js`, `validation.js`)
 
-### 导入路径规范
+### Import path conventions
 
 ```javascript
-// 页面组件
+// Page components
 import Navbar from '../components/layout/Navbar.vue'
 
 // Composables
 import { useVersion } from '../composables/useVersion.js'
 
-// 服务
+// Services
 import { AppService } from '../services/appService.js'
 
-// 工具函数
+// Utility functions
 import { debounce } from '../utils/helpers.js'
 
-// 配置
+// Configuration
 import { trackEvents } from '../config/firebase.js'
 ```
 
-### 常用 Composables
+### Common composables
 
-| Composable | 用途 | 返回内容 |
+| Composable | Purpose | Returns |
 |-----------|------|---------|
-| `useVersion` | 版本管理 | version, githubVersion, fetchVersions |
-| `useLogs` | 日志管理 | logs, fatalLogs, fetchLogs |
-| `useApps` | 应用管理 | apps, loadApps, save, editApp |
-| `useConfig` | 配置管理 | config, save, apply |
-| `useTheme` | 主题管理 | - |
-| `usePin` | PIN 配对 | clients, unpairAll, save |
+| `useVersion` | Version management | version, githubVersion, fetchVersions |
+| `useLogs` | Log management | logs, fatalLogs, fetchLogs |
+| `useApps` | Application management | apps, loadApps, save, editApp |
+| `useConfig` | Configuration management | config, save, apply |
+| `useTheme` | Theme management | - |
+| `usePin` | PIN pairing | clients, unpairAll, save |
 
-## 🎯 下一步
+## 🎯 Next Steps
 
-- 考虑添加 TypeScript 支持
-- 考虑添加单元测试
-- 考虑添加 E2E 测试
-- 优化性能（懒加载、代码分割）
+- Consider adding TypeScript support
+- Consider adding unit tests
+- Consider adding E2E tests
+- Optimize performance (lazy loading, code splitting)
 
-## 🤝 贡献指南
+## 🤝 Contribution Guide
 
-欢迎为 WebUI 贡献代码！请确保：
+Contributions to the WebUI are welcome! Please make sure to:
 
-1. **遵循代码规范**
-   - 使用 Composition API
-   - 业务逻辑提取到 composables
-   - 组件按功能分类
+1. **Follow the conventions**
+   - Use the Composition API
+   - Extract business logic into composables
+   - Place components in their right category
 
-2. **代码质量**
-   - 添加必要的错误处理
-   - 使用国际化
-   - 添加必要的注释
+2. **Code quality**
+   - Add appropriate error handling
+   - Use i18n
+   - Add comments where helpful
 
-3. **测试验证**
-   - 提交前运行构建命令确保无错误
-   - 测试新功能在不同浏览器中的表现
+3. **Test and verify**
+   - Run the build commands before committing to confirm there are no errors
+   - Test new features in different browsers
 
-4. **文档更新**
-   - 更新相关文档
-   - 添加必要的代码注释
+4. **Documentation**
+   - Update related documentation
+   - Add useful code comments
 
-## 📝 更新日志
+## 📝 Changelog
 
-### 最新更新 (2024)
+### Latest updates (2024)
 
-- ✅ 所有页面重构为 Composition API
-- ✅ 业务逻辑提取到 composables
-- ✅ 组件按功能重新组织
-- ✅ 配置文件统一管理
-- ✅ Vue I18n 迁移到 Composition API 模式
-- ✅ 简化所有 HTML 入口文件
-- ✅ 升级 Vite 到 5.4+ 并支持 Rolldown
-- ✅ 修复 CJS Node API 弃用警告（添加 `"type": "module"`）
-- ✅ 添加生产环境预览功能
-- ✅ 优化预览模式下的 API 错误处理
-- ✅ 添加 GPU 信息上报功能（Firebase Analytics）
-- ✅ 改进国际化配置的错误处理
-- ✅ 跨平台环境变量支持（使用 `cross-env`）
+- ✅ All pages refactored to the Composition API
+- ✅ Business logic extracted into composables
+- ✅ Components reorganized by feature
+- ✅ Configuration files unified
+- ✅ Vue I18n migrated to Composition API mode
+- ✅ All HTML entry files simplified
+- ✅ Vite upgraded to 5.4+ with Rolldown support
+- ✅ Fixed CJS Node API deprecation warnings (added `"type": "module"`)
+- ✅ Added a production preview workflow
+- ✅ Improved API error handling in preview mode
+- ✅ Added GPU info reporting (Firebase Analytics)
+- ✅ Improved error handling in the i18n configuration
+- ✅ Cross-platform environment variable support (using `cross-env`)
 
-### 技术改进
+### Technical improvements
 
-- **构建系统**: 升级到 Vite 5.4+，支持 Rolldown 实验性打包器
-- **模块系统**: 迁移到 ES 模块（`"type": "module"`）
-- **错误处理**: 改进预览模式下的 API 错误处理
-- **性能优化**: 使用 Rolldown 加速构建过程
-- **开发体验**: 改进预览功能，支持一键构建并预览
+- **Build system**: upgraded to Vite 5.4+ with the experimental Rolldown bundler
+- **Module system**: migrated to ES modules (`"type": "module"`)
+- **Error handling**: improved API error handling in preview mode
+- **Performance**: builds are faster thanks to Rolldown
+- **Developer experience**: improved preview workflow, with one-click build-and-preview

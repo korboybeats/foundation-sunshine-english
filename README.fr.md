@@ -4,8 +4,7 @@
 
 <div align="center">
 
-[![English](https://img.shields.io/badge/English-README.en.md-blue?style=for-the-badge)](README.en.md)
-[![中文简体](https://img.shields.io/badge/简体中文-README.zh--CN.md-red?style=for-the-badge)](README.md)
+[![English](https://img.shields.io/badge/English-README.md-blue?style=for-the-badge)](README.md)
 [![Français](https://img.shields.io/badge/Français-README.fr.md-green?style=for-the-badge)](README.fr.md)
 [![Deutsch](https://img.shields.io/badge/Deutsch-README.de.md-yellow?style=for-the-badge)](README.de.md)
 [![日本語](https://img.shields.io/badge/日本語-README.ja.md-purple?style=for-the-badge)](README.ja.md)

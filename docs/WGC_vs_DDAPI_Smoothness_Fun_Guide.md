@@ -1,158 +1,158 @@
-# 杂鱼！你还在用 DDAPI 吗？WGC vs DDAPI 流畅度大对决！
+# Hey scrub! Still using DDAPI? WGC vs DDAPI smoothness showdown!
 
-> 杂鱼杂鱼~连捕获模式都不会选的杂鱼~  
-> 本文用通俗到杂鱼都能懂的方式，解释为什么 WGC 比 DDAPI 更丝滑！
-
----
-
-## 诶？为什么同样的帧率，画面流畅度却不一样？
-
-杂鱼们在用 Sunshine 串流的时候有没有发现——明明都设成 60fps 了，WGC 就是比 DDAPI 看起来更顺滑？
-
-"一定是我的错觉吧"——才不是呢杂鱼！这是有实打实的技术原因的！
+> Scrub, scrub~ what a scrub who can't even pick a capture mode~
+> This article explains, in terms even a scrub can understand, why WGC is way smoother than DDAPI!
 
 ---
 
-## 先来搞懂：你的游戏画面是怎么传到串流里的
+## Wait — same frame rate, but the picture isn't equally smooth?
 
-杂鱼也知道，游戏画面不是凭空出现的吧？整个流程是这样的：
+Have you scrubs ever noticed, while streaming with Sunshine — both are set to 60fps, but WGC just *looks* smoother than DDAPI?
+
+"It's just my imagination, right?" — nope, scrub! There's an actual technical reason!
+
+---
+
+## First, let's clear this up: how does your game image get into the stream?
+
+Even a scrub knows the picture doesn't appear out of thin air, right? The pipeline goes like this:
 
 ```mermaid
 flowchart LR
-    A["游戏渲染好一帧"] --> B["交给 DWM 大人"]
-    B --> C["DWM 合成桌面画面"]
-    C --> D["Sunshine 来抄作业"]
-    D --> E["编码成视频"]
-    E --> F["发给你的客户端"]
+    A["Game renders a frame"] --> B["Hands it to Master DWM"]
+    B --> C["DWM composites the desktop"]
+    C --> D["Sunshine copies the homework"]
+    D --> E["Encodes it into video"]
+    E --> F["Sends it to your client"]
 ```
 
-**DWM**（Desktop Window Manager）就是那个负责把所有窗口画面合成到一起的 Windows 大管家。不管你用什么捕获方式，最终都是从 DWM 那里拿画面的。
+**DWM** (Desktop Window Manager) is the Windows housekeeper that composites all your windows into the final desktop image. No matter what capture method you use, you're ultimately grabbing the picture from DWM.
 
-但是！**怎么从 DWM 拿画面**，这两种方式可太不一样了——
+But! **How** you grab the picture from DWM is wildly different between the two methods —
 
 ---
 
-## DDAPI：那个笨笨的等待狂
+## DDAPI: the dim-witted waiter
 
-DDAPI 的工作方式，打个比方就是——
+The way DDAPI works, by analogy:
 
-> 杂鱼 DDAPI 每隔一会儿就跑去 DWM 门口问："有新帧吗？有新帧吗？"
-> DWM："还没好呢！等着！"
-> DDAPI："好……那我就站在这里等……"
-> **然后它就真的傻站在那里不动了！**
-> 更要命的是——**它等的时候还把 GPU 的钥匙攥在手里不撒手！**
+> Scrub DDAPI runs over to DWM's door every so often and asks, "Got a new frame? Got a new frame?"
+> DWM: "Not yet! Wait!"
+> DDAPI: "OK… I'll just stand here and wait…"
+> **And then it really does just stand there and not move!**
+> Worse — **while it's waiting it's still gripping the GPU's keys in its hand and won't let go!**
 
 ```mermaid
 sequenceDiagram
-    participant DD as DDAPI（笨蛋杂鱼）
-    participant GPU as GPU 钥匙🔑
-    participant ENC as 编码器（干活的）
+    participant DD as DDAPI (dumb scrub)
+    participant GPU as GPU keys🔑
+    participant ENC as Encoder (the worker)
 
-    DD->>GPU: "我要等新帧！钥匙给我！"
+    DD->>GPU: "I'm waiting for a new frame! Give me the keys!"
     activate GPU
-    Note over DD: 杂鱼傻等中......
-    ENC--xGPU: "我要编码啊！钥匙呢？"
-    Note over ENC: 被锁在门外.jpg
-    Note over DD: 终于等到了！
-    DD->>GPU: "处理完了，钥匙还你"
+    Note over DD: Scrub waiting helplessly......
+    ENC--xGPU: "I want to encode! Where are the keys?"
+    Note over ENC: Locked out.jpg
+    Note over DD: Finally got it!
+    DD->>GPU: "Done processing, here are the keys back"
     deactivate GPU
-    ENC->>GPU: "终于轮到我了呜呜"
+    ENC->>GPU: "Finally my turn, sob"
     activate GPU
-    Note over ENC: 开始（迟到的）编码
+    Note over ENC: Starts (late) encoding
     deactivate GPU
 ```
 
-看到没！编码器明明想干活，结果被 DDAPI 这个杂鱼挡在门外！
+See that?! The encoder *wants* to work, but DDAPI, that scrub, blocks it at the door!
 
 ---
 
-## WGC：优等生的做事方式
+## WGC: the honor student's way of doing things
 
-WGC 可聪明多了——
+WGC is way smarter —
 
-> WGC："DWM 大人，有新帧了麻烦叫我一声~"
-> DWM："行。"
-> WGC 回到座位上安静等通知，**期间不占用任何公共资源**
-> DWM："新帧好了！"
-> WGC："收到！我就拿一下图片，马上归还 GPU 钥匙~"
+> WGC: "Master DWM, please give me a heads-up when there's a new frame~"
+> DWM: "Sure."
+> WGC sits back at its desk and waits quietly for the notification, **occupying no shared resources in the meantime**
+> DWM: "New frame is ready!"
+> WGC: "Got it! I'll just borrow the GPU keys for a moment and give them right back~"
 
 ```mermaid
 sequenceDiagram
-    participant WGC as WGC（优等生）
-    participant GPU as GPU 钥匙🔑
-    participant ENC as 编码器（干活的）
+    participant WGC as WGC (honor student)
+    participant GPU as GPU keys🔑
+    participant ENC as Encoder (the worker)
 
-    WGC->>WGC: 安静等通知（不拿钥匙）
-    ENC->>GPU: 我要编码！
+    WGC->>WGC: Quietly waits for notification (no keys held)
+    ENC->>GPU: I want to encode!
     activate GPU
-    Note over ENC: 编码顺利进行中~
+    Note over ENC: Encoding goes smoothly~
     deactivate GPU
-    Note over WGC: DWM 通知到了！
-    WGC->>GPU: 借一下钥匙，马上还！
+    Note over WGC: DWM notification arrives!
+    WGC->>GPU: Borrowing the keys, returning them right away!
     activate GPU
     deactivate GPU
-    Note over WGC: 0.1ms 搞定
+    Note over WGC: Done in 0.1 ms
 ```
 
-编码器全程不受影响！想啥时候用 GPU 就啥时候用！
+The encoder is unaffected the whole time! It can use the GPU whenever it wants!
 
 ---
 
-## 所以到底有啥区别？
+## So what's the actual difference?
 
-| | DDAPI（杂鱼） | WGC（优等生） |
+| | DDAPI (scrub) | WGC (honor student) |
 |---|---|---|
-| 取帧方式 | 傻傻地轮询等待 | 聪明地等回调通知 |
-| 拿 GPU 钥匙的时间 | 整个等待期间都捏着 | 只在复制纹理时借一下 |
-| 编码器能不能正常干活 | 经常被挡在门外 | 畅通无阻 |
-| 帧间距稳定性 | 忽大忽小（±3~4ms） | 非常稳定（±0.5ms） |
-| 给人的感觉 | 有点涩涩的（不是） | 丝滑~ |
+| Frame fetching | Dumbly polls and waits | Cleverly waits for a callback notification |
+| Time spent holding the GPU keys | The entire wait period | Only for a moment while copying the texture |
+| Can the encoder do its job? | Often locked out | Unobstructed |
+| Frame interval stability | Wobbles a lot (±3–4 ms) | Very stable (±0.5 ms) |
+| How it feels | A bit rough (no, not *that* kind of rough) | Silky smooth~ |
 
 ---
 
-## 等等！我客户端开了帧缓冲和 V-Sync 啊！为什么还是能感觉到！
+## Wait! My client has frame buffering and V-Sync enabled! Why can I still feel it?
 
-杂鱼的这个问题问得好（难得）！
+Good question, scrub (rare!).
 
-V-Sync 确实让每一帧在屏幕上显示的**时间**完全一样——都是 16.67ms。帧缓冲也确实把网络抖动给抹平了。
+V-Sync does ensure that every frame stays on the screen for exactly the same **duration** — 16.67 ms each. Frame buffering does smooth out network jitter.
 
-**但是！** 问题不在"帧投递的时间"，而在"帧里面画的是什么"！
+**But!** The problem is not "when frames are delivered," but "what's *inside* each frame"!
 
-来看这个例子——假设一个球在屏幕上匀速移动：
+Take this example — imagine a ball moving across the screen at constant speed:
 
 ```mermaid
 flowchart TB
-    subgraph DD ["DDAPI 的帧内容"]
+    subgraph DD ["Frame contents under DDAPI"]
         direction LR
-        A1["帧1: 球移动了 2.5px"] --> A2["帧2: 球移动了 3.6px"] --> A3["帧3: 球移动了 2.7px"]
+        A1["Frame 1: ball moved 2.5 px"] --> A2["Frame 2: ball moved 3.6 px"] --> A3["Frame 3: ball moved 2.7 px"]
     end
 
-    subgraph W ["WGC 的帧内容"]
+    subgraph W ["Frame contents under WGC"]
         direction LR
-        B1["帧1: 球移动了 3.0px"] --> B2["帧2: 球移动了 3.0px"] --> B3["帧3: 球移动了 3.0px"]
+        B1["Frame 1: ball moved 3.0 px"] --> B2["Frame 2: ball moved 3.0 px"] --> B3["Frame 3: ball moved 3.0 px"]
     end
 ```
 
-DDAPI 因为编码器被耽误了，每帧**包含的游戏运动量不一样**——有的帧里球走了 2.5 像素，有的却走了 3.6 像素。
+Because the encoder gets delayed under DDAPI, **each frame contains a different amount of in-game motion** — one frame the ball walked 2.5 pixels, the next it walked 3.6.
 
-V-Sync 让每帧显示时间相同（16.67ms），但你的眼睛看到的是：**球忽快忽慢地移动**。
+V-Sync makes every frame display for the same duration (16.67 ms), but what your eye *sees* is: **the ball moving in fits and starts**.
 
-这东西有个专业名字叫 **judder**（运动抖动）——不是掉帧，也不是卡顿，就是那种"说不清哪里不对但就是不够顺"的感觉。
+This thing has a proper name: **judder** (motion jitter). It's not dropped frames, it's not stutter — it's that "I can't quite say what's wrong, but it's just not smooth" feeling.
 
-### 杂鱼都能看懂的比喻
+### A scrub-friendly analogy
 
-想象你坐在一辆平稳行驶的公交车上看窗外的路灯：
-- **WGC**：路灯间距完全均匀，看着超舒服~
-- **DDAPI**：路灯间距忽大忽小，看久了会晕……
+Imagine you're sitting in a smoothly moving bus, watching the streetlights pass by:
+- **WGC**: the streetlights are perfectly evenly spaced. Looks great~
+- **DDAPI**: the streetlight spacing is uneven. After a while you start feeling sick…
 
-V-Sync 保证了"你每秒看到相同数量的路灯"，帧缓冲保证了"路灯不会突然消失"，但**路灯之间的距离不均匀**——这是在路灯被"种下去"的时候就决定了的，后面怎么也改不了。
+V-Sync guarantees "you see the same number of streetlights per second," and the frame buffer guarantees "no streetlight suddenly disappears," but **the spacing between them is uneven** — that was decided when the lights were planted, and nothing downstream can fix it.
 
 ```mermaid
 flowchart TB
-    ROOT["根因：DDAPI 锁竞争\n↓\n帧内容时间切片不等"]
-    BUF>"帧缓冲\n只管传输节奏\n管不了帧内容"]
-    VSYNC>"V-Sync\n只管显示节奏\n管不了帧内容"]
-    JUDDER["结果：运动抖动\n眼睛：总觉得不对劲"]
+    ROOT["Root cause: DDAPI lock contention\n↓\nUneven time slicing of frame contents"]
+    BUF>"Frame buffer\nOnly handles transmission cadence\nCan't fix frame contents"]
+    VSYNC>"V-Sync\nOnly handles display cadence\nCan't fix frame contents"]
+    JUDDER["Result: motion judder\nEye: something feels off"]
 
     ROOT --> JUDDER
     JUDDER -.- BUF
@@ -161,45 +161,45 @@ flowchart TB
 
 ---
 
-## 高帧率时更明显哦~杂鱼~
+## The higher the frame rate, the worse it gets, scrub~
 
-| 帧率 | 帧间距 | DDAPI 的 ±3ms 抖动占比 | 你的感受 |
+| Frame rate | Frame interval | DDAPI's ±3 ms jitter as % | What you feel |
 |---|---|---|---|
-| 30fps | 33.3ms | 9% | 有点涩 |
-| 60fps | 16.7ms | 18% | 明显不顺 |
-| 120fps | 8.3ms | **36%** | 很不舒服 |
-| 240fps | 4.2ms | **72%** | 杂鱼你是来搞笑的吧 |
+| 30 fps | 33.3 ms | 9% | A little rough |
+| 60 fps | 16.7 ms | 18% | Noticeably not smooth |
+| 120 fps | 8.3 ms | **36%** | Pretty uncomfortable |
+| 240 fps | 4.2 ms | **72%** | Scrub, are you here for the comedy? |
 
-帧率越高，同样的 3ms 抖动占比越大，judder 越明显。所以追求高帧率串流的杂鱼们——**用 WGC 啊！**
-
----
-
-## 那 DDAPI 就一无是处吗？
-
-也不是啦~（安慰杂鱼）
-
-- **旧系统兼容性**：Windows 10 1903 以下没有 WGC，只能用 DDAPI
-- **某些特殊场景**：个别应用 WGC 抓不到画面但 DDAPI 可以
-- **Sunshine 已经在努力优化了**：用"短超时 + 间歇释放锁"的策略缓解锁竞争
-
-但如果你的系统支持 WGC……
-
-> **杂鱼！赶紧去改成 WGC 啊！别在那犹豫了！** 
+The higher the frame rate, the larger that same 3 ms jitter looms, and the more obvious the judder becomes. So all you scrubs chasing high-frame-rate streaming — **use WGC!**
 
 ---
 
-## 总结（给看到这里的杂鱼的奖励）
+## So is DDAPI completely useless?
+
+Not exactly~ (consoling the scrub)
+
+- **Legacy compatibility**: Windows 10 versions before 1903 don't have WGC, so DDAPI is the only option.
+- **Certain edge cases**: a few apps can't be captured by WGC but work fine with DDAPI.
+- **Sunshine is already optimizing**: it uses a "short timeout + intermittent lock release" strategy to mitigate the lock contention.
+
+But if your system supports WGC…
+
+> **Scrub! Go switch to WGC right now! Don't sit there hesitating!**
+
+---
+
+## TL;DR (a reward for the scrubs who made it this far)
 
 ```
-流畅度 = 投递有多均匀 × 帧内容有多均匀
-              ↑                  ↑
-         V-Sync搞定         WGC ✓  DDAPI ✗
+Smoothness = how evenly frames are delivered × how evenly frame contents are spaced
+                       ↑                                ↑
+                  V-Sync handles                  WGC ✓  DDAPI ✗
 ```
 
-| 一句话总结 |
+| One-liner takeaway |
 |---|
-| WGC 事件驱动不抢 GPU 锁 → 编码器不被耽误 → 帧间距均匀 → 丝滑 |
-| DDAPI 傻等时霸占 GPU 锁 → 编码器被饿死 → 帧间距抖动 → judder |
-| 帧缓冲和 V-Sync 管不了帧内容 → judder 从服务端就决定了 → 客户端救不了 |
+| WGC is event-driven and doesn't grab the GPU lock → the encoder is never delayed → even frame intervals → silky smooth |
+| DDAPI hogs the GPU lock while waiting → the encoder is starved → uneven frame intervals → judder |
+| Frame buffering and V-Sync can't touch frame contents → judder is decided on the server side → the client can't save you |
 
-> 所以杂鱼~还不快去设置里把捕获模式改成 WGC~？
+> So, scrub~ go change your capture mode to WGC in the settings already~?

@@ -158,8 +158,8 @@ When internationalizing existing components with hardcoded text, follow these st
 3. **Replace hardcoded text in template**:
    ```vue
    <!-- Before -->
-   <h1>我的标题</h1>
-   <button>点击我</button>
+   <h1>My Title</h1>
+   <button>Click Me</button>
    
    <!-- After -->
    <h1>{{ $t('mycomponent.title') }}</h1>
@@ -174,7 +174,7 @@ When internationalizing existing components with hardcoded text, follow these st
    
    // Before
    const handleClick = () => {
-     if (confirm('确定吗？')) {
+     if (confirm('Are you sure?')) {
        // ...
      }
    }

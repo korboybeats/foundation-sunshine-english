@@ -1,124 +1,124 @@
 # Image Path Migration Guide
 
-## 概述
+## Overview
 
-此迁移脚本会自动将存量的本地文件路径图片迁移到新的 `covers/` 目录，并更新 `apps.json` 中的引用。
+This migration script automatically moves existing local-file-path images into the new `covers/` directory and updates the references in `apps.json`.
 
-## 迁移逻辑
+## Migration Logic
 
-### 1️⃣ 识别需要迁移的图片路径
+### 1️⃣ Identify image paths that need to be migrated
 
-脚本会检查 `apps.json` 中每个应用的 `image-path` 字段：
+The script inspects the `image-path` field of every app in `apps.json`:
 
-**跳过（无需迁移）：**
-- `desktop` - 使用桌面图片
-- `app_name_123.png` - 已经是 boxart 格式（仅文件名，无路径分隔符）
+**Skipped (no migration needed):**
+- `desktop` — uses the desktop image
+- `app_name_123.png` — already in the boxart format (filename only, no path separator)
 
-**需要迁移：**
-- `C:\Users\...\picture.png` - 绝对路径
-- `./images/game.jpg` - 相对路径
-- `covers/steam.png` - 旧的 covers 路径（已被第58行处理）
+**Needs migration:**
+- `C:\Users\...\picture.png` — absolute path
+- `./images/game.jpg` — relative path
+- `covers/steam.png` — old `covers` path (handled on line 58)
 
-### 2️⃣ 查找源文件
+### 2️⃣ Locate the source file
 
-脚本会按以下顺序查找图片文件：
+The script looks for the image file in this order:
 
-1. **绝对路径** - 直接检查路径是否存在
-2. **相对于 config 目录** - `config\<image-path>`
-3. **相对于旧的 Sunshine 根目录** - `<parent>\<image-path>`
+1. **Absolute path** — check whether the path exists directly
+2. **Relative to the config directory** — `config\<image-path>`
+3. **Relative to the legacy Sunshine root** — `<parent>\<image-path>`
 
-### 3️⃣ 复制到 covers 目录
+### 3️⃣ Copy into the covers directory
 
-找到源文件后：
+Once a source file is located:
 
 ```
-源文件: C:\Users\mohaha\Pictures\game.png
-应用名: Steam
+Source: C:\Users\mohaha\Pictures\game.png
+App name: Steam
 ↓
-生成新文件名: app_Steam_1234567890.png
+New filename: app_Steam_1234567890.png
 ↓
-复制到: config\covers\app_Steam_1234567890.png
+Copied to: config\covers\app_Steam_1234567890.png
 ```
 
-### 4️⃣ 更新 apps.json
+### 4️⃣ Update apps.json
 
 ```json
-// 迁移前
+// Before migration
 {
   "name": "Steam",
   "image-path": "C:\\Users\\mohaha\\Pictures\\game.png"
 }
 
-// 迁移后
+// After migration
 {
   "name": "Steam",
   "image-path": "app_Steam_1234567890.png"
 }
 ```
 
-## 工作流程
+## Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 1. migrate-config.bat 执行                                   │
-│    - 迁移 covers/ 目录                                       │
-│    - 更新旧的 ./covers/ 路径为 ./config/covers/              │
+│ 1. migrate-config.bat runs                                   │
+│    - Migrates the covers/ directory                          │
+│    - Updates legacy ./covers/ paths to ./config/covers/      │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│ 2. 调用 migrate-images.ps1                                   │
-│    - 读取 apps.json                                         │
-│    - 查找每个应用的图片文件                                   │
+│ 2. Calls migrate-images.ps1                                  │
+│    - Reads apps.json                                         │
+│    - Locates the image file for each app                     │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│ 3. 对每个图片文件：                                           │
-│    ✅ 复制到 config/covers/app_<name>_<timestamp>.png       │
-│    ✅ 更新 apps.json 中的 image-path                        │
+│ 3. For each image file:                                      │
+│    ✅ Copies it to config/covers/app_<name>_<timestamp>.png  │
+│    ✅ Updates the image-path in apps.json                    │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
-│ 4. Sunshine 服务启动                                         │
-│    ✅ getBoxArt 从 covers/ 目录加载图片                      │
-│    ✅ Web UI 通过 /boxart/<filename> 访问                   │
+│ 4. The Sunshine service starts                               │
+│    ✅ getBoxArt loads images from the covers/ directory      │
+│    ✅ Web UI accesses them via /boxart/<filename>            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 示例场景
+## Example Scenarios
 
-### 场景 1: 绝对路径
+### Scenario 1: absolute path
 
-**迁移前：**
+**Before:**
 ```json
 {
   "apps": [
     {
-      "name": "游戏A",
+      "name": "Game A",
       "image-path": "C:\\Users\\mohaha\\Pictures\\game1.jpg"
     }
   ]
 }
 ```
 
-**迁移后：**
+**After:**
 ```json
 {
   "apps": [
     {
-      "name": "游戏A",
-      "image-path": "app_游戏A_1234567890.jpg"
+      "name": "Game A",
+      "image-path": "app_Game_A_1234567890.jpg"
     }
   ]
 }
 ```
 
-**文件位置：**
-- 源: `C:\Users\mohaha\Pictures\game1.jpg`
-- 目标: `config\covers\app_游戏A_1234567890.jpg`
+**File locations:**
+- Source: `C:\Users\mohaha\Pictures\game1.jpg`
+- Destination: `config\covers\app_Game_A_1234567890.jpg`
 
-### 场景 2: 相对路径
+### Scenario 2: relative path
 
-**迁移前：**
+**Before:**
 ```json
 {
   "apps": [
@@ -130,7 +130,7 @@
 }
 ```
 
-**迁移后：**
+**After:**
 ```json
 {
   "apps": [
@@ -142,14 +142,14 @@
 }
 ```
 
-**查找顺序：**
-1. ❌ `./assets/steam-icon.png` (绝对路径)
-2. ✅ `config\assets\steam-icon.png` (相对于 config)
-3. (找到，停止查找)
+**Lookup order:**
+1. ❌ `./assets/steam-icon.png` (as an absolute path)
+2. ✅ `config\assets\steam-icon.png` (relative to config)
+3. (found, stop searching)
 
-### 场景 3: 已经是新格式（跳过）
+### Scenario 3: already in the new format (skipped)
 
-**apps.json：**
+**apps.json:**
 ```json
 {
   "apps": [
@@ -165,57 +165,57 @@
 }
 ```
 
-**结果：** 两个应用都跳过，不进行迁移
+**Result:** both apps are skipped — no migration is performed.
 
-## 错误处理
+## Error Handling
 
-### 文件不存在
+### File not found
 ```
-⚠️  Image file not found for 游戏B: C:\old\path\missing.png
+⚠️  Image file not found for Game B: C:\old\path\missing.png
 ```
-- **行为**: 保留原始路径，不修改 apps.json
-- **原因**: 可能是网络路径或将来会可用
+- **Behavior**: keep the original path; do not modify apps.json
+- **Reason**: it may be a network path or become available later
 
-### 复制失败
+### Copy failed
 ```
-❌ Failed to copy image for 游戏C: Access denied
+❌ Failed to copy image for Game C: Access denied
 ```
-- **行为**: 保留原始路径，继续处理其他应用
-- **原因**: 权限问题或磁盘空间不足
+- **Behavior**: keep the original path; continue with the other apps
+- **Reason**: insufficient permissions or disk space
 
-## 兼容性
+## Compatibility
 
-### 与新的 getBoxArt 配合
+### Working with the new getBoxArt
 
 ```cpp
-// src/confighttp.cpp - getBoxArt 函数
+// src/confighttp.cpp - getBoxArt function
 std::string imagePath = SUNSHINE_ASSETS_DIR "boxart/" + path;
 
-// 如果在 boxart/ 未找到，尝试 covers/
+// If not found in boxart/, try covers/
 if (!fs::exists(imagePath)) {
   std::string coversPath = platf::appdata().string() + "/covers/" + path;
   if (fs::exists(coversPath)) {
-    imagePath = coversPath;  // ✅ 迁移的图片在这里
+    imagePath = coversPath;  // ✅ migrated images live here
   }
 }
 ```
 
-### 与 Web UI 配合
+### Working with the Web UI
 
 ```javascript
-// getImagePreviewUrl 函数
+// getImagePreviewUrl function
 if (imagePath.includes('/') || imagePath.includes('\\')) {
-  return imagePath;  // 旧的路径格式（迁移前）
+  return imagePath;  // legacy path format (pre-migration)
 } else {
-  return `/boxart/${imagePath}`;  // ✅ 新格式（迁移后）
+  return `/boxart/${imagePath}`;  // ✅ new format (post-migration)
 }
 ```
 
-## 测试迁移
+## Testing the Migration
 
-### 手动测试
+### Manual test
 
-1. 创建测试 apps.json：
+1. Create a test apps.json:
 ```json
 {
   "apps": [
@@ -227,17 +227,17 @@ if (imagePath.includes('/') || imagePath.includes('\\')) {
 }
 ```
 
-2. 运行迁移：
+2. Run the migration:
 ```cmd
 powershell -ExecutionPolicy Bypass -File migrate-images.ps1 "C:\path\to\config"
 ```
 
-3. 验证结果：
-- ✅ 文件已复制到 `config\covers\app_Test_*.png`
-- ✅ apps.json 已更新为新路径
-- ✅ Sunshine Web UI 能正常显示图片
+3. Verify the result:
+- ✅ The file has been copied to `config\covers\app_Test_*.png`
+- ✅ apps.json has been updated to the new path
+- ✅ The Sunshine Web UI displays the image correctly
 
-## 日志输出示例
+## Sample Log Output
 
 ```
 Reading apps.json from: C:\Sunshine\config\apps.json
@@ -254,14 +254,10 @@ Found image file: C:\Users\mohaha\Pictures\game.png
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## 注意事项
+## Notes
 
-1. **备份**: 迁移前会自动备份（通过 Copy-Item，原文件不会删除）
-2. **权限**: 需要对 config 目录有写入权限
-3. **文件名**: 特殊字符会被替换为下划线（`[^a-zA-Z0-9_-]` → `_`）
-4. **时间戳**: 使用 Unix 时间戳确保文件名唯一
-5. **编码**: apps.json 使用 UTF-8 编码保存
-
-
-
-
+1. **Backups**: backups happen automatically (via `Copy-Item`); the originals are not deleted
+2. **Permissions**: write permission to the config directory is required
+3. **Filenames**: special characters are replaced with underscores (`[^a-zA-Z0-9_-]` → `_`)
+4. **Timestamps**: a Unix timestamp ensures filenames are unique
+5. **Encoding**: apps.json is saved as UTF-8
