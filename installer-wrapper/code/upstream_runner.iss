@@ -82,6 +82,6 @@ begin
 
   g_UpstreamRunErrorMsg := Format(
     'Upstream installer failed with exit code %d.' + #13#10 +
-    'See log: %s',
-    [ResultCode, g_UpstreamLogPath]);
+    'See log: %s', [
+      ResultCode, g_UpstreamLogPath]);
 end;
