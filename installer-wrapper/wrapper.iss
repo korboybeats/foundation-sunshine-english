@@ -57,8 +57,10 @@ Source: "build\overlay\OVERLAY_MANIFEST.json"; DestDir: "{tmp}\overlay";        
 
 [Run]
 // Run install.ps1 with all logic. Components/vmouse passed as arguments.
+// Log goes to %LOCALAPPDATA%\SunshineEnglishEdition\install.log so it
+// survives Inno's cleanup of {tmp}.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} -LogPath ""{tmp}\sunshine-english-install.log"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} -LogPath ""{localappdata}\SunshineEnglishEdition\install.log"""; \
   StatusMsg: "Downloading and installing Foundation Sunshine (this takes 1-2 minutes)..."; \
   Flags: runhidden waituntilterminated; \
   WorkingDir: "{tmp}"

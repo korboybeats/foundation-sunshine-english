@@ -51,14 +51,28 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 if (-not $LogPath) {
-    $LogPath = Join-Path $env:TEMP "sunshine-english-install.log"
+    $LogPath = Join-Path $env:LOCALAPPDATA "SunshineEnglishEdition\install.log"
 }
+
+# Ensure the log's parent directory exists before any logging
+$logDir = Split-Path -Parent $LogPath
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+}
+
+# Truncate any prior log so we always see the latest run only
+"" | Set-Content -Path $LogPath -Encoding UTF8
 
 function Write-Log([string]$Message) {
     $timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
     $line = "[$timestamp] $Message"
     Write-Host $line
-    Add-Content -Path $LogPath -Value $line -Encoding UTF8
+    try {
+        Add-Content -Path $LogPath -Value $line -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        # Logging failure is non-fatal; the script continues
+        Write-Host "WARN: log write failed: $($_.Exception.Message)"
+    }
 }
 
 function Throw-Step([string]$Message) {
