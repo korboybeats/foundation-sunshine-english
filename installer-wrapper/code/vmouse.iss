@@ -48,6 +48,6 @@ begin
   g_VmouseInstallErrorMsg := Format(
     'install-vmouse.bat exited with code %d. The Sunshine install completed, ' +
     'but the virtual mouse driver may not be registered. ' +
-    'You can re-run %s manually as Administrator.',
-    [ResultCode, ScriptPath]);
+    'You can re-run %s manually as Administrator.', [
+      ResultCode, ScriptPath]);
 end;

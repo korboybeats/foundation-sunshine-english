@@ -33,8 +33,8 @@ begin
     g_OverlayApplyErrorMsg := Format(
       'Overlay verification failed: expected files missing in %s:%s' + #13#10 +
       'This usually means the upstream installer used a different install directory ' +
-      'than expected. Try uninstalling Sunshine first, then re-run this installer.',
-      [AppDir, MissingItems]);
+      'than expected. Try uninstalling Sunshine first, then re-run this installer.', [
+        AppDir, MissingItems]);
     Result := False;
     Exit;
   end;
