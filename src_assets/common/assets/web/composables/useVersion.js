@@ -53,13 +53,15 @@ export function useVersion() {
     githubVersion.value?.isLessThan?.(version.value) ?? false
   )
 
-  const stableBuildAvailable = computed(() => 
-    githubVersion.value?.isGreater?.(version.value) ?? false
-  )
-
-  const preReleaseBuildAvailable = computed(() => 
-    preReleaseVersion.value?.isGreater?.(version.value) ?? false
-  )
+  // English Edition: updates are managed by the wrapper's weekly scheduled
+  // task which reads HKLM\SOFTWARE\SunshineEnglishEdition\Version. The Web UI's
+  // own version-check compares sunshine.exe's FileVersion (e.g.
+  // "0.0.0.<commit>") against our release tag (e.g. "v2026.04.19-english")
+  // which always parses as "update available" because 2026 > 0. Disable the
+  // stable/pre-release banners here so they stop screaming at users who are
+  // already on the latest version via the wrapper.
+  const stableBuildAvailable = computed(() => false)
+  const preReleaseBuildAvailable = computed(() => false)
 
   const buildVersionIsDirty = computed(() => {
     const v = version.value?.version
