@@ -224,10 +224,10 @@ function Stop-SunshineProcesses {
             return
         }
         if ($stillRunning) {
-            Write-Log "  Pass $i: still running: $(($stillRunning | ForEach-Object { $_.Name }) -join ', ')"
+            Write-Log "  Pass ${i}: still running: $(($stillRunning | ForEach-Object { $_.Name }) -join ', ')"
         }
         if ($exeLocked) {
-            Write-Log "  Pass $i: sunshine.exe still locked"
+            Write-Log "  Pass ${i}: sunshine.exe still locked"
         }
     }
     Write-Log "  WARN: gave up after 8 kill passes; copy may still fail with file-in-use."
