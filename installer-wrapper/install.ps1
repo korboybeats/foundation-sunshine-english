@@ -170,6 +170,17 @@ function Invoke-UpstreamInstaller([string]$InstallerPath) {
 # ---------------------------------------------------------------------------
 # 3. Apply English overlay
 # ---------------------------------------------------------------------------
+function Test-FileLocked([string]$Path) {
+    if (-not (Test-Path $Path)) { return $false }
+    try {
+        $stream = [System.IO.File]::Open($Path, 'Open', 'ReadWrite', 'None')
+        $stream.Close()
+        return $false
+    } catch {
+        return $true
+    }
+}
+
 function Stop-SunshineProcesses {
     # Upstream installer auto-starts SunshineService and may launch sunshine.exe
     # or sunshine-gui.exe via [Run]/finish-page. We must stop AND disable the
@@ -188,29 +199,38 @@ function Stop-SunshineProcesses {
         }
         # Disable startup so SCM can't auto-restart mid-copy. We restore at the end.
         try {
-            $script:OriginalServiceStartType = $svc.StartType
+            if (-not $script:OriginalServiceStartType) {
+                $script:OriginalServiceStartType = $svc.StartType
+            }
             Set-Service -Name "SunshineService" -StartupType Disabled -ErrorAction Stop
             Write-Log "  SunshineService startup temporarily disabled (was $($script:OriginalServiceStartType))."
         } catch {
             Write-Log "  WARN: failed to disable SunshineService startup: $($_.Exception.Message)"
         }
     }
-    # Kill in a loop in case anything respawns instantly (sunshinesvc itself
-    # also runs sunshine.exe; we kill it too).
-    for ($i = 1; $i -le 5; $i++) {
-        $procs = Get-Process -Name "sunshine", "sunshine-gui", "sunshinesvc" -ErrorAction SilentlyContinue
-        if (-not $procs) { break }
-        foreach ($p in $procs) {
-            try {
-                Stop-Process -Id $p.Id -Force -ErrorAction Stop
-                Write-Log "  Killed $($p.Name) (PID $($p.Id)) [pass $i]"
-            } catch {
-                Write-Log "  WARN: failed to kill $($p.Name) (PID $($p.Id)): $($_.Exception.Message)"
-            }
-        }
+    # Use taskkill /F /T to tree-kill (any child processes get killed too).
+    # Loop up to 8 passes catching anything that respawns. Verify sunshine.exe
+    # is not file-locked before declaring success.
+    $sunshineExe = Join-Path $InstallDir "sunshine.exe"
+    $sunshineGuiExe = Join-Path $InstallDir "assets\gui\sunshine-gui.exe"
+    for ($i = 1; $i -le 8; $i++) {
+        # taskkill returns non-zero if process not found, ignore stderr
+        $null = & cmd /c "taskkill /F /T /IM sunshine.exe /IM sunshine-gui.exe /IM sunshinesvc.exe /IM qiin-tabtip.exe 2>nul"
         Start-Sleep -Milliseconds 500
+        $stillRunning = Get-Process -Name "sunshine", "sunshine-gui", "sunshinesvc", "qiin-tabtip" -ErrorAction SilentlyContinue
+        $exeLocked = (Test-FileLocked $sunshineExe) -or (Test-FileLocked $sunshineGuiExe)
+        if (-not $stillRunning -and -not $exeLocked) {
+            Write-Log "  All processes killed; binaries unlocked (after $i pass(es))."
+            return
+        }
+        if ($stillRunning) {
+            Write-Log "  Pass $i: still running: $(($stillRunning | ForEach-Object { $_.Name }) -join ', ')"
+        }
+        if ($exeLocked) {
+            Write-Log "  Pass $i: sunshine.exe still locked"
+        }
     }
-    Start-Sleep -Milliseconds 1000
+    Write-Log "  WARN: gave up after 8 kill passes; copy may still fail with file-in-use."
 }
 
 function Restart-SunshineService {
