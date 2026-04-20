@@ -171,39 +171,67 @@ function Invoke-UpstreamInstaller([string]$InstallerPath) {
 # 3. Apply English overlay
 # ---------------------------------------------------------------------------
 function Stop-SunshineProcesses {
-    # Upstream installer auto-starts SunshineService and may launch sunshine.exe.
-    # We must stop them before overlaying our English binary or the copy fails
-    # with 'file in use'.
+    # Upstream installer auto-starts SunshineService and may launch sunshine.exe
+    # or sunshine-gui.exe via [Run]/finish-page. We must stop AND disable the
+    # service so it can't restart mid-overlay, then kill any lingering processes.
     Write-Log "Stopping Sunshine service + processes (so we can overlay the binary)..."
     $svc = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
-    if ($svc -and $svc.Status -ne 'Stopped') {
+    if ($svc) {
+        if ($svc.Status -ne 'Stopped') {
+            try {
+                Stop-Service -Name "SunshineService" -Force -ErrorAction Stop
+                Write-Log "  SunshineService stopped."
+                $script:RestartSunshineService = $true
+            } catch {
+                Write-Log "  WARN: failed to stop SunshineService: $($_.Exception.Message)"
+            }
+        }
+        # Disable startup so SCM can't auto-restart mid-copy. We restore at the end.
         try {
-            Stop-Service -Name "SunshineService" -Force -ErrorAction Stop
-            Write-Log "  SunshineService stopped."
-            $script:RestartSunshineService = $true
+            $script:OriginalServiceStartType = $svc.StartType
+            Set-Service -Name "SunshineService" -StartupType Disabled -ErrorAction Stop
+            Write-Log "  SunshineService startup temporarily disabled (was $($script:OriginalServiceStartType))."
         } catch {
-            Write-Log "  WARN: failed to stop SunshineService: $($_.Exception.Message)"
+            Write-Log "  WARN: failed to disable SunshineService startup: $($_.Exception.Message)"
         }
     }
-    Get-Process -Name "sunshine", "sunshine-gui" -ErrorAction SilentlyContinue | ForEach-Object {
-        try {
-            Stop-Process -Id $_.Id -Force -ErrorAction Stop
-            Write-Log "  Killed $($_.Name) (PID $($_.Id))"
-        } catch {
-            Write-Log "  WARN: failed to kill $($_.Name) (PID $($_.Id)): $($_.Exception.Message)"
+    # Kill in a loop in case anything respawns instantly (sunshinesvc itself
+    # also runs sunshine.exe; we kill it too).
+    for ($i = 1; $i -le 5; $i++) {
+        $procs = Get-Process -Name "sunshine", "sunshine-gui", "sunshinesvc" -ErrorAction SilentlyContinue
+        if (-not $procs) { break }
+        foreach ($p in $procs) {
+            try {
+                Stop-Process -Id $p.Id -Force -ErrorAction Stop
+                Write-Log "  Killed $($p.Name) (PID $($p.Id)) [pass $i]"
+            } catch {
+                Write-Log "  WARN: failed to kill $($p.Name) (PID $($p.Id)): $($_.Exception.Message)"
+            }
         }
+        Start-Sleep -Milliseconds 500
     }
-    Start-Sleep -Milliseconds 1500
+    Start-Sleep -Milliseconds 1000
 }
 
 function Restart-SunshineService {
-    if (-not $script:RestartSunshineService) { return }
-    Write-Log "Restarting SunshineService..."
+    # Restore service startup type then start it.
+    $svc = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
+    if (-not $svc) { return }
+    $restoreType = $script:OriginalServiceStartType
+    if (-not $restoreType -or $restoreType -eq 'Disabled') { $restoreType = 'Automatic' }
     try {
-        Start-Service -Name "SunshineService" -ErrorAction Stop
-        Write-Log "  SunshineService restarted."
+        Set-Service -Name "SunshineService" -StartupType $restoreType -ErrorAction Stop
+        Write-Log "Restored SunshineService startup type to $restoreType."
     } catch {
-        Write-Log "  WARN: failed to restart SunshineService: $($_.Exception.Message). Start manually if needed."
+        Write-Log "WARN: failed to restore SunshineService startup type: $($_.Exception.Message)"
+    }
+    if ($script:RestartSunshineService) {
+        try {
+            Start-Service -Name "SunshineService" -ErrorAction Stop
+            Write-Log "SunshineService started."
+        } catch {
+            Write-Log "WARN: failed to start SunshineService: $($_.Exception.Message). Start manually if needed."
+        }
     }
 }
 
