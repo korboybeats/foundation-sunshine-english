@@ -224,7 +224,23 @@ function Copy-Overlay {
         if (-not (Test-Path $destDir)) {
             New-Item -ItemType Directory -Force -Path $destDir | Out-Null
         }
-        Copy-Item -Path $_.FullName -Destination $dest -Force
+        # Retry up to 3 times with another kill if the file is locked. This
+        # handles the case where a sunshine/sunshine-gui process respawned
+        # between Stop-SunshineProcesses and the actual file copy (upstream's
+        # finish-page checkbox or user manually launching the GUI).
+        $copied = $false
+        for ($attempt = 1; $attempt -le 3 -and -not $copied; $attempt++) {
+            try {
+                Copy-Item -Path $_.FullName -Destination $dest -Force -ErrorAction Stop
+                $copied = $true
+            } catch {
+                Write-Log "  Copy attempt $attempt failed for $relative ($($_.Exception.Message)); re-killing Sunshine and retrying..."
+                Stop-SunshineProcesses
+            }
+        }
+        if (-not $copied) {
+            Abort-Install "Failed to overlay $relative after 3 attempts. Close all Sunshine windows manually and retry."
+        }
         $count++
     }
     Write-Log "Copied $count overlay files."
