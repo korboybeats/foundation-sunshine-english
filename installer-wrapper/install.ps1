@@ -145,19 +145,28 @@ function Get-UpstreamInstaller {
 function Invoke-UpstreamInstaller([string]$InstallerPath) {
     $upstreamLog = Join-Path $env:TEMP "upstream-install.log"
 
-    $args = @(
+    # IMPORTANT: do NOT name this variable $args. $args is a PowerShell
+    # automatic variable inside functions; reassigning it can result in
+    # Start-Process receiving an empty array instead of our flags, causing
+    # the upstream installer to launch with no flags and display its full
+    # interactive wizard UI (the very thing /VERYSILENT is supposed to hide).
+    $installerArgs = @(
         "/VERYSILENT",
         "/SUPPRESSMSGBOXES",
         "/NORESTART",
-        "/DIR=`"$InstallDir`"",
-        "/COMPONENTS=`"$Components`"",
-        "/LOG=`"$upstreamLog`""
+        "/SP-",
+        "/DIR=$InstallDir",
+        "/COMPONENTS=$Components",
+        "/LOG=$upstreamLog"
     )
 
     Write-Log "Running upstream installer:"
-    Write-Log "  $InstallerPath $($args -join ' ')"
+    Write-Log "  Path: $InstallerPath"
+    foreach ($a in $installerArgs) {
+        Write-Log "  Arg : $a"
+    }
 
-    $proc = Start-Process -FilePath $InstallerPath -ArgumentList $args -Wait -PassThru -NoNewWindow
+    $proc = Start-Process -FilePath $InstallerPath -ArgumentList $installerArgs -Wait -PassThru -NoNewWindow
     Write-Log "Upstream installer exit code: $($proc.ExitCode)"
 
     # 0 = success, 3010 = success-needs-reboot
