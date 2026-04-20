@@ -264,22 +264,65 @@ function Install-Vmouse {
 # 4b. Install ViGEmBus (virtual gamepad driver)
 # ---------------------------------------------------------------------------
 function Install-Gamepad {
-    # Upstream's install-gamepad.bat downloads and installs ViGEmBus from the
-    # nefarius release page. The upstream installer has a [Run] entry that
-    # invokes this script when the 'gamepad' component is selected, but in
-    # silent mode it's been observed to skip. We re-run it explicitly here.
-    # The script is idempotent: if ViGEmBus >= 1.17 is already installed, it
-    # exits cleanly.
-    $script = Join-Path $InstallDir "scripts\install-gamepad.bat"
-    if (-not (Test-Path $script)) {
-        Write-Log "install-gamepad.bat not found - skipping ViGEmBus install."
+    # Install ViGEmBus directly from nefarius/ViGEmBus latest release.
+    # We bypass upstream's install-gamepad.bat because it downloads via
+    # mirror.ghproxy.com (a Chinese GitHub proxy) which fails silently
+    # outside China — curl gets an HTML error page, runs an invalid .exe,
+    # script returns 0 success, ViGEmBus is never actually installed.
+    $vigemSys = Join-Path $env:SystemRoot "System32\drivers\ViGEmBus.sys"
+    if (Test-Path $vigemSys) {
+        try {
+            $existingVer = (Get-Item $vigemSys).VersionInfo.FileVersion
+            if ([System.Version]$existingVer -ge [System.Version]"1.17") {
+                Write-Log "ViGEmBus already installed (v$existingVer >= 1.17); skipping."
+                return
+            }
+            Write-Log "ViGEmBus v$existingVer is older than 1.17; will reinstall."
+        } catch {
+            Write-Log "Could not parse existing ViGEmBus version; will reinstall."
+        }
+    }
+
+    Write-Log "Querying nefarius/ViGEmBus latest release..."
+    $headers = @{ "User-Agent" = "SunshineEnglishEdition-Installer" }
+    try {
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/nefarius/ViGEmBus/releases/latest" -Headers $headers -TimeoutSec 30
+    } catch {
+        Write-Log "WARNING: failed to query ViGEmBus release: $($_.Exception.Message). Sunshine works; gamepad input from clients unavailable. Install manually from https://github.com/nefarius/ViGEmBus/releases"
         return
     }
-    Write-Log "Installing ViGEmBus (virtual gamepad driver): $script"
-    $proc = Start-Process -FilePath $script -WorkingDirectory (Split-Path -Parent $script) -Wait -PassThru -NoNewWindow
-    Write-Log "install-gamepad.bat exit code: $($proc.ExitCode)"
-    if ($proc.ExitCode -ne 0) {
-        Write-Log "WARNING: ViGEmBus install exit code $($proc.ExitCode). Sunshine streaming works; gamepad input from clients will be unavailable until ViGEmBus is installed. Re-run $script as admin to retry, or download from https://github.com/nefarius/ViGEmBus/releases"
+
+    # Prefer .exe installer asset (their releases usually have ViGEmBus_Setup_x.x.x.exe)
+    $asset = $release.assets | Where-Object { $_.name -like "*Setup*.exe" -or $_.name -like "*.msi" } | Select-Object -First 1
+    if (-not $asset) {
+        Write-Log "WARNING: no installer asset found in ViGEmBus release $($release.tag_name). Install manually from $($release.html_url)"
+        return
+    }
+
+    $tmp = Join-Path $env:TEMP "ViGEmBus_$($asset.name)"
+    Write-Log "Downloading $($asset.name) ($([math]::Round($asset.size / 1MB, 1)) MB) from GitHub..."
+    try {
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmp -Headers $headers -TimeoutSec 300
+    } catch {
+        Write-Log "WARNING: ViGEmBus download failed: $($_.Exception.Message). Install manually from $($release.html_url)"
+        return
+    }
+
+    Write-Log "Running ViGEmBus installer silently..."
+    if ($asset.name -like "*.msi") {
+        $proc = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i", "`"$tmp`"", "/passive", "/promptrestart" -Wait -PassThru -NoNewWindow
+    } else {
+        $proc = Start-Process -FilePath $tmp -ArgumentList "/passive", "/promptrestart" -Wait -PassThru -NoNewWindow
+    }
+    Write-Log "ViGEmBus installer exit code: $($proc.ExitCode)"
+
+    Remove-Item -Path $tmp -ErrorAction SilentlyContinue
+
+    if (Test-Path $vigemSys) {
+        $newVer = (Get-Item $vigemSys).VersionInfo.FileVersion
+        Write-Log "ViGEmBus.sys present after install (v$newVer)."
+    } else {
+        Write-Log "WARNING: ViGEmBus.sys not present after installer ran. Sunshine works; gamepad input from clients unavailable. Try running $tmp manually as admin, or install from $($release.html_url)"
     }
 }
 
