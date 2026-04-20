@@ -87,9 +87,16 @@ function Abort-Install([string]$Message) {
 }
 
 # ---------------------------------------------------------------------------
-# 1. Download upstream installer
+# 1. Download + extract upstream PORTABLE zip
+#
+# We use upstream's portable zip instead of their .exe installer because their
+# installer ignores /VERYSILENT (custom Pascal in [Code] forces wizard UI).
+# The portable zip ships the exact same binary set that the installer would
+# extract; we just place the files ourselves into Program Files. End result
+# is a normal install (service registered, drivers installed, etc.), without
+# the Chinese wizard ever appearing.
 # ---------------------------------------------------------------------------
-function Get-UpstreamInstaller {
+function Get-UpstreamPortable {
     Write-Log "Querying upstream release..."
 
     $headers = @{
@@ -105,9 +112,9 @@ function Get-UpstreamInstaller {
 
     Write-Log "Upstream tag: $($release.tag_name)"
 
-    $asset = $release.assets | Where-Object { $_.name -like "*WindowsInstaller.exe" } | Select-Object -First 1
+    $asset = $release.assets | Where-Object { $_.name -like "*Portable*.zip" } | Select-Object -First 1
     if (-not $asset) {
-        Abort-Install "No *WindowsInstaller.exe asset in upstream release $($release.tag_name)"
+        Abort-Install "No *Portable*.zip asset in upstream release $($release.tag_name)"
     }
 
     Write-Log "Found asset: $($asset.name) ($([math]::Round($asset.size / 1MB, 1)) MB)"
@@ -118,65 +125,210 @@ function Get-UpstreamInstaller {
     }
     $cachePath = Join-Path $cacheDir $asset.name
 
-    if (Test-Path $cachePath) {
-        Write-Log "Using cached installer: $cachePath"
-        return $cachePath
-    }
-
-    Write-Log "Downloading from $($asset.browser_download_url) ..."
-    $maxAttempts = 3
-    for ($i = 1; $i -le $maxAttempts; $i++) {
-        try {
-            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $cachePath -Headers $headers -TimeoutSec 600
-            Write-Log "Download succeeded ($([math]::Round((Get-Item $cachePath).Length / 1MB, 1)) MB)"
-            return $cachePath
-        } catch {
-            Write-Log "Attempt $i/$maxAttempts failed: $($_.Exception.Message)"
-            if ($i -lt $maxAttempts) {
-                $backoff = 5 * $i * $i
-                Write-Log "Retrying in $backoff seconds..."
-                Start-Sleep -Seconds $backoff
+    if (-not (Test-Path $cachePath)) {
+        Write-Log "Downloading from $($asset.browser_download_url) ..."
+        $maxAttempts = 3
+        $downloaded = $false
+        for ($i = 1; $i -le $maxAttempts; $i++) {
+            try {
+                Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $cachePath -Headers $headers -TimeoutSec 600
+                Write-Log "Download succeeded ($([math]::Round((Get-Item $cachePath).Length / 1MB, 1)) MB)"
+                $downloaded = $true
+                break
+            } catch {
+                Write-Log "Attempt $i/$maxAttempts failed: $($_.Exception.Message)"
+                if ($i -lt $maxAttempts) {
+                    $backoff = 5 * $i * $i
+                    Write-Log "Retrying in $backoff seconds..."
+                    Start-Sleep -Seconds $backoff
+                }
             }
         }
+        if (-not $downloaded) {
+            Abort-Install "Failed to download upstream portable zip after $maxAttempts attempts."
+        }
+    } else {
+        Write-Log "Using cached portable zip: $cachePath"
     }
 
-    Abort-Install "Failed to download upstream installer after $maxAttempts attempts."
+    # Extract to a fresh staging directory under TEMP
+    $stagingDir = Join-Path $env:TEMP "SunshineEnglishEdition-portable-staging"
+    if (Test-Path $stagingDir) { Remove-Item -Recurse -Force $stagingDir }
+    New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+
+    Write-Log "Extracting portable zip to $stagingDir ..."
+    try {
+        Expand-Archive -Path $cachePath -DestinationPath $stagingDir -Force
+    } catch {
+        Abort-Install "Failed to extract portable zip: $($_.Exception.Message)"
+    }
+
+    # The zip has a single 'Sunshine/' top-level folder containing all the files.
+    $sunshineRoot = Get-ChildItem -Path $stagingDir -Directory | Select-Object -First 1
+    if (-not $sunshineRoot) {
+        Abort-Install "Extracted zip has unexpected layout (no top-level dir)."
+    }
+    Write-Log "Extracted to $($sunshineRoot.FullName)"
+
+    return @{
+        ExtractedDir = $sunshineRoot.FullName
+        ReleaseTag   = $release.tag_name
+    }
 }
 
 # ---------------------------------------------------------------------------
-# 2. Run upstream installer
+# 2. Install from extracted portable zip
+#
+# Copies all files from the extracted Sunshine/ directory into $InstallDir,
+# preserving user config (we never touch $InstallDir\config\). On first
+# install, also runs upstream's setup scripts (install-service.bat,
+# install-vdd.bat) to register the SunshineService and install drivers.
 # ---------------------------------------------------------------------------
-function Invoke-UpstreamInstaller([string]$InstallerPath) {
-    $upstreamLog = Join-Path $env:TEMP "upstream-install.log"
-
-    # IMPORTANT: do NOT name this variable $args. $args is a PowerShell
-    # automatic variable inside functions; reassigning it can result in
-    # Start-Process receiving an empty array instead of our flags, causing
-    # the upstream installer to launch with no flags and display its full
-    # interactive wizard UI (the very thing /VERYSILENT is supposed to hide).
-    $installerArgs = @(
-        "/VERYSILENT",
-        "/SUPPRESSMSGBOXES",
-        "/NORESTART",
-        "/SP-",
-        "/DIR=$InstallDir",
-        "/COMPONENTS=$Components",
-        "/LOG=$upstreamLog"
+function Install-FromPortable {
+    param(
+        [Parameter(Mandatory)] [string]$ExtractedDir,
+        [Parameter(Mandatory)] [bool]$IsFirstInstall
     )
 
-    Write-Log "Running upstream installer:"
-    Write-Log "  Path: $InstallerPath"
-    foreach ($a in $installerArgs) {
-        Write-Log "  Arg : $a"
+    Stop-SunshineProcesses
+
+    if (-not (Test-Path $InstallDir)) {
+        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     }
 
-    $proc = Start-Process -FilePath $InstallerPath -ArgumentList $installerArgs -Wait -PassThru -NoNewWindow
-    Write-Log "Upstream installer exit code: $($proc.ExitCode)"
+    # Copy everything from the extracted portable dir to InstallDir.
+    # We explicitly do NOT touch $InstallDir\config\ which holds user data
+    # (sunshine.conf, apps.json, covers/, credentials, etc.). The portable
+    # zip doesn't include a config/ subdirectory, so this is safe by default.
+    Write-Log "Copying upstream portable files $ExtractedDir -> $InstallDir ..."
+    $count = 0
+    Get-ChildItem -Path $ExtractedDir -Recurse -File | ForEach-Object {
+        $relative = $_.FullName.Substring($ExtractedDir.Length).TrimStart('\', '/')
+        # Defensive: skip any path that lands inside config/ (shouldn't happen
+        # with current portable zip, but in case upstream changes layout)
+        if ($relative -match '(?i)^config[/\\]') { return }
+        $dest = Join-Path $InstallDir $relative
+        $destDir = Split-Path -Parent $dest
+        if (-not (Test-Path $destDir)) {
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        }
+        $copied = $false
+        for ($attempt = 1; $attempt -le 3 -and -not $copied; $attempt++) {
+            try {
+                Copy-Item -Path $_.FullName -Destination $dest -Force -ErrorAction Stop
+                $copied = $true
+            } catch {
+                Write-Log "  Copy attempt $attempt failed for $relative; killing Sunshine and retrying..."
+                Stop-SunshineProcesses
+            }
+        }
+        if (-not $copied) {
+            Abort-Install "Failed to copy $relative from portable zip after 3 attempts."
+        }
+        $count++
+    }
+    Write-Log "Copied $count files from upstream portable."
 
-    # 0 = success, 3010 = success-needs-reboot
-    if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 3010) {
-        Write-Log "Upstream installer log: $upstreamLog"
-        Abort-Install "Upstream installer failed with exit code $($proc.ExitCode). See log: $upstreamLog"
+    # Sanity check
+    $marker = Join-Path $InstallDir "sunshine.exe"
+    if (-not (Test-Path $marker)) {
+        Abort-Install "Upstream copy verification failed: $marker missing."
+    }
+    Write-Log "Upstream sunshine.exe in place."
+
+    if ($IsFirstInstall) {
+        Write-Log "First install detected; running upstream setup scripts..."
+
+        # Install SunshineService
+        $svcBat = Join-Path $InstallDir "scripts\install-service.bat"
+        if (Test-Path $svcBat) {
+            Write-Log "  Running install-service.bat ..."
+            $proc = Start-Process -FilePath $svcBat -WorkingDirectory (Split-Path $svcBat) -Wait -PassThru -NoNewWindow
+            Write-Log "  install-service.bat exit code: $($proc.ExitCode)"
+        } else {
+            Write-Log "  WARN: install-service.bat not found in portable zip."
+        }
+
+        # Install VDD driver if vdd component selected
+        if ($Components -match '\bvdd\b') {
+            $vddBat = Join-Path $InstallDir "scripts\install-vdd.bat"
+            if (Test-Path $vddBat) {
+                Write-Log "  Running install-vdd.bat ..."
+                $proc = Start-Process -FilePath $vddBat -WorkingDirectory (Split-Path $vddBat) -Wait -PassThru -NoNewWindow
+                Write-Log "  install-vdd.bat exit code: $($proc.ExitCode)"
+            } else {
+                Write-Log "  WARN: install-vdd.bat not found in portable zip."
+            }
+        }
+
+        # Add firewall rules
+        $fwBat = Join-Path $InstallDir "scripts\add-firewall-rule.bat"
+        if (Test-Path $fwBat) {
+            Write-Log "  Running add-firewall-rule.bat ..."
+            $proc = Start-Process -FilePath $fwBat -WorkingDirectory (Split-Path $fwBat) -Wait -PassThru -NoNewWindow
+            Write-Log "  add-firewall-rule.bat exit code: $($proc.ExitCode)"
+        }
+
+        # Update PATH
+        $pathBat = Join-Path $InstallDir "scripts\update-path.bat"
+        if (Test-Path $pathBat) {
+            Write-Log "  Running update-path.bat add ..."
+            $proc = Start-Process -FilePath $pathBat -ArgumentList "add" -WorkingDirectory (Split-Path $pathBat) -Wait -PassThru -NoNewWindow
+            Write-Log "  update-path.bat exit code: $($proc.ExitCode)"
+        }
+    } else {
+        Write-Log "Existing install detected; skipping first-install setup scripts."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 2b. Force English locale in sunshine.conf
+# ---------------------------------------------------------------------------
+function Set-EnglishLocale {
+    # Set both `locale` (web UI / log messages) and `tray_locale` (system tray
+    # menu) to English in the user's sunshine.conf, creating the file/section
+    # entries as needed. Preserves all other settings the user has configured.
+    $configPath = Join-Path $InstallDir "config\sunshine.conf"
+    if (-not (Test-Path $configPath)) {
+        Write-Log "sunshine.conf not present at $configPath; will be created with English defaults on first launch."
+        # Create a minimal config that pre-sets English
+        $configDir = Split-Path -Parent $configPath
+        if (-not (Test-Path $configDir)) {
+            New-Item -ItemType Directory -Force -Path $configDir | Out-Null
+        }
+        Set-Content -Path $configPath -Value "locale = en_US`r`ntray_locale = en`r`n" -Encoding UTF8
+        Write-Log "Created $configPath with English locale defaults."
+        return
+    }
+
+    $content = Get-Content -Path $configPath -Raw
+    $changed = $false
+
+    if ($content -match '(?m)^locale\s*=') {
+        if ($content -notmatch '(?m)^locale\s*=\s*en') {
+            $content = [regex]::Replace($content, '(?m)^locale\s*=.*$', 'locale = en_US')
+            $changed = $true
+        }
+    } else {
+        $content += "`r`nlocale = en_US`r`n"
+        $changed = $true
+    }
+
+    if ($content -match '(?m)^tray_locale\s*=') {
+        if ($content -notmatch '(?m)^tray_locale\s*=\s*en') {
+            $content = [regex]::Replace($content, '(?m)^tray_locale\s*=.*$', 'tray_locale = en')
+            $changed = $true
+        }
+    } else {
+        $content += "tray_locale = en`r`n"
+        $changed = $true
+    }
+
+    if ($changed) {
+        Set-Content -Path $configPath -Value $content -Encoding UTF8 -NoNewline
+        Write-Log "Forced English locale in $configPath (locale=en_US, tray_locale=en)."
+    } else {
+        Write-Log "sunshine.conf already English (locale=en_*, tray_locale=en)."
     }
 }
 
@@ -469,22 +621,25 @@ try {
         Abort-Install "Foundation Sunshine requires 64-bit Windows."
     }
 
-    # Detect if Sunshine is already installed. If so, skip the upstream
-    # installer entirely - it forces interactive UI even with /VERYSILENT
-    # (custom Pascal in upstream's [Code] overrides silent mode), which
-    # breaks our wrapper's silent install flow. For existing installs we
-    # only need to apply the English overlay anyway.
-    $existingInstall = Test-Path (Join-Path $InstallDir "sunshine.exe")
-    if ($existingInstall) {
-        Write-Log "Sunshine already installed at $InstallDir; skipping upstream installer (overlay-only update)."
-    } else {
-        Write-Log "No existing Sunshine install detected; running upstream installer."
-        Write-Log "NOTE: upstream installer will display its Chinese wizard UI - this is a known upstream bug. Click through normally; UNCHECK 'Open GUI' on the finish page so our overlay can apply."
-        $upstream = Get-UpstreamInstaller
-        Invoke-UpstreamInstaller -InstallerPath $upstream
-    }
+    # Detect first install vs update by checking if SunshineService exists.
+    # First install needs the setup scripts (service, VDD, firewall, PATH);
+    # updates only need to overwrite files.
+    $existingService = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
+    $isFirstInstall = -not $existingService
+    Write-Log "Install mode: $(if ($isFirstInstall) { 'FIRST INSTALL' } else { 'UPDATE' })"
 
+    # Always download + extract latest upstream portable zip (auto-current
+    # with upstream releases). Then copy contents to InstallDir.
+    $portable = Get-UpstreamPortable
+    Install-FromPortable -ExtractedDir $portable.ExtractedDir -IsFirstInstall $isFirstInstall
+
+    # Apply English overlay (assets/web/, sunshine-gui.exe, vmouse scripts)
+    # on top of the upstream files we just copied.
     Copy-Overlay
+
+    # Force locale=en_US, tray_locale=en in sunshine.conf
+    Set-EnglishLocale
+
     Install-Vmouse
     Install-Gamepad
     Set-VersionKey
