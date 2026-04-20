@@ -40,7 +40,10 @@ UninstallDisplayIcon={app}\sunshine.exe
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Components]
-Name: "vmouse";  Description: "Virtual mouse driver (anti-cheat compatible)"; Types: full
+// vmouse component removed: the ZakoVirtualMouse driver lives in a private
+// AlkaidLab repo and is NOT included in any public upstream release. Ticking
+// the box did nothing useful (install-vmouse.bat would fail silently because
+// the .dll doesn't exist on disk).
 Name: "vdd";     Description: "Virtual display driver";                       Types: full
 Name: "gamepad"; Description: "Virtual gamepad driver";                       Types: full
 Name: "tools";   Description: "Diagnostic tools (dxgi-info, audio-info)";     Types: full
