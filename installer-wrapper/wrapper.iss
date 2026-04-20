@@ -48,6 +48,8 @@ Name: "tools";   Description: "Diagnostic tools (dxgi-info, audio-info)";     Ty
 [Files]
 // install.ps1 - does all the actual work (download upstream, run silently, overlay, vmouse register)
 Source: "install.ps1"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
+// auto-update.ps1 - shipped alongside install.ps1; install.ps1 deploys it to {app}\scripts and registers a scheduled task
+Source: "auto-update.ps1"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
 
 // English overlay - staged here by build/prepare_overlay.ps1 in CI
 Source: "build\overlay\sunshine.exe";          DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
@@ -61,7 +63,7 @@ Source: "build\overlay\OVERLAY_MANIFEST.json"; DestDir: "{tmp}\overlay";        
 // Log goes to %LOCALAPPDATA%\SunshineEnglishEdition\install.log so it
 // survives Inno's cleanup of {tmp}.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} -LogPath ""{localappdata}\SunshineEnglishEdition\install.log"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} -LogPath ""{localappdata}\SunshineEnglishEdition\install.log"" -WrapperVersion ""{#OverlayVersion}"" -WrapperSourceDir ""{tmp}"""; \
   StatusMsg: "Downloading and installing Foundation Sunshine (this takes 1-2 minutes)..."; \
   Flags: runhidden waituntilterminated; \
   WorkingDir: "{tmp}"

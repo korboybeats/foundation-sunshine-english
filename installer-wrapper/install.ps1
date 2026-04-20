@@ -44,7 +44,9 @@ param(
     [Parameter(Mandatory)] [string]$OverlayDir,
     [Parameter(Mandatory)] [string]$Components,
     [switch]$InstallVmouse,
-    [string]$LogPath
+    [string]$LogPath,
+    [string]$WrapperVersion = "unknown",
+    [string]$WrapperSourceDir
 )
 
 $ErrorActionPreference = "Stop"
@@ -355,11 +357,41 @@ function Set-VersionKey {
     if (-not (Test-Path $key)) {
         New-Item -Path $key -Force | Out-Null
     }
-    $version = $env:OVERLAY_VERSION
-    if (-not $version) { $version = "unknown" }
-    Set-ItemProperty -Path $key -Name "Version" -Value $version
+    Set-ItemProperty -Path $key -Name "Version" -Value $WrapperVersion
     Set-ItemProperty -Path $key -Name "InstalledAtUtc" -Value (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
-    Write-Log "Wrote registry key: $key (Version=$version)"
+    Write-Log "Wrote registry key: $key (Version=$WrapperVersion)"
+}
+
+# ---------------------------------------------------------------------------
+# 6. Set up auto-update scheduled task
+# ---------------------------------------------------------------------------
+function Setup-AutoUpdate {
+    # Deploy auto-update.ps1 to a stable path so the scheduled task can find it.
+    if (-not $WrapperSourceDir -or -not (Test-Path (Join-Path $WrapperSourceDir "auto-update.ps1"))) {
+        Write-Log "auto-update.ps1 not found in source dir; skipping auto-update setup."
+        return
+    }
+    $updaterDest = Join-Path $InstallDir "scripts\sunshine-english-updater.ps1"
+    $updaterDir = Split-Path -Parent $updaterDest
+    if (-not (Test-Path $updaterDir)) {
+        New-Item -ItemType Directory -Force -Path $updaterDir | Out-Null
+    }
+    Copy-Item -Path (Join-Path $WrapperSourceDir "auto-update.ps1") -Destination $updaterDest -Force
+    Write-Log "Deployed auto-updater: $updaterDest"
+
+    # (Re)register weekly scheduled task. Sunday 3am, runs as SYSTEM with highest privileges.
+    $taskName = "SunshineEnglishEdition_AutoUpdate"
+    try {
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+        $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$updaterDest`""
+        $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3am
+        $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
+        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description "Auto-update Foundation Sunshine - English Edition (weekly check for new wrapper releases)" | Out-Null
+        Write-Log "Scheduled task '$taskName' registered (weekly Sunday 3am)."
+    } catch {
+        Write-Log "WARNING: failed to register auto-update task: $($_.Exception.Message). Auto-update disabled; you can re-run the wrapper manually for updates."
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -382,6 +414,7 @@ try {
     Install-Vmouse
     Install-Gamepad
     Set-VersionKey
+    Setup-AutoUpdate
     Restart-SunshineService
 
     Write-Log "=== Install complete ==="
