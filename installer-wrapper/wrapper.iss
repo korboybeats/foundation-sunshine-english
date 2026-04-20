@@ -76,7 +76,11 @@ begin
   S := 'application,assets';
   if WizardIsComponentSelected('vdd')     then S := S + ',vdd';
   if WizardIsComponentSelected('vmouse')  then S := S + ',vmouse';
-  if WizardIsComponentSelected('gamepad') then S := S + ',gamepad';
+  // NOTE: 'gamepad' is intentionally NOT passed to upstream. Upstream's
+  // install-gamepad.bat downloads ViGEmBus via mirror.ghproxy.com (Chinese
+  // mirror, unreachable outside China) and hangs on curl's 5-min connection
+  // timeout. Our own Install-Gamepad function in install.ps1 downloads
+  // ViGEmBus directly from nefarius/ViGEmBus on GitHub instead.
   if WizardIsComponentSelected('tools')   then S := S + ',tools';
   Result := S;
 end;
