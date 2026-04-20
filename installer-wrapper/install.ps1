@@ -52,6 +52,10 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+# Initialize script-scope state so Set-StrictMode doesn't throw on first read
+$script:OriginalServiceStartType = $null
+$script:RestartSunshineService = $false
+
 if (-not $LogPath) {
     $LogPath = Join-Path $env:LOCALAPPDATA "SunshineEnglishEdition\install.log"
 }
@@ -247,7 +251,7 @@ function Restart-SunshineService {
     $svc = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
     if (-not $svc) { return }
     $restoreType = $script:OriginalServiceStartType
-    if (-not $restoreType -or $restoreType -eq 'Disabled') { $restoreType = 'Automatic' }
+    if (-not $restoreType -or "$restoreType" -eq 'Disabled') { $restoreType = 'Automatic' }
     try {
         Set-Service -Name "SunshineService" -StartupType $restoreType -ErrorAction Stop
         Write-Log "Restored SunshineService startup type to $restoreType."
