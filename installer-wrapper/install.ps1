@@ -465,8 +465,21 @@ try {
         Abort-Install "Foundation Sunshine requires 64-bit Windows."
     }
 
-    $upstream = Get-UpstreamInstaller
-    Invoke-UpstreamInstaller -InstallerPath $upstream
+    # Detect if Sunshine is already installed. If so, skip the upstream
+    # installer entirely - it forces interactive UI even with /VERYSILENT
+    # (custom Pascal in upstream's [Code] overrides silent mode), which
+    # breaks our wrapper's silent install flow. For existing installs we
+    # only need to apply the English overlay anyway.
+    $existingInstall = Test-Path (Join-Path $InstallDir "sunshine.exe")
+    if ($existingInstall) {
+        Write-Log "Sunshine already installed at $InstallDir; skipping upstream installer (overlay-only update)."
+    } else {
+        Write-Log "No existing Sunshine install detected; running upstream installer."
+        Write-Log "NOTE: upstream installer will display its Chinese wizard UI - this is a known upstream bug. Click through normally; UNCHECK 'Open GUI' on the finish page so our overlay can apply."
+        $upstream = Get-UpstreamInstaller
+        Invoke-UpstreamInstaller -InstallerPath $upstream
+    }
+
     Copy-Overlay
     Install-Vmouse
     Install-Gamepad
