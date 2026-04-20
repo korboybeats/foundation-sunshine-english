@@ -57,15 +57,17 @@ try {
 }
 
 $latest = $release.tag_name
-Write-Log "Latest release: $latest"
+Write-Log "Latest wrapper release: $latest"
 
+# Always re-run the wrapper, even if wrapper version hasn't changed. The
+# wrapper internally downloads the LATEST upstream portable zip on every
+# run (auto-current with upstream), so re-running picks up new upstream
+# releases even when our wrapper hasn't been re-cut. Wrapper install logic
+# is idempotent and fast (~30s when nothing has changed).
 if ($latest -eq $installed) {
-    Write-Log "Already up to date."
-    exit 0
-}
-
-if ($installed -eq "unknown") {
-    Write-Log "Installed version is 'unknown' (older wrapper without version tagging). Forcing update to $latest."
+    Write-Log "Wrapper version unchanged, but re-running anyway to pull latest upstream Sunshine release."
+} else {
+    Write-Log "New wrapper version available; updating from $installed to $latest."
 }
 
 # Find wrapper installer asset
