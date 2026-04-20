@@ -292,12 +292,17 @@ function Install-Gamepad {
         return
     }
 
-    # Prefer .exe installer asset (their releases usually have ViGEmBus_Setup_x.x.x.exe)
-    $asset = $release.assets | Where-Object { $_.name -like "*Setup*.exe" -or $_.name -like "*.msi" } | Select-Object -First 1
+    # Asset naming has varied across ViGEmBus releases:
+    #  - older: ViGEmBusSetup_*.exe
+    #  - 1.22.0+: ViGEmBus_<version>_x64_x86_arm64.exe (no "Setup" in name)
+    #  - some older: ViGEmBus_*.msi
+    # Match anything starting with ViGEmBus and ending in .exe or .msi.
+    $asset = $release.assets | Where-Object { $_.name -like "ViGEmBus*.exe" -or $_.name -like "ViGEmBus*.msi" } | Select-Object -First 1
     if (-not $asset) {
         Write-Log "WARNING: no installer asset found in ViGEmBus release $($release.tag_name). Install manually from $($release.html_url)"
         return
     }
+    Write-Log "Selected asset: $($asset.name)"
 
     $tmp = Join-Path $env:TEMP "ViGEmBus_$($asset.name)"
     Write-Log "Downloading $($asset.name) ($([math]::Round($asset.size / 1MB, 1)) MB) from GitHub..."
