@@ -399,7 +399,10 @@ function Stop-SunshineProcesses {
 }
 
 function Restart-SunshineService {
-    # Restore service startup type then start it.
+    # Restore service startup type then start it. Always attempt to start
+    # unconditionally — the conditional $script:RestartSunshineService flag
+    # was unreliable (second Stop-SunshineProcesses call could leave the flag
+    # in an unexpected state, causing the service to remain stopped after install).
     $svc = Get-Service -Name "SunshineService" -ErrorAction SilentlyContinue
     if (-not $svc) { return }
     $restoreType = $script:OriginalServiceStartType
@@ -410,13 +413,11 @@ function Restart-SunshineService {
     } catch {
         Write-Log "WARN: failed to restore SunshineService startup type: $($_.Exception.Message)"
     }
-    if ($script:RestartSunshineService) {
-        try {
-            Start-Service -Name "SunshineService" -ErrorAction Stop
-            Write-Log "SunshineService started."
-        } catch {
-            Write-Log "WARN: failed to start SunshineService: $($_.Exception.Message). Start manually if needed."
-        }
+    try {
+        Start-Service -Name "SunshineService" -ErrorAction Stop
+        Write-Log "SunshineService started."
+    } catch {
+        Write-Log "WARN: failed to start SunshineService: $($_.Exception.Message). Start manually if needed."
     }
 }
 
