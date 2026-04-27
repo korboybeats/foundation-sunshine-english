@@ -23,6 +23,7 @@ AppPublisherURL=https://github.com/korboybeats/foundation-sunshine-english
 AppSupportURL=https://github.com/korboybeats/foundation-sunshine-english/issues
 AppUpdatesURL=https://github.com/korboybeats/foundation-sunshine-english/releases
 DefaultDirName={autopf}\Sunshine
+DefaultGroupName=Foundation Sunshine
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64
@@ -53,6 +54,10 @@ Name: "tools";   Description: "Diagnostic tools (dxgi-info, audio-info)";     Ty
 Source: "install.ps1"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
 // auto-update.ps1 - shipped alongside install.ps1; install.ps1 deploys it to {app}\scripts and registers a scheduled task
 Source: "auto-update.ps1"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall
+// Launcher scripts deployed permanently to {app}\scripts. Targets of the
+// Start Menu / Desktop shortcuts. Auto-elevate via UAC when needed.
+Source: "sunshine-launcher.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "sunshine-stop.ps1";     DestDir: "{app}\scripts"; Flags: ignoreversion
 
 // English overlay - staged here by build/prepare_overlay.ps1 in CI
 Source: "build\overlay\sunshine.exe";          DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
@@ -60,6 +65,32 @@ Source: "build\overlay\assets\web\*";          DestDir: "{tmp}\overlay\assets\we
 Source: "build\overlay\scripts\vmouse\*.bat";  DestDir: "{tmp}\overlay\scripts\vmouse"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist
 Source: "build\overlay\assets\gui\sunshine-gui.exe"; DestDir: "{tmp}\overlay\assets\gui"; Flags: ignoreversion deleteafterinstall skipifsourcedoesntexist
 Source: "build\overlay\OVERLAY_MANIFEST.json"; DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a desktop shortcut for Sunshine"; GroupDescription: "Additional shortcuts:"
+
+[Icons]
+// Main shortcut: starts the service if needed (UAC), then opens the Web UI.
+Name: "{group}\Sunshine"; Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\scripts\sunshine-launcher.ps1"""; \
+  IconFilename: "{app}\sunshine.exe"; WorkingDir: "{app}"; Comment: "Start Sunshine and open the Web UI"
+// Stop the service (UAC).
+Name: "{group}\Stop Sunshine"; Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\scripts\sunshine-stop.ps1"""; \
+  IconFilename: "{app}\sunshine.exe"; WorkingDir: "{app}"; Comment: "Stop the Sunshine service"
+// Direct browser link (no service interaction).
+Name: "{group}\Sunshine Web UI"; Filename: "https://localhost:47990"; \
+  IconFilename: "{app}\sunshine.exe"; Comment: "Open the Sunshine Web UI in your browser"
+// Quick access to config + logs folder.
+Name: "{group}\Sunshine Config Folder"; Filename: "{app}\config"; \
+  IconFilename: "{app}\sunshine.exe"; Comment: "Open the Sunshine config and logs folder"
+// Standard uninstall entry.
+Name: "{group}\Uninstall Sunshine (English Edition)"; Filename: "{uninstallexe}"
+// Optional desktop icon (controlled by [Tasks]).
+Name: "{commondesktop}\Sunshine"; Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{app}\scripts\sunshine-launcher.ps1"""; \
+  IconFilename: "{app}\sunshine.exe"; WorkingDir: "{app}"; \
+  Comment: "Start Sunshine and open the Web UI"; Tasks: desktopicon
 
 [Run]
 // Run install.ps1 with all logic. Components/vmouse passed as arguments.
