@@ -14,7 +14,6 @@ import fr from '../../public/assets/locale/fr.json'
 import it from '../../public/assets/locale/it.json'
 import ru from '../../public/assets/locale/ru.json'
 import sv from '../../public/assets/locale/sv.json'
-import zh from '../../public/assets/locale/zh.json'
 
 // Create the i18n instance
 const i18n = createI18n({
@@ -29,8 +28,7 @@ const i18n = createI18n({
         fr: fr,
         it: it,
         ru: ru,
-        sv: sv,
-        zh: zh
+        sv: sv
     },
 });
 

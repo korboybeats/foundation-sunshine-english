@@ -42,24 +42,12 @@
           <div v-if="currentStep === 1">
             <h3 class="mb-4">{{ $t('setup.step0_description') }}</h3>
             
-            <div class="option-card" 
-                 :class="{ selected: selectedLocale === 'zh' }"
-                 @click="selectedLocale = 'zh'">
-              <div class="option-icon">
-                <i class="fas fa-language"></i>
-              </div>
-              <h4>简体中文</h4>
-              <p>Use the Simplified Chinese interface</p>
-            </div>
-
-            <div class="option-card" 
-                 :class="{ selected: selectedLocale === 'en' }"
-                 @click="selectedLocale = 'en'">
+            <div class="option-card selected">
               <div class="option-icon">
                 <i class="fas fa-language"></i>
               </div>
               <h4>English</h4>
-              <p>Use English interface</p>
+              <p>English interface</p>
             </div>
           </div>
 

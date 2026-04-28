@@ -27,8 +27,6 @@
               <option value="en">English</option>
               <option value="en_GB">English (UK)</option>
               <option value="en_US">English (US)</option>
-              <option value="zh">简体中文</option>
-              <option value="zh_TW">繁體中文</option>
               <option value="de">Deutsch</option>
               <option value="fr">Français</option>
               <option value="es">Español</option>
