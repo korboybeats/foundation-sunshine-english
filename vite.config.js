@@ -62,6 +62,19 @@ export default defineConfig({
       },
     },
     rolldownOptions: {
+      // Mirror the input list so all HTML entry points get built. Without
+      // this, rolldown falls back to a single default entry and only emits
+      // index.html — apps/pin/config/password/troubleshooting/welcome get
+      // silently dropped.
+      input: {
+        apps: resolve(assetsSrcPath, 'apps.html'),
+        config: resolve(assetsSrcPath, 'config.html'),
+        index: resolve(assetsSrcPath, 'index.html'),
+        password: resolve(assetsSrcPath, 'password.html'),
+        pin: resolve(assetsSrcPath, 'pin.html'),
+        troubleshooting: resolve(assetsSrcPath, 'troubleshooting.html'),
+        welcome: resolve(assetsSrcPath, 'welcome.html'),
+      },
       output: {
         // Optimize chunk naming
         chunkFileNames: 'assets/[name]-[hash].js',
