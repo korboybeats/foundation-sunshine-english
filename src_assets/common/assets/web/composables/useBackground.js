@@ -3,7 +3,17 @@ import ColorThief from 'colorthief'
 // 1x1 transparent-on-black PNG, scaled to viewport via background-size: cover.
 // Result is a solid black backdrop with no external CDN dependency.
 const DEFAULT_BACKGROUND = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII='
-const STORAGE_KEY = 'customBackground'
+// Bump the storage key so the upstream-CDN kitsune URL that older installs
+// persisted in localStorage is no longer found — fresh fallback to the
+// solid-black DEFAULT_BACKGROUND. Also remove the legacy key so it stops
+// taking up storage quota.
+const LEGACY_STORAGE_KEY = 'customBackground'
+const STORAGE_KEY = 'customBackground_v2'
+try {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(LEGACY_STORAGE_KEY)
+  }
+} catch { /* private mode etc. */ }
 
 const COLOR_CONFIG = {
   textLightnessRange: { min: 15, max: 95 },
