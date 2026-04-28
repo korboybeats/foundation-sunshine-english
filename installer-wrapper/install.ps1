@@ -647,21 +647,42 @@ function Write-UpstreamVersionFile {
         installed_at_utc    = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
     }
     $dest = Join-Path $assetsDir "upstream_version.json"
-    $payload | ConvertTo-Json -Depth 4 | Set-Content -Path $dest -Encoding UTF8
+    $json = $payload | ConvertTo-Json -Depth 4
+    # Avoid PowerShell 5.1's UTF8-with-BOM encoding here too (browsers
+    # tolerate BOM in JSON, but consistency matters and some parsers don't).
+    [System.IO.File]::WriteAllText($dest, $json, (New-Object System.Text.UTF8Encoding($false)))
     Write-Log "Wrote $dest"
 
     # Backwards-compat: also patch any older bundled JS that fetches
     # /upstream_version.json (root path) to use /assets/upstream_version.json
     # instead. Future Vite builds will hard-code the correct path natively
     # and this patch becomes a no-op.
+    # PowerShell 5.1's Set-Content -Encoding UTF8 prepends a BOM, which
+    # breaks the bundled JS when loaded as a script. Use WriteAllText with
+    # an explicit no-BOM UTF-8 encoder. Also strip any BOM that an earlier
+    # buggy install left at the start of the file.
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     $bundledJs = Get-ChildItem -Path $assetsDir -Filter "index-*.js" -File -ErrorAction SilentlyContinue
     foreach ($f in $bundledJs) {
         try {
-            $raw = Get-Content -Path $f.FullName -Raw -ErrorAction Stop
+            $raw = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
+            $needsWrite = $false
+
+            # Strip leading BOM (codepoint U+FEFF) if present
+            if ($raw.Length -gt 0 -and $raw[0] -eq [char]0xFEFF) {
+                $raw = $raw.Substring(1)
+                $needsWrite = $true
+                Write-Log "Stripped UTF-8 BOM from $($f.Name)"
+            }
+
             if ($raw -match '/upstream_version\.json' -and $raw -notmatch '/assets/upstream_version\.json') {
-                $patched = $raw -replace '/upstream_version\.json', '/assets/upstream_version.json'
-                Set-Content -Path $f.FullName -Value $patched -NoNewline -Encoding UTF8
+                $raw = $raw -replace '/upstream_version\.json', '/assets/upstream_version.json'
+                $needsWrite = $true
                 Write-Log "Patched $($f.Name) fetch path to /assets/upstream_version.json"
+            }
+
+            if ($needsWrite) {
+                [System.IO.File]::WriteAllText($f.FullName, $raw, $utf8NoBom)
             }
         } catch {
             Write-Log "WARN: failed to patch $($f.FullName): $($_.Exception.Message)"
