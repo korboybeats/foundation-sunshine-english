@@ -21,6 +21,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <wtsapi32.h>
+#endif
 #include <openssl/evp.h>
 #include <openssl/sha.h>
 
@@ -1002,15 +1007,42 @@ namespace confighttp {
     outputTree.put("pair_name", nvhttp::get_pair_name());
 
     // Expose the host OS username so the Web UI can personalise its
-    // welcome banner with the actual Windows account name (rather than
-    // the Sunshine auth username, which usually defaults to "sunshine").
-    const char *os_user =
+    // welcome banner with the actual interactive Windows account name
+    // (rather than the Sunshine auth username, which usually defaults
+    // to "sunshine"). When sunshine.exe runs as the SunshineService
+    // it lives under the LocalSystem account, so $USERNAME would just
+    // return "SYSTEM" — query the active console session instead.
+    std::string os_username;
 #ifdef _WIN32
-      std::getenv("USERNAME");
+    {
+      DWORD session_id = WTSGetActiveConsoleSessionId();
+      if (session_id != 0xFFFFFFFF) {
+        LPWSTR buf = nullptr;
+        DWORD len = 0;
+        if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, session_id, WTSUserName, &buf, &len) && buf) {
+          int u8len = WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0, nullptr, nullptr);
+          if (u8len > 1) {
+            std::string utf8(u8len - 1, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8.data(), u8len, nullptr, nullptr);
+            os_username = std::move(utf8);
+          }
+          WTSFreeMemory(buf);
+        }
+      }
+      // Fall back to $USERNAME if the session query produced nothing
+      // (running interactively, dev session, no active console, etc.)
+      if (os_username.empty()) {
+        if (const char *u = std::getenv("USERNAME")) {
+          os_username = u;
+        }
+      }
+    }
 #else
-      std::getenv("USER");
+    if (const char *u = std::getenv("USER")) {
+      os_username = u;
+    }
 #endif
-    outputTree.put("os_username", os_user ? os_user : "");
+    outputTree.put("os_username", os_username);
   }
 
   void
