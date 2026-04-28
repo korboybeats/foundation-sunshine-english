@@ -1,6 +1,8 @@
 import ColorThief from 'colorthief'
 
-const DEFAULT_BACKGROUND = 'https://assets.alkaidlab.com/sunshine-bg0.webp'
+// 1x1 transparent-on-black PNG, scaled to viewport via background-size: cover.
+// Result is a solid black backdrop with no external CDN dependency.
+const DEFAULT_BACKGROUND = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII='
 const STORAGE_KEY = 'customBackground'
 
 const COLOR_CONFIG = {

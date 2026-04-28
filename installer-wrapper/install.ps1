@@ -681,6 +681,16 @@ function Write-UpstreamVersionFile {
                 Write-Log "Patched $($f.Name) fetch path to /assets/upstream_version.json"
             }
 
+            # Replace AlkaidLab CDN background image with a 1x1 black-pixel
+            # data URL so the Web UI shows a solid black backdrop instead of
+            # the kitsune mascot fetched from the upstream CDN.
+            if ($raw -match 'https://assets\.alkaidlab\.com/sunshine-bg0\.webp') {
+                $blackBg = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII='
+                $raw = $raw -replace 'https://assets\.alkaidlab\.com/sunshine-bg0\.webp', $blackBg
+                $needsWrite = $true
+                Write-Log "Patched $($f.Name) default background to solid black."
+            }
+
             if ($needsWrite) {
                 [System.IO.File]::WriteAllText($f.FullName, $raw, $utf8NoBom)
             }
