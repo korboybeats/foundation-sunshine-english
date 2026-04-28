@@ -44,6 +44,7 @@ param(
     [Parameter(Mandatory)] [string]$OverlayDir,
     [Parameter(Mandatory)] [string]$Components,
     [switch]$InstallVmouse,
+    [switch]$TrackPrereleases,
     [string]$LogPath,
     [string]$WrapperVersion = "unknown",
     [string]$WrapperSourceDir
@@ -97,7 +98,17 @@ function Abort-Install([string]$Message) {
 # the Chinese wizard ever appearing.
 # ---------------------------------------------------------------------------
 function Get-UpstreamPortable {
-    Write-Log "Querying upstream release..."
+    # Effective preference: explicit -TrackPrereleases switch wins; otherwise
+    # honour the existing registry value so a silent re-install (auto-update
+    # task) preserves whatever the user picked at first install.
+    $usePrereleases = $TrackPrereleases.IsPresent
+    if (-not $usePrereleases) {
+        try {
+            $existing = (Get-ItemProperty -Path "HKLM:\SOFTWARE\SunshineEnglishEdition" -Name "TrackPrereleases" -ErrorAction Stop).TrackPrereleases
+            if ($existing -eq 1) { $usePrereleases = $true }
+        } catch {}
+    }
+    Write-Log "Querying upstream release (prereleases: $usePrereleases)..."
 
     $headers = @{
         "User-Agent" = "SunshineEnglishEdition-Installer"
@@ -105,12 +116,21 @@ function Get-UpstreamPortable {
     }
 
     try {
-        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/AlkaidLab/foundation-sunshine/releases/latest" -Headers $headers -TimeoutSec 30
+        if ($usePrereleases) {
+            # /releases/latest only returns stable. To include prereleases,
+            # fetch the recent list and pick the most recently published
+            # non-draft entry (could be stable or prerelease).
+            $all = Invoke-RestMethod -Uri "https://api.github.com/repos/AlkaidLab/foundation-sunshine/releases?per_page=10" -Headers $headers -TimeoutSec 30
+            $release = $all | Where-Object { -not $_.draft } | Sort-Object -Property published_at -Descending | Select-Object -First 1
+            if (-not $release) { Abort-Install "No non-draft upstream releases found." }
+        } else {
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/AlkaidLab/foundation-sunshine/releases/latest" -Headers $headers -TimeoutSec 30
+        }
     } catch {
         Abort-Install "Failed to query upstream release: $($_.Exception.Message)"
     }
 
-    Write-Log "Upstream tag: $($release.tag_name)"
+    Write-Log "Upstream tag: $($release.tag_name) (prerelease: $($release.prerelease))"
 
     $asset = $release.assets | Where-Object { $_.name -like "*Portable*.zip" } | Select-Object -First 1
     if (-not $asset) {
@@ -173,6 +193,9 @@ function Get-UpstreamPortable {
     return @{
         ExtractedDir = $sunshineRoot.FullName
         ReleaseTag   = $release.tag_name
+        PublishedAt  = $release.published_at
+        IsPrerelease = [bool]$release.prerelease
+        HtmlUrl      = $release.html_url
     }
 }
 
@@ -567,13 +590,61 @@ function Install-Gamepad {
 # 5. Update wrapper version registry key
 # ---------------------------------------------------------------------------
 function Set-VersionKey {
+    param([hashtable]$Portable)
+
     $key = "HKLM:\SOFTWARE\SunshineEnglishEdition"
     if (-not (Test-Path $key)) {
         New-Item -Path $key -Force | Out-Null
     }
     Set-ItemProperty -Path $key -Name "Version" -Value $WrapperVersion
     Set-ItemProperty -Path $key -Name "InstalledAtUtc" -Value (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
-    Write-Log "Wrote registry key: $key (Version=$WrapperVersion)"
+
+    # Track-prereleases preference: explicit switch wins; else preserve the
+    # existing value (so silent re-installs from auto-update don't reset it).
+    if ($TrackPrereleases.IsPresent) {
+        Set-ItemProperty -Path $key -Name "TrackPrereleases" -Value 1 -Type DWord
+    } else {
+        # Only initialise the value if it doesn't exist; never overwrite a
+        # previously-set "1" via a silent reinstall.
+        try { (Get-ItemProperty -Path $key -Name "TrackPrereleases" -ErrorAction Stop) | Out-Null } catch {
+            Set-ItemProperty -Path $key -Name "TrackPrereleases" -Value 0 -Type DWord
+        }
+    }
+
+    if ($Portable) {
+        Set-ItemProperty -Path $key -Name "UpstreamTag" -Value $Portable.ReleaseTag
+        Set-ItemProperty -Path $key -Name "UpstreamIsPrerelease" -Value ([int][bool]$Portable.IsPrerelease) -Type DWord
+    }
+
+    Write-Log "Wrote registry: Version=$WrapperVersion; UpstreamTag=$($Portable.ReleaseTag); TrackPrereleases=$($TrackPrereleases.IsPresent)"
+}
+
+# ---------------------------------------------------------------------------
+# Write upstream version metadata to the Web UI assets dir so the Web UI
+# can display the actual upstream Sunshine version (instead of the raw
+# 0.0.0.<commit> FileVersion that sunshine.exe reports). Sunshine's
+# embedded HTTP server serves assets/web/ at the root, so the file is
+# fetchable from the browser at /upstream_version.json.
+# ---------------------------------------------------------------------------
+function Write-UpstreamVersionFile {
+    param([Parameter(Mandatory)] [hashtable]$Portable)
+
+    $webDir = Join-Path $InstallDir "assets\web"
+    if (-not (Test-Path $webDir)) {
+        Write-Log "WARN: $webDir not found; skipping upstream_version.json write."
+        return
+    }
+    $payload = [ordered]@{
+        upstream_tag        = $Portable.ReleaseTag
+        upstream_published  = $Portable.PublishedAt
+        upstream_prerelease = [bool]$Portable.IsPrerelease
+        upstream_url        = $Portable.HtmlUrl
+        wrapper_version     = $WrapperVersion
+        installed_at_utc    = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+    }
+    $dest = Join-Path $webDir "upstream_version.json"
+    $payload | ConvertTo-Json -Depth 4 | Set-Content -Path $dest -Encoding UTF8
+    Write-Log "Wrote $dest"
 }
 
 # ---------------------------------------------------------------------------
@@ -643,7 +714,8 @@ try {
 
     Install-Vmouse
     Install-Gamepad
-    Set-VersionKey
+    Set-VersionKey -Portable $portable
+    Write-UpstreamVersionFile -Portable $portable
     Setup-AutoUpdate
     Restart-SunshineService
 

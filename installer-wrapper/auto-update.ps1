@@ -86,9 +86,21 @@ try {
     exit 0
 }
 
-Write-Log "Running wrapper installer /SILENT ..."
+# Preserve the user's update-channel choice across silent re-installs.
+# Inno wizard tasks default to unchecked under /SILENT, so without /TASKS
+# the prereleases task would silently flip back to off on every weekly run.
+$wrapperArgs = @("/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART")
 try {
-    $proc = Start-Process -FilePath $tmp -ArgumentList "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru -NoNewWindow
+    $tp = (Get-ItemProperty -Path "HKLM:\SOFTWARE\SunshineEnglishEdition" -Name "TrackPrereleases" -ErrorAction Stop).TrackPrereleases
+    if ($tp -eq 1) {
+        $wrapperArgs += "/TASKS=prereleases"
+        Write-Log "Preserving TrackPrereleases=1 across re-install."
+    }
+} catch {}
+
+Write-Log "Running wrapper installer: $($wrapperArgs -join ' ')"
+try {
+    $proc = Start-Process -FilePath $tmp -ArgumentList $wrapperArgs -Wait -PassThru -NoNewWindow
     Write-Log "Wrapper exit code: $($proc.ExitCode)"
 } catch {
     Write-Log "ERROR: wrapper launch failed: $($_.Exception.Message)"

@@ -36,6 +36,8 @@
         :build-version-is-dirty="buildVersionIsDirty"
         :parsed-stable-body="parsedStableBody"
         :parsed-pre-release-body="parsedPreReleaseBody"
+        :display-version="displayVersion"
+        :upstream-is-prerelease="upstreamIsPrerelease"
       />
 
       <!-- Resource card -->
@@ -72,6 +74,8 @@ const {
   parsedStableBody,
   parsedPreReleaseBody,
   fetchVersions,
+  displayVersion,
+  upstreamIsPrerelease,
 } = useVersion()
 
 const { fatalLogs, fetchLogs } = useLogs()
@@ -122,8 +126,8 @@ onMounted(async () => {
     await fetchLogs()
 
     // Update the page title
-    if (version.value) {
-      document.title += ` Ver ${version.value.version}`
+    if (displayVersion.value || version.value) {
+      document.title += ` Ver ${displayVersion.value || version.value.version}`
     }
   } catch (e) {
     // In preview mode the API may not be available, so only log a warning

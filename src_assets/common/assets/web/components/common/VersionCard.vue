@@ -3,7 +3,8 @@
     <div class="card-header bg-info bg-opacity-10 border-bottom-0">
       <h5 class="card-title mb-0">
         <i class="fas fa-code-branch text-info me-2"></i>
-        Version {{ version.version }}
+        Foundation Sunshine {{ displayVersion || version.version }}
+        <span v-if="upstreamIsPrerelease" class="badge bg-warning text-dark ms-2" style="font-size: 0.65em; vertical-align: middle;">pre-release</span>
       </h5>
     </div>
     <div class="card-body">
@@ -108,6 +109,8 @@ defineProps({
   buildVersionIsDirty: Boolean,
   parsedStableBody: String,
   parsedPreReleaseBody: String,
+  displayVersion: String,
+  upstreamIsPrerelease: Boolean,
 })
 
 const showDownloadConfirm = ref(false)

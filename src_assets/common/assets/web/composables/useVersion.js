@@ -39,6 +39,16 @@ const toBoolean = (value) => {
 }
 
 /**
+ * Strip the trailing CJK suffix that upstream tags carry (e.g. ".杂鱼").
+ * Leaves the versioned portion intact:
+ *   "v2026.324.103456.杂鱼" -> "v2026.324.103456"
+ */
+const cleanUpstreamTag = (tag) => {
+  if (!tag) return tag
+  return tag.replace(/\.[一-鿿]+$/, '')
+}
+
+/**
  * Version management composable
  */
 export function useVersion() {
@@ -47,6 +57,11 @@ export function useVersion() {
   const preReleaseVersion = ref(null)
   const notifyPreReleases = ref(false)
   const loading = ref(true)
+  // Wrapper-supplied upstream metadata (written by install.ps1 to
+  // assets/web/upstream_version.json). When present we display the actual
+  // upstream Foundation Sunshine release tag instead of the raw
+  // 0.0.0.<commit> FileVersion that sunshine.exe reports.
+  const upstreamInfo = ref(null)
 
   // Computed properties
   const installedVersionNotStable = computed(() => 
@@ -74,8 +89,21 @@ export function useVersion() {
     parseMarkdown(githubVersion.value?.release?.body)
   )
   
-  const parsedPreReleaseBody = computed(() => 
+  const parsedPreReleaseBody = computed(() =>
     parseMarkdown(preReleaseVersion.value?.release?.body)
+  )
+
+  // Display label for the upstream Foundation Sunshine version. Prefer the
+  // wrapper-written tag; fall back to the raw FileVersion so the card still
+  // renders if upstream_version.json is missing (e.g. an older install).
+  const displayVersion = computed(() => {
+    const tag = upstreamInfo.value?.upstream_tag
+    if (tag) return cleanUpstreamTag(tag)
+    return version.value?.version
+  })
+
+  const upstreamIsPrerelease = computed(() =>
+    Boolean(upstreamInfo.value?.upstream_prerelease)
   )
 
   /**
@@ -83,11 +111,18 @@ export function useVersion() {
    */
   const fetchVersions = async (config) => {
     loading.value = true
-    
+
     try {
       notifyPreReleases.value = toBoolean(config.notify_pre_releases)
       version.value = new SunshineVersion(null, config.version)
-      
+
+      // Try to load the wrapper-written upstream metadata. Fail-soft: if
+      // the file is missing the rest of the version flow still works.
+      try {
+        const r = await fetch('/upstream_version.json', { cache: 'no-store' })
+        if (r.ok) upstreamInfo.value = await r.json()
+      } catch (e) { /* ignore */ }
+
       // Fetch GitHub version info in parallel
       const [latestData, releases] = await Promise.all([
         fetchGitHub(`${GITHUB_API_BASE}/latest`),
@@ -130,5 +165,8 @@ export function useVersion() {
     parsedStableBody,
     parsedPreReleaseBody,
     fetchVersions,
+    upstreamInfo,
+    displayVersion,
+    upstreamIsPrerelease,
   }
 }

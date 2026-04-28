@@ -67,7 +67,8 @@ Source: "build\overlay\assets\gui\sunshine-gui.exe"; DestDir: "{tmp}\overlay\ass
 Source: "build\overlay\OVERLAY_MANIFEST.json"; DestDir: "{tmp}\overlay";                Flags: ignoreversion deleteafterinstall
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut for Sunshine"; GroupDescription: "Additional shortcuts:"
+Name: "desktopicon";  Description: "Create a desktop shortcut for Sunshine"; GroupDescription: "Additional shortcuts:"
+Name: "prereleases";  Description: "Track upstream pre-releases (latest dev builds — may be unstable)"; GroupDescription: "Update channel:"; Flags: unchecked
 
 [Icons]
 // Main shortcut: starts the service if needed (UAC), then opens the Web UI.
@@ -97,7 +98,7 @@ Name: "{commondesktop}\Sunshine"; Filename: "powershell.exe"; \
 // Log goes to %LOCALAPPDATA%\SunshineEnglishEdition\install.log so it
 // survives Inno's cleanup of {tmp}.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} -LogPath ""{localappdata}\SunshineEnglishEdition\install.log"" -WrapperVersion ""{#OverlayVersion}"" -WrapperSourceDir ""{tmp}"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{tmp}\install.ps1"" -InstallDir ""{app}"" -OverlayDir ""{tmp}\overlay"" -Components ""{code:GetUpstreamComponents}"" {code:GetVmouseFlag} {code:GetPrereleaseFlag} -LogPath ""{localappdata}\SunshineEnglishEdition\install.log"" -WrapperVersion ""{#OverlayVersion}"" -WrapperSourceDir ""{tmp}"""; \
   StatusMsg: "Downloading and installing Foundation Sunshine (this takes 1-2 minutes)..."; \
   Flags: runhidden waituntilterminated; \
   WorkingDir: "{tmp}"
@@ -123,6 +124,14 @@ function GetVmouseFlag(Param: String): String;
 begin
   if WizardIsComponentSelected('vmouse') then
     Result := '-InstallVmouse'
+  else
+    Result := '';
+end;
+
+function GetPrereleaseFlag(Param: String): String;
+begin
+  if WizardIsTaskSelected('prereleases') then
+    Result := '-TrackPrereleases'
   else
     Result := '';
 end;
