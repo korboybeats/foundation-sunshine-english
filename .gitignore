@@ -97,3 +97,6 @@ src/vk_layer_hdr_inject/
 
 # Local-only planning docs (not for upstream / fork repo)
 docs/INSTALLER_WRAPPER_PLAN.md
+
+# Codemap session-state output (tooling, not source)
+.codemap/
