@@ -118,8 +118,10 @@ export function useVersion() {
 
       // Try to load the wrapper-written upstream metadata. Fail-soft: if
       // the file is missing the rest of the version flow still works.
+      // Path: Sunshine's HTTP server only serves files under /assets/
+      // (via getNodeModules in confighttp.cpp); root-level paths return 444.
       try {
-        const r = await fetch('/upstream_version.json', { cache: 'no-store' })
+        const r = await fetch('/assets/upstream_version.json', { cache: 'no-store' })
         if (r.ok) upstreamInfo.value = await r.json()
       } catch (e) { /* ignore */ }
 

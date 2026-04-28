@@ -629,9 +629,13 @@ function Set-VersionKey {
 function Write-UpstreamVersionFile {
     param([Parameter(Mandatory)] [hashtable]$Portable)
 
-    $webDir = Join-Path $InstallDir "assets\web"
-    if (-not (Test-Path $webDir)) {
-        Write-Log "WARN: $webDir not found; skipping upstream_version.json write."
+    # Sunshine's HTTP server (confighttp.cpp) only serves files under /assets/
+    # via the getNodeModules handler — root-level paths return 444 from the
+    # default close_connection handler. So the JSON has to live in the assets
+    # subdir to be fetchable from the Web UI.
+    $assetsDir = Join-Path $InstallDir "assets\web\assets"
+    if (-not (Test-Path $assetsDir)) {
+        Write-Log "WARN: $assetsDir not found; skipping upstream_version.json write."
         return
     }
     $payload = [ordered]@{
@@ -642,9 +646,27 @@ function Write-UpstreamVersionFile {
         wrapper_version     = $WrapperVersion
         installed_at_utc    = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
     }
-    $dest = Join-Path $webDir "upstream_version.json"
+    $dest = Join-Path $assetsDir "upstream_version.json"
     $payload | ConvertTo-Json -Depth 4 | Set-Content -Path $dest -Encoding UTF8
     Write-Log "Wrote $dest"
+
+    # Backwards-compat: also patch any older bundled JS that fetches
+    # /upstream_version.json (root path) to use /assets/upstream_version.json
+    # instead. Future Vite builds will hard-code the correct path natively
+    # and this patch becomes a no-op.
+    $bundledJs = Get-ChildItem -Path $assetsDir -Filter "index-*.js" -File -ErrorAction SilentlyContinue
+    foreach ($f in $bundledJs) {
+        try {
+            $raw = Get-Content -Path $f.FullName -Raw -ErrorAction Stop
+            if ($raw -match '/upstream_version\.json' -and $raw -notmatch '/assets/upstream_version\.json') {
+                $patched = $raw -replace '/upstream_version\.json', '/assets/upstream_version.json'
+                Set-Content -Path $f.FullName -Value $patched -NoNewline -Encoding UTF8
+                Write-Log "Patched $($f.Name) fetch path to /assets/upstream_version.json"
+            }
+        } catch {
+            Write-Log "WARN: failed to patch $($f.FullName): $($_.Exception.Message)"
+        }
+    }
 }
 
 # ---------------------------------------------------------------------------

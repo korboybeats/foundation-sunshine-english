@@ -1,0 +1,69 @@
+{
+  "updated_at": "2026-04-28T22:57:47.417318168+09:00",
+  "file_count": 648,
+  "hubs": null,
+  "importers": {},
+  "imports": {},
+  "recent_events": [
+    {
+      "time": "2026-04-28T22:19:18.904711468+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 144,
+      "delta": 10,
+      "size_delta": 281,
+      "dirty": true
+    },
+    {
+      "time": "2026-04-28T22:19:24.731546461+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 149,
+      "delta": 5,
+      "size_delta": 299,
+      "dirty": true
+    },
+    {
+      "time": "2026-04-28T22:19:32.676868861+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 162,
+      "delta": 13,
+      "size_delta": 503,
+      "dirty": true
+    },
+    {
+      "time": "2026-04-28T22:19:40.260214578+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 169,
+      "delta": 7,
+      "size_delta": 316,
+      "dirty": true
+    },
+    {
+      "time": "2026-04-28T22:19:45.412695902+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 172,
+      "delta": 3,
+      "size_delta": 64,
+      "dirty": true
+    },
+    {
+      "time": "2026-04-28T22:57:47.412209439+09:00",
+      "op": "CREATE",
+      "path": "src_assets/common/assets/web/composables/useVersion.js",
+      "lang": "javascript",
+      "lines": 174,
+      "delta": 2,
+      "size_delta": 156,
+      "dirty": true
+    }
+  ]
+}
