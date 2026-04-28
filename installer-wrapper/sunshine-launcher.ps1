@@ -34,6 +34,28 @@ function Log([string]$msg) {
     } catch {}
 }
 
+# Wait for the Sunshine Web UI port to actually accept connections. The
+# SCM reports the service "Running" the moment its main thread starts,
+# but Sunshine still needs ~1-3s to bind its HTTPS listener on 47990.
+# Returns $true if the port becomes reachable within $TimeoutSec.
+function Wait-ForWebUI([int]$TimeoutSec = 15) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        $tcp = $null
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $task = $tcp.ConnectAsync('127.0.0.1', 47990)
+            if ($task.Wait(500) -and $tcp.Connected) {
+                return $true
+            }
+        } catch {} finally {
+            if ($tcp) { $tcp.Close() }
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    return $false
+}
+
 Log "=== Launcher invoked (PID $PID) ==="
 Log "ScriptPath: $PSCommandPath"
 
@@ -87,8 +109,8 @@ if (-not $isAdmin) {
     $svc2 = Get-Service -Name 'SunshineService' -ErrorAction SilentlyContinue
     Log "Post-elevation status: $($svc2.Status)"
     if ($svc2 -and $svc2.Status -eq 'Running') {
-        # Service needs a beat to bind its listener before the UI can connect.
-        Start-Sleep -Seconds 1
+        $ready = Wait-ForWebUI -TimeoutSec 15
+        Log "Web UI ready: $ready"
     }
     Start-Process 'https://localhost:47990'
     Log "Opened browser."
