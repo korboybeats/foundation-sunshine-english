@@ -19,6 +19,7 @@
 #include <set>
 #include <sstream>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
@@ -1000,9 +1001,16 @@ namespace confighttp {
 
     outputTree.put("pair_name", nvhttp::get_pair_name());
 
-    // Expose the configured username so the Web UI can personalise its
-    // welcome banner. Empty string when no user has been set up yet.
-    outputTree.put("username", config::sunshine.username);
+    // Expose the host OS username so the Web UI can personalise its
+    // welcome banner with the actual Windows account name (rather than
+    // the Sunshine auth username, which usually defaults to "sunshine").
+    const char *os_user =
+#ifdef _WIN32
+      std::getenv("USERNAME");
+#else
+      std::getenv("USER");
+#endif
+    outputTree.put("os_username", os_user ? os_user : "");
   }
 
   void

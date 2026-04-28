@@ -112,9 +112,9 @@ onMounted(async () => {
   try {
     const config = await fetch('/api/config').then((r) => r.json())
 
-    // Personalise the welcome banner with the configured Sunshine username
-    if (config.username) {
-      username.value = config.username
+    // Personalise the welcome banner with the host OS username
+    if (config.os_username) {
+      username.value = config.os_username
     }
 
     setTimeout(() => {
