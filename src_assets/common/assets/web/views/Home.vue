@@ -15,7 +15,7 @@
     <div v-if="!showSetupWizard" id="content" class="container">
       <div class="page-header mt-2 mb-4">
         <h1 class="page-title">
-          {{ $t('index.welcome') }}
+          Hello, {{ username || 'Sunshine' }}!
         </h1>
         <p class="page-subtitle">{{ $t('index.description') }}</p>
       </div>
@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import Navbar from '../components/layout/Navbar.vue'
 import SetupWizard from '../components/SetupWizard.vue'
 import ResourceCard from '../components/common/ResourceCard.vue'
@@ -82,6 +82,8 @@ const { fatalLogs, fetchLogs } = useLogs()
 
 const { showSetupWizard, adapters, displayDevices, hasLocale, checkSetupWizard, onSetupComplete } = useSetupWizard()
 
+const username = ref('')
+
 // Report GPU info
 const reportGPUInfo = (config) => {
   try {
@@ -109,6 +111,11 @@ onMounted(async () => {
 
   try {
     const config = await fetch('/api/config').then((r) => r.json())
+
+    // Personalise the welcome banner with the configured Sunshine username
+    if (config.username) {
+      username.value = config.username
+    }
 
     setTimeout(() => {
       reportGPUInfo(config)

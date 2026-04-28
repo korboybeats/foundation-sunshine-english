@@ -999,6 +999,10 @@ namespace confighttp {
     }
 
     outputTree.put("pair_name", nvhttp::get_pair_name());
+
+    // Expose the configured username so the Web UI can personalise its
+    // welcome banner. Empty string when no user has been set up yet.
+    outputTree.put("username", config::sunshine.username);
   }
 
   void
